@@ -19,7 +19,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<archunit.version>0.16.0</archunit.version>
-		<bytebuddy.version>1.10.19</bytebuddy.version>
+		<bytebuddy.version>1.10.20</bytebuddy.version>
 		<spring-boot.version>2.3.8.RELEASE</spring-boot.version>
 	</properties>
 

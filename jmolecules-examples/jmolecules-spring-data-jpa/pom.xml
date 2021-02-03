@@ -81,13 +81,6 @@
 						<optional>true</optional>
 					</dependency>
 				</dependencies>
-				<configuration>
-					<transformations>
-						<transformation>
-							<plugin>org.jmolecules.bytebuddy.JMoleculesPlugin</plugin>
-						</transformation>
-					</transformations>
-				</configuration>
 			</plugin>
 		</plugins>
 	</build>
