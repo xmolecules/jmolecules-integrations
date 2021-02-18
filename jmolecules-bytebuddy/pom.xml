@@ -24,6 +24,12 @@
 			<artifactId>jmolecules-ddd</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>jmolecules-events</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 
 		<!-- Spring dependencies -->
 

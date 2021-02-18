@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmolecules.jpa.plugin;
+package org.jmolecules.bytebuddy;
 
 import static org.assertj.core.api.Assertions.*;
 

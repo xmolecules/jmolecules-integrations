@@ -38,6 +38,14 @@ class ApplicationIntegrationTests {
 	void bootstrapsContainer() {
 
 		assertThat(AssertableApplicationContext.get(() -> context)) //
-				.hasSingleBean(CustomerManagement.class);
+				.hasSingleBean(CustomerManagement.class)
+				.satisfies(ctx -> {
+
+					ctx.publishEvent(new CustomerManagement.SampleEvent());
+
+					CustomerManagement bean = ctx.getBean(CustomerManagement.class);
+
+					assertThat(bean.eventReceived).isTrue();
+				});
 	}
 }

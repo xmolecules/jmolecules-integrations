@@ -13,13 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmolecules.jpa.plugin;
+package org.jmolecules.bytebuddy;
 
-import org.jmolecules.ddd.types.Identifier;
+import lombok.Getter;
+
+import org.jmolecules.ddd.types.Entity;
 
 /**
  * @author Oliver Drotbohm
  */
-public class SampleAggregateIdentifier implements Identifier {
+@Getter
+public class SampleEntity implements Entity<SampleAggregate, Long> {
+
+	private Long id;
 
 }

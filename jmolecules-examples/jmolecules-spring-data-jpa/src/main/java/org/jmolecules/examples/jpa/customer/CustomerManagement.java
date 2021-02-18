@@ -16,11 +16,22 @@
 package org.jmolecules.examples.jpa.customer;
 
 import org.jmolecules.ddd.annotation.Service;
+import org.jmolecules.event.annotation.DomainEventHandler;
+import org.jmolecules.event.types.DomainEvent;
 
 /**
  * @author Oliver Drotbohm
  */
+
 @Service
 public class CustomerManagement {
 
+	public boolean eventReceived = false;
+
+	@DomainEventHandler
+	void on(SampleEvent event) {
+		this.eventReceived = true;
+	}
+
+	public static class SampleEvent implements DomainEvent {};
 }

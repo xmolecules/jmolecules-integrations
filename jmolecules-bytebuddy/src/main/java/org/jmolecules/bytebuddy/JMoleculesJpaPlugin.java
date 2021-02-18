@@ -223,7 +223,7 @@ public class JMoleculesJpaPlugin implements Plugin {
 			return builder;
 		}
 
-		log.info("jMolecules JPA Plugin - {} - Adding {}.", type.getSimpleName(), annotation.getName());
+		log.info("jMolecules JPA Plugin - {} - Adding @{}.", type.getSimpleName(), annotation.getName());
 
 		return builder.annotateType(createAnnotation(annotation));
 	}

@@ -13,18 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmolecules.jpa.plugin;
+package org.jmolecules.bytebuddy;
 
 import lombok.Getter;
 
-import org.jmolecules.ddd.types.Entity;
+import java.util.Collection;
+
+import org.jmolecules.ddd.types.AggregateRoot;
 
 /**
  * @author Oliver Drotbohm
  */
 @Getter
-public class SampleEntity implements Entity<SampleAggregate, Long> {
+public class SampleAggregate implements AggregateRoot<SampleAggregate, SampleAggregateIdentifier> {
 
-	private Long id;
+	private final SampleAggregateIdentifier id;
 
+	private SampleEntity entity;
+	private Collection<SampleEntity> listOfEntity;
+
+	public SampleAggregate() {
+		this.id = new SampleAggregateIdentifier();
+	}
 }
