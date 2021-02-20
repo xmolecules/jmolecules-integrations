@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.jmolecules</groupId>
 		<artifactId>jmolecules-integrations</artifactId>
-		<version>1.1.0-SNAPSHOT</version>
+		<version>0.1.0-SNAPSHOT</version>
 	</parent>
 
 	<name>jMolecules - ByteBuddy plugin</name>
@@ -22,13 +22,13 @@
 		<dependency>
 			<groupId>${project.groupId}</groupId>
 			<artifactId>jmolecules-ddd</artifactId>
-			<version>${project.version}</version>
+			<version>${jmolecules.version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>${project.groupId}</groupId>
 			<artifactId>jmolecules-events</artifactId>
-			<version>${project.version}</version>
+			<version>${jmolecules.version}</version>
 		</dependency>
 
 		<!-- Spring dependencies -->

@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>org.jmolecules</groupId>
 		<artifactId>jmolecules-examples</artifactId>
-		<version>1.1.0-SNAPSHOT</version>
+		<version>0.1.0-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>jmolecules-spring-data-jpa</artifactId>
@@ -25,13 +25,13 @@
 		<dependency>
 			<groupId>${project.groupId}</groupId>
 			<artifactId>jmolecules-ddd</artifactId>
-			<version>${project.version}</version>
+			<version>${jmolecules.version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>${project.groupId}</groupId>
 			<artifactId>jmolecules-events</artifactId>
-			<version>${project.version}</version>
+			<version>${jmolecules.version}</version>
 		</dependency>
 
 		<dependency>
@@ -90,12 +90,5 @@
 			</plugin>
 		</plugins>
 	</build>
-
-	<repositories>
-		<repository>
-			<id>spring-snapshots</id>
-			<url>https://repo.spring.io/snapshot</url>
-		</repository>
-	</repositories>
 
 </project>
