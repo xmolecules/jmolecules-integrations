@@ -8,6 +8,7 @@
 	</parent>
 
 	<name>jMolecules - JPA support</name>
+	<description>JPA support code for the ByteBuddy based JPA integration of jMolecules</description>
 	<artifactId>jmolecules-jpa</artifactId>
 
 	<dependencies>

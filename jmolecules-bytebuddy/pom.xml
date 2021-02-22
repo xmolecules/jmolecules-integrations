@@ -10,6 +10,7 @@
 	</parent>
 
 	<name>jMolecules - ByteBuddy plugin</name>
+	<description>A ByteBuddy plugin to translate jMolecules abstractions into implementation technology abstractions</description>
 	<artifactId>jmolecules-bytebuddy</artifactId>
 
 	<dependencies>

@@ -10,6 +10,7 @@
 
 	<artifactId>jmolecules-archunit</artifactId>
 	<name>jMolecules - ArchUnit rules</name>
+	<description>ArchUnit rules to enforce constraints implied by the jMolecules abstractions</description>
 
 	<dependencies>
 

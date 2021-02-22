@@ -6,13 +6,13 @@
 	<version>0.1.0-SNAPSHOT</version>
 
 	<name>jMolecules - Technology integrations</name>
+	<description>Modules to integrate jMolecules abstractions with implementation technologies</description>
+	<url>https://github.com/xmolecules/jmolecules-integrations</url>
 	<packaging>pom</packaging>
 
 	<modules>
 		<module>jmolecules-archunit</module>
 		<module>jmolecules-bytebuddy</module>
-		<module>jmolecules-bytebuddy-empty</module>
-		<module>jmolecules-examples</module>
 		<module>jmolecules-jpa</module>
 	</modules>
 
@@ -43,7 +43,20 @@
 
 	<profiles>
 		<profile>
+			<id>default</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<modules>
+				<module>jmolecules-examples</module>
+				<module>jmolecules-bytebuddy-empty</module>
+			</modules>
+		</profile>
+		<profile>
 			<id>sonatype</id>
+			<properties>
+				<skipTests>true</skipTests>
+			</properties>
 			<build>
 				<plugins>
 					<plugin>

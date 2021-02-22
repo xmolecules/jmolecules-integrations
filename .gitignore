@@ -11,3 +11,4 @@ target/
 *.ipr
 *.iws
 .flattened-pom.xml
+changelog.txt
