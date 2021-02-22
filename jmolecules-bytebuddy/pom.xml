@@ -74,7 +74,6 @@
 					</dependency>
 				</dependencies>
 				<configuration>
-					<discover>false</discover>
 					<transformations>
 						<transformation>
 							<plugin>org.jmolecules.bytebuddy.JMoleculesJpaPlugin</plugin>

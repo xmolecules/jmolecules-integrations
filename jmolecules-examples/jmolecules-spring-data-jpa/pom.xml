@@ -84,7 +84,6 @@
 						<groupId>${project.groupId}</groupId>
 						<artifactId>jmolecules-bytebuddy</artifactId>
 						<version>${project.version}</version>
-						<optional>true</optional>
 					</dependency>
 				</dependencies>
 			</plugin>
