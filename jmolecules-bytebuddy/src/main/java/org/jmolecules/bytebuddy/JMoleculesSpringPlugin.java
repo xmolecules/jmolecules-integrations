@@ -20,6 +20,7 @@ import net.bytebuddy.build.Plugin;
 import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.annotation.AnnotationList;
 import net.bytebuddy.description.method.MethodDescription;
+import net.bytebuddy.description.type.TypeDefinition;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.DynamicType.Builder;
@@ -34,6 +35,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jmolecules.ddd.annotation.Repository;
 import org.jmolecules.ddd.annotation.Service;
@@ -147,7 +149,7 @@ public class JMoleculesSpringPlugin implements Plugin {
 			return builder;
 		}
 
-		log.info("jMolecules Spring Plugin - Annotating {} with @{}.", type.getName(), annotation.getName());
+		log.info("jMolecules Spring Plugin - Annotating {} with @{}.", type.getSimpleName(), annotation.getName());
 
 		return builder.annotateType(getAnnotation(annotation));
 	}
@@ -178,20 +180,39 @@ public class JMoleculesSpringPlugin implements Plugin {
 			}
 
 			AnnotationList annotations = method.getDeclaredAnnotations();
+			String signature = toLog(method);
 
 			if (annotations.isAnnotationPresent(target)) {
-				log.debug("jMolecules Spring Plugin - Method {} already annotated with @{}.", method, target.getName());
+				log.debug("jMolecules Spring Plugin - Method {} already annotated with @{}.", signature, target.getName());
 				return false;
 			}
 
 			if (!annotations.isAnnotationPresent(source)) {
-				log.debug("jMolecules Spring Plugin - Annotation {} not found on method {}.", source.getName(), method);
+				log.debug("jMolecules Spring Plugin - Annotation {} not found on method {}.", source.getName(), signature);
 				return false;
 			}
 
-			log.info("jMolecules Spring Plugin - Annotating {} with {}.", method, target.getName());
+			log.info("jMolecules Spring Plugin - Annotating {} with {}.", signature, target.getName());
 
 			return true;
 		};
+	}
+
+	private static String toLog(MethodDescription method) {
+
+		TypeDefinition type = method.getDeclaringType();
+		String parameterTypes = method.getParameters()
+				.asTypeList()
+				.asErasures()
+				.stream()
+				.map(TypeDescription::getSimpleName)
+				.collect(Collectors.joining(", "));
+
+		return type.asErasure().getSimpleName()
+				.concat(".")
+				.concat(method.getName())
+				.concat("(")
+				.concat(parameterTypes)
+				.concat(")");
 	}
 }
