@@ -18,6 +18,9 @@ package org.jmolecules.bytebuddy;
 import static org.assertj.core.api.Assertions.*;
 
 import java.io.Serializable;
+import java.lang.annotation.Annotation;
+import java.util.Arrays;
+import java.util.stream.Stream;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Embeddable;
@@ -79,5 +82,18 @@ public class JpaDefaultsGeneratingTests {
 		assertThat(SampleAggregateIdentifier.class.getAnnotations())
 				.filteredOn(it -> it.annotationType().equals(Embeddable.class))
 				.hasSize(1);
+	}
+
+	@Test // #12
+	void doesNotAnnotateMappedSuperclassWithAtEntity() {
+		assertDoesNotHaveAnnotation(SampleMappedSuperclass.class, Entity.class);
+	}
+
+	private static void assertDoesNotHaveAnnotation(Class<?> type, Class<? extends Annotation> expected) {
+
+		Stream<Class<?>> annotationTypes = Arrays.stream(type.getAnnotations())
+				.map(Annotation::annotationType);
+
+		assertThat(annotationTypes).doesNotContain(expected);
 	}
 }

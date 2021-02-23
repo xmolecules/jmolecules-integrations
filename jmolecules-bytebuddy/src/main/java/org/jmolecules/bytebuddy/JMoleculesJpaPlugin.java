@@ -38,11 +38,13 @@ import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Embeddable;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.PostLoad;
@@ -213,13 +215,29 @@ public class JMoleculesJpaPlugin implements Plugin {
 						.and(not(isAnnotatedWith(EmbeddedId.class).or(isAnnotatedWith(Id.class)))), annotation))
 				.annotateField(annotation);
 
-		return addAnnotationIfMissing(javax.persistence.Entity.class, builder, type);
+		return addAnnotationIfMissing(javax.persistence.Entity.class, builder, type, MappedSuperclass.class);
 	}
 
+	@SafeVarargs
 	private static Builder<?> addAnnotationIfMissing(Class<? extends Annotation> annotation, Builder<?> builder,
-			TypeDescription type) {
+			TypeDescription type, Class<? extends Annotation>... others) {
 
-		if (type.getDeclaredAnnotations().isAnnotationPresent(annotation)) {
+		AnnotationList existing = type.getDeclaredAnnotations();
+
+		boolean existingFound = Stream.concat(Stream.of(annotation), Stream.of(others))
+				.anyMatch(it -> {
+
+					boolean found = existing.isAnnotationPresent(it);
+
+					if (found) {
+						log.info("jMolecules JPA Plugin - {} - Not adding @{} because type is already annotated with @{}.",
+								type.getSimpleName(), annotation.getSimpleName(), it.getSimpleName());
+					}
+
+					return found;
+				});
+
+		if (existingFound) {
 			return builder;
 		}
 
