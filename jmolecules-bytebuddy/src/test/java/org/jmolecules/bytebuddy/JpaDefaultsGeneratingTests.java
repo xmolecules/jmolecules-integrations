@@ -89,11 +89,24 @@ public class JpaDefaultsGeneratingTests {
 		assertDoesNotHaveAnnotation(SampleMappedSuperclass.class, Entity.class);
 	}
 
+	@Test // #13
+	void annotatesSubclassesWithAtEntity() {
+		assertHasAnnotation(SampleSubclass.class, Entity.class);
+	}
+
 	private static void assertDoesNotHaveAnnotation(Class<?> type, Class<? extends Annotation> expected) {
 
 		Stream<Class<?>> annotationTypes = Arrays.stream(type.getAnnotations())
 				.map(Annotation::annotationType);
 
 		assertThat(annotationTypes).doesNotContain(expected);
+	}
+
+	private static void assertHasAnnotation(Class<?> type, Class<? extends Annotation> expected) {
+
+		Stream<Class<?>> annotationTypes = Arrays.stream(type.getAnnotations())
+				.map(Annotation::annotationType);
+
+		assertThat(annotationTypes).contains(expected);
 	}
 }

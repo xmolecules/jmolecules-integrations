@@ -62,8 +62,17 @@ public class JMoleculesJpaPlugin implements Plugin {
 	@Override
 	public boolean matches(TypeDescription target) {
 
-		return !target.isAnnotation()
-				&& !target.getInterfaces().filter(nameStartsWith("org.jmolecules")).isEmpty();
+		if (target.isAnnotation()) {
+			return false;
+		}
+
+		if (!target.getInterfaces().filter(nameStartsWith("org.jmolecules")).isEmpty()) {
+			return true;
+		}
+
+		Generic superType = target.getSuperClass();
+
+		return superType == null || superType.represents(Object.class) ? false : matches(superType.asErasure());
 	}
 
 	/*
