@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.*;
 
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
@@ -26,10 +27,12 @@ import javax.persistence.CascadeType;
 import javax.persistence.Embeddable;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
+import javax.persistence.MappedSuperclass;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * @author Oliver Drotbohm
@@ -92,6 +95,20 @@ public class JpaDefaultsGeneratingTests {
 	@Test // #13
 	void annotatesSubclassesWithAtEntity() {
 		assertHasAnnotation(SampleSubclass.class, Entity.class);
+	}
+
+	@Test // #14
+	void annotatesAbstractEntityWithAtMappedSuperclass() {
+		assertHasAnnotation(SampleBaseClass.class, MappedSuperclass.class);
+	}
+
+	@Test // #14
+	void doesNotGenerateNullabilityCheckingMethodForAbstractClasses() throws Exception {
+
+		Method method = ReflectionUtils.findMethod(SampleMappedSuperclass.class,
+				JMoleculesJpaPlugin.NULLABILITY_METHOD_NAME);
+
+		assertThat(method).isNull();
 	}
 
 	private static void assertDoesNotHaveAnnotation(Class<?> type, Class<? extends Annotation> expected) {

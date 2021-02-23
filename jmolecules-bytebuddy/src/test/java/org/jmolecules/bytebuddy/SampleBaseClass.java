@@ -20,7 +20,7 @@ import org.jmolecules.ddd.types.Entity;
 /**
  * @author Oliver Drotbohm
  */
-public class SampleBaseClass implements Entity {
+public abstract class SampleBaseClass implements Entity {
 
 	@Override
 	public Object getId() {

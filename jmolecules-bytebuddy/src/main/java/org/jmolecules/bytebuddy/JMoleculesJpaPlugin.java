@@ -38,6 +38,7 @@ import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import javax.persistence.CascadeType;
@@ -58,6 +59,8 @@ import org.jmolecules.jpa.JMoleculesJpa;
 
 @Slf4j
 public class JMoleculesJpaPlugin implements Plugin {
+
+	static final String NULLABILITY_METHOD_NAME = "__verifyNullability";
 
 	@Override
 	public boolean matches(TypeDescription target) {
@@ -201,14 +204,14 @@ public class JMoleculesJpaPlugin implements Plugin {
 
 		builder = addDefaultConstructorIfMissing(builder, type);
 
-		return addAnnotationIfMissing(Embeddable.class, builder, type);
+		return addAnnotationIfMissing(Embeddable.class, builder, type, Embeddable.class);
 	}
 
 	private static Builder<?> handleAssociation(Builder<?> builder, TypeDescription type) {
 
 		builder = addDefaultConstructorIfMissing(builder, type);
 
-		return addAnnotationIfMissing(Embeddable.class, builder, type);
+		return addAnnotationIfMissing(Embeddable.class, builder, type, Embeddable.class);
 	}
 
 	private static Builder<?> handleEntity(Builder<?> builder, TypeDescription type) {
@@ -224,27 +227,39 @@ public class JMoleculesJpaPlugin implements Plugin {
 						.and(not(isAnnotatedWith(EmbeddedId.class).or(isAnnotatedWith(Id.class)))), annotation))
 				.annotateField(annotation);
 
-		return addAnnotationIfMissing(javax.persistence.Entity.class, builder, type, MappedSuperclass.class);
+		Function<TypeDescription, Class<? extends Annotation>> selector = it -> type.isAbstract()
+				? MappedSuperclass.class
+				: javax.persistence.Entity.class;
+
+		return addAnnotationIfMissing(selector, builder, type, javax.persistence.Entity.class,
+				MappedSuperclass.class);
 	}
 
 	@SafeVarargs
 	private static Builder<?> addAnnotationIfMissing(Class<? extends Annotation> annotation, Builder<?> builder,
-			TypeDescription type, Class<? extends Annotation>... others) {
+			TypeDescription type, Class<? extends Annotation>... exclusions) {
+		return addAnnotationIfMissing(__ -> annotation, builder, type, exclusions);
+	}
+
+	@SafeVarargs
+	private static Builder<?> addAnnotationIfMissing(Function<TypeDescription, Class<? extends Annotation>> producer,
+			Builder<?> builder,
+			TypeDescription type, Class<? extends Annotation>... exclusions) {
 
 		AnnotationList existing = type.getDeclaredAnnotations();
+		Class<? extends Annotation> annotation = producer.apply(type);
 
-		boolean existingFound = Stream.concat(Stream.of(annotation), Stream.of(others))
-				.anyMatch(it -> {
+		boolean existingFound = Stream.of(exclusions).anyMatch(it -> {
 
-					boolean found = existing.isAnnotationPresent(it);
+			boolean found = existing.isAnnotationPresent(it);
 
-					if (found) {
-						log.info("jMolecules JPA Plugin - {} - Not adding @{} because type is already annotated with @{}.",
-								type.getSimpleName(), annotation.getSimpleName(), it.getSimpleName());
-					}
+			if (found) {
+				log.info("jMolecules JPA Plugin - {} - Not adding @{} because type is already annotated with @{}.",
+						type.getSimpleName(), annotation.getSimpleName(), it.getSimpleName());
+			}
 
-					return found;
-				});
+			return found;
+		});
 
 		if (existingFound) {
 			return builder;
@@ -267,16 +282,21 @@ public class JMoleculesJpaPlugin implements Plugin {
 
 	private static Builder<?> declareNullVerificationMethod(Builder<?> builder, TypeDescription type) {
 
-		String nullabilityMethodName = "__verifyNullability";
+		String typeName = type.getSimpleName();
 
-		if (type.getDeclaredMethods().filter(it -> it.getName().equals(nullabilityMethodName)).size() > 0) {
-			log.info("jMolecules JPA Plugin - {} - Found existing nullability method.", type.getSimpleName());
+		if (type.isAbstract()) {
+			log.info("jMolecules JPA Plugin - {} - Not generating nullability method for abstract type.", typeName);
 			return builder;
 		}
 
-		log.info("jMolecules JPA Plugin - {} - Adding nullability verification method.", type.getSimpleName());
+		if (type.getDeclaredMethods().filter(it -> it.getName().equals(NULLABILITY_METHOD_NAME)).size() > 0) {
+			log.info("jMolecules JPA Plugin - {} - Found existing nullability method.", typeName);
+			return builder;
+		}
 
-		return builder.defineMethod(nullabilityMethodName, void.class, Visibility.PACKAGE_PRIVATE)
+		log.info("jMolecules JPA Plugin - {} - Adding nullability verification method.", typeName);
+
+		return builder.defineMethod(NULLABILITY_METHOD_NAME, void.class, Visibility.PACKAGE_PRIVATE)
 				.intercept(MethodDelegation.to(JMoleculesJpa.class))
 				.annotateMethod(createAnnotation(PrePersist.class))
 				.annotateMethod(createAnnotation(PostLoad.class));
