@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.build.Plugin;
 import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.annotation.AnnotationList;
+import net.bytebuddy.description.annotation.AnnotationSource;
 import net.bytebuddy.description.field.FieldDescription;
 import net.bytebuddy.description.method.MethodDescription.InGenericShape;
 import net.bytebuddy.description.modifier.Visibility;
@@ -41,15 +42,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Embeddable;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.PostLoad;
-import javax.persistence.PrePersist;
+import javax.persistence.*;
 
 import org.jmolecules.ddd.types.AggregateRoot;
 import org.jmolecules.ddd.types.Association;
@@ -85,14 +78,16 @@ public class JMoleculesJpaPlugin implements Plugin {
 	@Override
 	public Builder<?> apply(Builder<?> builder, TypeDescription type, ClassFileLocator classFileLocator) {
 
-		if (type.isAssignableTo(AggregateRoot.class)
-				|| hasAnnotation(type, org.jmolecules.ddd.annotation.AggregateRoot.class)) {
+		boolean isAggregateRoot = type.isAssignableTo(AggregateRoot.class)
+				|| hasAnnotation(type, org.jmolecules.ddd.annotation.AggregateRoot.class);
+
+		if (isAggregateRoot) {
 			builder = handleAggregateRoot(builder, type);
 		}
 
 		if (type.isAssignableTo(Entity.class)
 				|| hasAnnotation(type, org.jmolecules.ddd.annotation.Entity.class)) {
-			builder = handleEntity(builder, type);
+			builder = handleEntity(builder, type, isAggregateRoot);
 		}
 
 		if (type.isAssignableTo(Association.class)) {
@@ -119,17 +114,25 @@ public class JMoleculesJpaPlugin implements Plugin {
 		AnnotationDescription oneToOneDescription = createCascadingAnnotation(OneToOne.class);
 
 		builder = builder.field(wrap(fieldType(isEntity(type))
-				.and(not(isAnnotatedWith(OneToOne.class))), oneToOneDescription))
+				.and(not(hasJpaRelationShipAnnotation())), oneToOneDescription))
 				.annotateField(oneToOneDescription);
 
 		// Default collection entity references to @OneToMany mapping
 		AnnotationDescription oneToManyDescription = createCascadingAnnotation(OneToMany.class);
 
 		builder = builder.field(wrap(genericFieldType(isCollectionOfEntity(type))
-				.and(not(isAnnotatedWith(OneToMany.class))), oneToManyDescription))
+				.and(not(hasJpaRelationShipAnnotation())), oneToManyDescription))
 				.annotateField(oneToManyDescription);
 
 		return builder;
+	}
+
+	private static <T extends AnnotationSource> ElementMatcher.Junction<T> hasJpaRelationShipAnnotation() {
+
+		return isAnnotatedWith(OneToOne.class)
+				.or(isAnnotatedWith(OneToMany.class))
+				.or(isAnnotatedWith(ManyToOne.class))
+				.or(isAnnotatedWith(ManyToMany.class));
 	}
 
 	private static ElementMatcher<FieldDescription> wrap(Junction<FieldDescription> source,
@@ -214,7 +217,7 @@ public class JMoleculesJpaPlugin implements Plugin {
 		return addAnnotationIfMissing(Embeddable.class, builder, type, Embeddable.class);
 	}
 
-	private static Builder<?> handleEntity(Builder<?> builder, TypeDescription type) {
+	private static Builder<?> handleEntity(Builder<?> builder, TypeDescription type, boolean forAggregateRoot) {
 
 		builder = declareNullVerificationMethod(builder, type);
 		builder = addDefaultConstructorIfMissing(builder, type);
@@ -227,7 +230,7 @@ public class JMoleculesJpaPlugin implements Plugin {
 						.and(not(isAnnotatedWith(EmbeddedId.class).or(isAnnotatedWith(Id.class)))), annotation))
 				.annotateField(annotation);
 
-		Function<TypeDescription, Class<? extends Annotation>> selector = it -> type.isAbstract()
+		Function<TypeDescription, Class<? extends Annotation>> selector = it -> !forAggregateRoot && type.isAbstract()
 				? MappedSuperclass.class
 				: javax.persistence.Entity.class;
 
@@ -325,7 +328,7 @@ public class JMoleculesJpaPlugin implements Plugin {
 
 		if (superClassConstructor == null) {
 			log.info(
-					"jMolecules JPA Plugin - {} - No default constructur found on superclass {}. Skipping default constructor creation.",
+					"jMolecules JPA Plugin - {} - No default constructor found on superclass {}. Skipping default constructor creation.",
 					type.getName(), superClass.asErasure().getName());
 		}
 

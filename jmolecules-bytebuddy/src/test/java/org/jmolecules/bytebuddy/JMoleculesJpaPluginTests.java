@@ -37,7 +37,7 @@ import org.springframework.util.ReflectionUtils;
 /**
  * @author Oliver Drotbohm
  */
-public class JpaDefaultsGeneratingTests {
+public class JMoleculesJpaPluginTests {
 
 	@Test
 	public void defaultsAggregateType() throws Exception {
@@ -109,6 +109,16 @@ public class JpaDefaultsGeneratingTests {
 				JMoleculesJpaPlugin.NULLABILITY_METHOD_NAME);
 
 		assertThat(method).isNull();
+	}
+
+	@Test // #15
+	void doesNotAnnotateAlreadyAnnotatedRelationship() throws Exception {
+
+		assertThat(SampleAggregate.class.getDeclaredField("annotatedListOfEntity")
+				.getAnnotation(OneToMany.class)).isNull();
+
+		assertThat(SampleAggregate.class.getDeclaredField("annotatedEntity")
+				.getAnnotation(OneToOne.class)).isNull();
 	}
 
 	private static void assertDoesNotHaveAnnotation(Class<?> type, Class<? extends Annotation> expected) {

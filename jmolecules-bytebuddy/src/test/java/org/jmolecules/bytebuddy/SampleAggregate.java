@@ -19,6 +19,9 @@ import lombok.Getter;
 
 import java.util.Collection;
 
+import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
+
 import org.jmolecules.ddd.types.AggregateRoot;
 
 /**
@@ -31,6 +34,9 @@ public class SampleAggregate implements AggregateRoot<SampleAggregate, SampleAgg
 
 	private SampleEntity entity;
 	private Collection<SampleEntity> listOfEntity;
+
+	private @ManyToOne SampleEntity annotatedEntity;
+	private @ManyToMany Collection<SampleEntity> annotatedListOfEntity;
 
 	public SampleAggregate() {
 		this.id = new SampleAggregateIdentifier();
