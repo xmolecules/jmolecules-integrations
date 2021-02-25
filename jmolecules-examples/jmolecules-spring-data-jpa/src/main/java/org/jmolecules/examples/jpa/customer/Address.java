@@ -27,6 +27,15 @@ import org.jmolecules.ddd.types.Identifier;
 public class Address implements Entity<Customer, Address.AddressId> {
 
 	private Address.AddressId id;
+	private final String street, city, zipCode;
+
+	public Address(String street, String city, String zipCode) {
+
+		this.id = AddressId.of(UUID.randomUUID());
+		this.street = street;
+		this.city = city;
+		this.zipCode = zipCode;
+	}
 
 	@Value(staticConstructor = "of")
 	public static class AddressId implements Identifier {

@@ -49,8 +49,16 @@
 				<activeByDefault>true</activeByDefault>
 			</activation>
 			<modules>
-				<module>jmolecules-examples</module>
 				<module>jmolecules-bytebuddy-empty</module>
+			</modules>
+		</profile>
+		<profile>
+			<id>java-11</id>
+			<activation>
+				<jdk>11</jdk>
+			</activation>
+			<modules>
+				<module>jmolecules-examples</module>
 			</modules>
 		</profile>
 		<profile>

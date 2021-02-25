@@ -15,6 +15,7 @@
  */
 package org.jmolecules.examples.jpa;
 
+import org.jmolecules.examples.jpa.customer.Address;
 import org.jmolecules.examples.jpa.customer.Customer;
 import org.jmolecules.examples.jpa.customer.Customers;
 import org.jmolecules.examples.jpa.order.Order;
@@ -33,11 +34,13 @@ public class Application {
 
 		ApplicationContext context = SpringApplication.run(Application.class, args);
 
-		Customers customers = context.getBean(Customers.class);
-		Customer customer = customers.save(new Customer("Dave", "Matthews"));
+		var address = new Address("41 Greystreet", "Dreaming Tree", "2731");
 
-		Orders orders = context.getBean(Orders.class);
-		Order order = orders.save(new Order(customer));
+		var customers = context.getBean(Customers.class);
+		var customer = customers.save(new Customer("Dave", "Matthews", address));
+
+		var orders = context.getBean(Orders.class);
+		var order = orders.save(new Order(customer));
 
 		customers.resolveRequired(order.getCustomer());
 	}

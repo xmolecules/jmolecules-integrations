@@ -16,9 +16,9 @@
 package org.jmolecules.examples.jpa.customer;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,6 +26,7 @@ import org.jmolecules.ddd.types.AggregateRoot;
 import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Identifier;
 import org.jmolecules.examples.jpa.customer.Customer.CustomerId;
+import org.springframework.util.Assert;
 
 /**
  * @author Oliver Drotbohm
@@ -37,15 +38,20 @@ public class Customer implements AggregateRoot<Customer, CustomerId> {
 	private String firstname, lastname;
 	private List<Address> addresses;
 
-	public Customer(String firstname, String lastname) {
+	public Customer(String firstname, String lastname, Address address) {
+
+		Assert.notNull(address, "Address must not be null!");
 
 		this.id = CustomerId.of(UUID.randomUUID());
+
 		this.firstname = firstname;
 		this.lastname = lastname;
+
+		this.addresses = new ArrayList<>();
+		this.addresses.add(address);
 	}
 
-	@Value
-	@RequiredArgsConstructor(staticName = "of")
+	@Value(staticConstructor = "of")
 	public static class CustomerId implements Identifier {
 		private final UUID id;
 	}
