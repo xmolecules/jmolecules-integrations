@@ -14,6 +14,7 @@
 		<module>jmolecules-archunit</module>
 		<module>jmolecules-bytebuddy</module>
 		<module>jmolecules-jpa</module>
+		<module>jmolecules-jackson</module>
 		<module>jmolecules-spring</module>
 	</modules>
 
