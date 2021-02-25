@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors.
+ * Copyright 2020-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmolecules.examples;
+package org.jmolecules.spring;
 
 import java.util.Optional;
 
 import org.jmolecules.ddd.types.AggregateRoot;
-import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Identifier;
 
 /**
+ * Lookup interface to be implemented e.g. some repository to find an aggregate by their identifiers.
+ *
  * @author Oliver Drotbohm
  */
-public interface AssociationResolver<T extends AggregateRoot<T, ID>, ID extends Identifier>
-		extends AggregateLookup<T, ID> {
+public interface AggregateLookup<T extends AggregateRoot<T, ID>, ID extends Identifier> {
 
-	default Optional<T> resolve(Association<T, ID> association) {
-		return findById(association.getId());
-	}
-
-	default T resolveRequired(Association<T, ID> association) {
-		return resolve(association).orElseThrow(
-				() -> new IllegalArgumentException(String.format("Could not resolve association %s!", association)));
-	}
+	/**
+	 * Returns the
+	 *
+	 * @param id
+	 * @return
+	 */
+	Optional<T> findById(ID id);
 }

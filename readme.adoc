@@ -10,6 +10,7 @@ This repository contains a variety of integrations of jMolecules abstractions in
 * link:jmolecules-integration/jmolecules-spring[`jmolecules-spring`] -- Runtime library to make concepts from `jmolecules-ddd` work with Spring out of the box.
 ** `Converter` implementations that convert primitives (`String`, `UUID`) into `Identifier` implementations if they expose a static factory method `of(…)` and back into their inner value by calling the corresponding getter.
 ** Spring Boot auto-configuration to transparently register those converters in Spring MVC applications.
+** `AssociationResolver<T>` to be used with Spring Data repositories to easily resolve `Association` instances.
 
 == Examples
 * link:jmolecules-examples[`jmolecules-examples`] -- A collection of examples to showcase the usage of the concept types and annotations as well as the technology integration.

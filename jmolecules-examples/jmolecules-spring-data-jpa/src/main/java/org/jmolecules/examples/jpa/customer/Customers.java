@@ -15,8 +15,8 @@
  */
 package org.jmolecules.examples.jpa.customer;
 
-import org.jmolecules.examples.AssociationResolver;
 import org.jmolecules.examples.jpa.customer.Customer.CustomerId;
+import org.jmolecules.spring.AssociationResolver;
 import org.springframework.data.repository.CrudRepository;
 
 /**
