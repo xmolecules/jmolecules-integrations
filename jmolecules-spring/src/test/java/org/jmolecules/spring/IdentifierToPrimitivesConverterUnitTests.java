@@ -25,7 +25,7 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.support.DefaultConversionService;
 
-public class IdentifierToPrimitivesConverterUnitTests {
+class IdentifierToPrimitivesConverterUnitTests {
 
 	static final TypeDescriptor UUID_DESCRIPTOR = TypeDescriptor.valueOf(UUID.class);
 	static final TypeDescriptor STRING_DESCRIPTOR = TypeDescriptor.valueOf(String.class);
