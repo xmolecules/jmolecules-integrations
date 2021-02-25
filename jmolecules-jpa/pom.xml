@@ -7,7 +7,7 @@
 		<version>0.2.0-SNAPSHOT</version>
 	</parent>
 
-	<name>jMolecules - JPA support</name>
+	<name>jMolecules - JPA runtime support</name>
 	<description>JPA support code for the ByteBuddy based JPA integration of jMolecules</description>
 	<artifactId>jmolecules-jpa</artifactId>
 
