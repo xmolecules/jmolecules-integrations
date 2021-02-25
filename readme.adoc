@@ -7,7 +7,9 @@ This repository contains a variety of integrations of jMolecules abstractions in
 * link:jmolecules-bytebuddy[`jmolecules-bytebuddy`] -- A ByteBuddy plugin to translate jMolecules patterns implemented in `jmolecules-ddd` into different technologies. See the link:jmolecules-examples/jmolecules-spring-data-jpa[example] for details.
 ** Spring -- translates jMolecules annotations like `@Service` etc. into the Spring equivalents so that the annotated classes can be used out of the box with Spring.
 ** JPA -- translates `jmolecules-ddd` annotations and interfaces into default mapping annotations and boilerplate code required by JPA.
-* link:jmolecules-integration/jmolecules-spring[`jmolecules-spring`] -- A ByteBuddy plugin to derive Spring component annotations for code that expresses DDD building blocks via `jmolecules-ddd`.
+* link:jmolecules-integration/jmolecules-spring[`jmolecules-spring`] -- Runtime library to make concepts from `jmolecules-ddd` work with Spring out of the box.
+** `Converter` implementations that convert primitives (`String`, `UUID`) into `Identifier` implementations if they expose a static factory method `of(…)` and back into their inner value by calling the corresponding getter.
+** Spring Boot auto-configuration to transparently register those converters in Spring MVC applications.
 
 == Examples
 * link:jmolecules-examples[`jmolecules-examples`] -- A collection of examples to showcase the usage of the concept types and annotations as well as the technology integration.

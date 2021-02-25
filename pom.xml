@@ -14,13 +14,14 @@
 		<module>jmolecules-archunit</module>
 		<module>jmolecules-bytebuddy</module>
 		<module>jmolecules-jpa</module>
+		<module>jmolecules-spring</module>
 	</modules>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<archunit.version>0.17.0</archunit.version>
 		<bytebuddy.version>1.10.21</bytebuddy.version>
-		<jmolecules.version>1.1.0</jmolecules.version>
+		<jmolecules.version>1.2.0-SNAPSHOT</jmolecules.version>
 		<spring-boot.version>2.4.3</spring-boot.version>
 	</properties>
 
