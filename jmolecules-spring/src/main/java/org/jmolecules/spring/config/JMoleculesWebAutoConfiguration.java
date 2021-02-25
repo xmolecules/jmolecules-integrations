@@ -17,7 +17,9 @@ package org.jmolecules.spring.config;
 
 import java.util.function.Supplier;
 
+import org.jmolecules.spring.AssociationToPrimitivesConverter;
 import org.jmolecules.spring.IdentifierToPrimitivesConverter;
+import org.jmolecules.spring.PrimitivesToAssociationConverter;
 import org.jmolecules.spring.PrimitivesToIdentifierConverter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type;
@@ -63,8 +65,13 @@ public class JMoleculesWebAutoConfiguration {
 
 				Supplier<ConversionService> supplier = () -> conversionService;
 
-				conversionService.addConverter(new IdentifierToPrimitivesConverter(supplier));
-				conversionService.addConverter(new PrimitivesToIdentifierConverter(supplier));
+				IdentifierToPrimitivesConverter identifierToPrimitives = new IdentifierToPrimitivesConverter(supplier);
+				PrimitivesToIdentifierConverter primitivesToIdentifier = new PrimitivesToIdentifierConverter(supplier);
+
+				conversionService.addConverter(identifierToPrimitives);
+				conversionService.addConverter(primitivesToIdentifier);
+				conversionService.addConverter(new PrimitivesToAssociationConverter<>(primitivesToIdentifier));
+				conversionService.addConverter(new AssociationToPrimitivesConverter<>(identifierToPrimitives));
 			}
 		};
 	}
