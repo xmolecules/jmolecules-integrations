@@ -34,7 +34,11 @@ public class JMoleculesJpa {
 
 	public static void verifyNullability(@This Object object) throws Exception {
 
-		log.info("Verifying nullability!");
+		if (object == null) {
+			return;
+		}
+
+		log.debug("Verifying nullability of {}!", object.getClass().getSimpleName());
 
 		fields.computeIfAbsent(object.getClass(), JMoleculesJpa::fieldsToNullCheckFor)
 				.forEach(it -> {
