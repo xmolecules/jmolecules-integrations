@@ -47,10 +47,10 @@ public class IdentifierToPrimitivesConverter implements ConditionalGenericConver
 	private static final Map<Class<?>, Optional<Field>> CACHE = new ConcurrentReferenceHashMap<>();
 	private static final Set<Class<?>> DEFAULT_PRIMITIVES = new HashSet<>(Arrays.asList(String.class, UUID.class));
 
-	private final Supplier<ConversionService> conversionService;
+	private final Supplier<? extends ConversionService> conversionService;
 	private Set<Class<?>> primitives;
 
-	public IdentifierToPrimitivesConverter(Supplier<ConversionService> conversionService) {
+	public IdentifierToPrimitivesConverter(Supplier<? extends ConversionService> conversionService) {
 
 		this.primitives = new HashSet<>(DEFAULT_PRIMITIVES);
 		this.conversionService = conversionService;

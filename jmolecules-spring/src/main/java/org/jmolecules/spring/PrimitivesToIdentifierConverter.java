@@ -49,11 +49,11 @@ public class PrimitivesToIdentifierConverter implements ConditionalGenericConver
 	private static final Set<Class<?>> DEFAULT_PRIMITIVES = new HashSet<>(Arrays.asList(String.class, UUID.class));
 	private static final Set<String> DEFAULT_FACTORY_METHOD_NAMES = new HashSet<>(Arrays.asList("of"));
 
-	private final Supplier<ConversionService> conversionService;
+	private final Supplier<? extends ConversionService> conversionService;
 	private Set<Class<?>> primitives;
 	private Set<String> factoryMethodNames;
 
-	public PrimitivesToIdentifierConverter(Supplier<ConversionService> conversionService) {
+	public PrimitivesToIdentifierConverter(Supplier<? extends ConversionService> conversionService) {
 
 		this.primitives = new HashSet<>(DEFAULT_PRIMITIVES);
 		this.factoryMethodNames = new HashSet<>(DEFAULT_FACTORY_METHOD_NAMES);

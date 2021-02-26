@@ -49,7 +49,7 @@ public class AssociationToPrimitivesConverter<T extends AggregateRoot<T, Identif
 	 *
 	 * @param conversionService must not be {@literal null}.
 	 */
-	public AssociationToPrimitivesConverter(Supplier<ConversionService> conversionService) {
+	public AssociationToPrimitivesConverter(Supplier<? extends ConversionService> conversionService) {
 		this(new IdentifierToPrimitivesConverter(conversionService));
 	}
 
