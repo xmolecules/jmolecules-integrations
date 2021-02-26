@@ -41,7 +41,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * @see IdentifierToPrimitivesConverter
  * @see PrimitivesToIdentifierConverter
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnWebApplication(type = Type.SERVLET)
 public class JMoleculesWebAutoConfiguration {
 
@@ -61,17 +61,15 @@ public class JMoleculesWebAutoConfiguration {
 					return;
 				}
 
-				FormattingConversionService conversionService = (FormattingConversionService) registry;
-
-				Supplier<ConversionService> supplier = () -> conversionService;
+				Supplier<ConversionService> supplier = () -> ((FormattingConversionService) registry);
 
 				IdentifierToPrimitivesConverter identifierToPrimitives = new IdentifierToPrimitivesConverter(supplier);
 				PrimitivesToIdentifierConverter primitivesToIdentifier = new PrimitivesToIdentifierConverter(supplier);
 
-				conversionService.addConverter(identifierToPrimitives);
-				conversionService.addConverter(primitivesToIdentifier);
-				conversionService.addConverter(new PrimitivesToAssociationConverter<>(primitivesToIdentifier));
-				conversionService.addConverter(new AssociationToPrimitivesConverter<>(identifierToPrimitives));
+				registry.addConverter(identifierToPrimitives);
+				registry.addConverter(primitivesToIdentifier);
+				registry.addConverter(new PrimitivesToAssociationConverter<>(primitivesToIdentifier));
+				registry.addConverter(new AssociationToPrimitivesConverter<>(identifierToPrimitives));
 			}
 		};
 	}
