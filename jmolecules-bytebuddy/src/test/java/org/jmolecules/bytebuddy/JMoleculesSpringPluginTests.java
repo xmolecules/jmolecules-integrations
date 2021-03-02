@@ -32,8 +32,6 @@ import org.jmolecules.event.annotation.DomainEventHandler;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 import org.springframework.context.event.EventListener;
-import org.springframework.data.repository.CrudRepository;
-import org.springframework.data.repository.RepositoryDefinition;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
@@ -71,11 +69,6 @@ public class JMoleculesSpringPluginTests {
 		void on(Object event) {}
 	}
 
-	@RepositoryDefinition(domainClass = Object.class, idClass = Object.class)
-	interface AnnotatedSpringDataRepository {}
-
-	interface ImplementingSpringDataRepository extends CrudRepository<Object, Object> {}
-
 	interface DynamicTestSource<T> {
 
 		public static <T extends DynamicTestSource<T>> Stream<DynamicTest> of(Stream<T> supplier) {
@@ -97,9 +90,7 @@ public class JMoleculesSpringPluginTests {
 					$(JMoleculesType.class, org.springframework.stereotype.Repository.class), //
 					$(JMoleculesType.class, org.springframework.stereotype.Component.class), //
 					$(SpringType.class, Repository.class), //
-					$(SpringType.class, Service.class), //
-					$(AnnotatedSpringDataRepository.class, Repository.class), //
-					$(ImplementingSpringDataRepository.class, Repository.class) //
+					$(SpringType.class, Service.class) //
 			);
 		}
 

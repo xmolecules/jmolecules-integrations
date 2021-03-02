@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -48,7 +49,8 @@ public class JMoleculesPlugin implements WithPreprocessor {
 
 			ClassWorld world = ClassWorld.of(classFileLocator);
 
-			return Stream.concat(jpaPlugin(world), springPlugin(world))
+			return Stream.of(jpaPlugin(world), springPlugin(world), springDataPlugin(world))
+					.flatMap(Function.identity())
 					.filter(plugin -> plugin.matches(typeDescription))
 					.collect(Collectors.toList());
 		});
@@ -105,6 +107,13 @@ public class JMoleculesPlugin implements WithPreprocessor {
 
 		return world.isAvailable("org.springframework.stereotype.Component")
 				? Stream.of(new JMoleculesSpringPlugin())
+				: Stream.empty();
+	}
+
+	private static Stream<Plugin> springDataPlugin(ClassWorld world) {
+
+		return world.isAvailable("org.springframework.data.repository.Repository")
+				? Stream.of(new JMoleculesSpringDataPlugin())
 				: Stream.empty();
 	}
 }

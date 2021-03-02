@@ -80,6 +80,9 @@
 						<transformation>
 							<plugin>org.jmolecules.bytebuddy.JMoleculesSpringPlugin</plugin>
 						</transformation>
+						<transformation>
+							<plugin>org.jmolecules.bytebuddy.JMoleculesSpringDataPlugin</plugin>
+						</transformation>
 					</transformations>
 				</configuration>
 			</plugin>

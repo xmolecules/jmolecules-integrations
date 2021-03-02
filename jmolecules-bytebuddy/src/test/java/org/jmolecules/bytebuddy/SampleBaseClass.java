@@ -20,6 +20,7 @@ import org.jmolecules.ddd.types.Entity;
 /**
  * @author Oliver Drotbohm
  */
+@SuppressWarnings("rawtypes")
 public abstract class SampleBaseClass implements Entity {
 
 	@Override

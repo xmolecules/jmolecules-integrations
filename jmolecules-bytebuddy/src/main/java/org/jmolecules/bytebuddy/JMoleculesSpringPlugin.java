@@ -15,9 +15,10 @@
  */
 package org.jmolecules.bytebuddy;
 
+import static org.jmolecules.bytebuddy.PluginUtils.*;
+
 import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.build.Plugin;
-import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.annotation.AnnotationList;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDefinition;
@@ -41,7 +42,6 @@ import org.jmolecules.ddd.annotation.Repository;
 import org.jmolecules.ddd.annotation.Service;
 import org.jmolecules.event.annotation.DomainEventHandler;
 import org.springframework.context.event.EventListener;
-import org.springframework.data.repository.RepositoryDefinition;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -49,7 +49,6 @@ public class JMoleculesSpringPlugin implements Plugin {
 
 	private static final Map<Class<?>, Class<? extends Annotation>> TYPES;
 	private static final Map<Class<? extends Annotation>, Class<? extends Annotation>> METHOD_ANNOTATIONS;
-	private static final Set<MethodDescription> SEEN_METHODS;
 	private static final Set<String> TYPES_TO_SKIP;
 
 	static {
@@ -63,10 +62,6 @@ public class JMoleculesSpringPlugin implements Plugin {
 		// Spring -> jMolecules
 		types.put(org.springframework.stereotype.Service.class, Service.class);
 		types.put(org.springframework.stereotype.Repository.class, Repository.class);
-
-		// Spring Data -> jMolecules
-		types.put(RepositoryDefinition.class, Repository.class);
-		types.put(org.springframework.data.repository.Repository.class, Repository.class);
 
 		TYPES = Collections.unmodifiableMap(types);
 
@@ -82,8 +77,6 @@ public class JMoleculesSpringPlugin implements Plugin {
 		methods.put(EventListener.class, DomainEventHandler.class);
 
 		METHOD_ANNOTATIONS = Collections.unmodifiableMap(methods);
-
-		SEEN_METHODS = new HashSet<>();
 	}
 
 	/*
@@ -109,18 +102,7 @@ public class JMoleculesSpringPlugin implements Plugin {
 	@Override
 	public Builder<?> apply(Builder<?> builder, TypeDescription type, ClassFileLocator classFileLocator) {
 
-		for (Entry<Class<?>, Class<? extends Annotation>> entry : TYPES.entrySet()) {
-
-			Class<?> source = entry.getKey();
-
-			boolean processingRequired = source.isAnnotation()
-					? isAnnotatedWith(type, source)
-					: type.isAssignableTo(source);
-
-			if (processingRequired) {
-				builder = addAnnotationIfMissing(entry.getValue(), builder, type);
-			}
-		}
+		builder = mapAnnotationOrInterfaces("jMolecules Spring Plugin", builder, type, TYPES);
 
 		for (Entry<Class<? extends Annotation>, Class<? extends Annotation>> entry : METHOD_ANNOTATIONS.entrySet()) {
 
@@ -142,30 +124,6 @@ public class JMoleculesSpringPlugin implements Plugin {
 	@Override
 	public void close() throws IOException {}
 
-	private static Builder<?> addAnnotationIfMissing(Class<? extends Annotation> annotation, Builder<?> builder,
-			TypeDescription type) {
-
-		if (isAnnotatedWith(type, annotation)) {
-			return builder;
-		}
-
-		log.info("jMolecules Spring Plugin - Annotating {} with @{}.", type.getSimpleName(), annotation.getName());
-
-		return builder.annotateType(getAnnotation(annotation));
-	}
-
-	private static AnnotationDescription getAnnotation(Class<? extends Annotation> type) {
-		return AnnotationDescription.Builder.ofType(type).build();
-	}
-
-	private static boolean isAnnotatedWith(TypeDescription type, Class<?> annotationType) {
-
-		return type.getDeclaredAnnotations() //
-				.asTypeList() //
-				.stream() //
-				.anyMatch(it -> it.isAssignableTo(annotationType)); // || isAnnotatedWith(it, annotationType));
-	}
-
 	private static ElementMatcher<? super MethodDescription> hasAnnotatedMethod(TypeDescription type,
 			Class<? extends Annotation> source, Class<? extends Annotation> target) {
 
@@ -183,16 +141,16 @@ public class JMoleculesSpringPlugin implements Plugin {
 			String signature = toLog(method);
 
 			if (annotations.isAnnotationPresent(target)) {
-				log.debug("jMolecules Spring Plugin - Method {} already annotated with @{}.", signature, target.getName());
+				log.debug("jMolecules Spring Plugin - {} - Already annotated with @{}.", signature, target.getName());
 				return false;
 			}
 
 			if (!annotations.isAnnotationPresent(source)) {
-				log.debug("jMolecules Spring Plugin - Annotation {} not found on method {}.", source.getName(), signature);
+				log.debug("jMolecules Spring Plugin - {} - Annotation {} not found.", signature, source.getName());
 				return false;
 			}
 
-			log.info("jMolecules Spring Plugin - Annotating {} with {}.", signature, target.getName());
+			log.info("jMolecules Spring Plugin - {} - Adding {}.", signature, target.getName());
 
 			return true;
 		};
