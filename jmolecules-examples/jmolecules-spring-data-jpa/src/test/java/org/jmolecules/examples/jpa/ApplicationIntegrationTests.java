@@ -19,7 +19,12 @@ import static org.assertj.core.api.Assertions.*;
 
 import lombok.RequiredArgsConstructor;
 
+import org.jmolecules.examples.jpa.customer.Address;
+import org.jmolecules.examples.jpa.customer.Customer;
 import org.jmolecules.examples.jpa.customer.CustomerManagement;
+import org.jmolecules.examples.jpa.customer.Customers;
+import org.jmolecules.examples.jpa.order.Order;
+import org.jmolecules.examples.jpa.order.Orders;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.assertj.AssertableApplicationContext;
@@ -47,5 +52,19 @@ class ApplicationIntegrationTests {
 
 					assertThat(bean.eventReceived).isTrue();
 				});
+	}
+
+	@Test // #24
+	void exposesPersistenceComponents() {
+
+		var address = new Address("41 Greystreet", "Dreaming Tree", "2731");
+
+		var customers = context.getBean(Customers.class);
+		var customer = customers.save(new Customer("Dave", "Matthews", address));
+
+		var orders = context.getBean(Orders.class);
+		var order = orders.save(new Order(customer));
+
+		customers.resolveRequired(order.getCustomer());
 	}
 }

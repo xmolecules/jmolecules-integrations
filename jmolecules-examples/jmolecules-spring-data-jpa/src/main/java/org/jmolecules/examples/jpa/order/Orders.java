@@ -15,13 +15,14 @@
  */
 package org.jmolecules.examples.jpa.order;
 
+import org.jmolecules.ddd.types.Repository;
 import org.jmolecules.examples.jpa.order.Order.OrderId;
 import org.jmolecules.spring.AssociationResolver;
-import org.springframework.data.repository.CrudRepository;
 
 /**
  * @author Oliver Drotbohm
  */
-public interface Orders extends CrudRepository<Order, OrderId>, AssociationResolver<Order, OrderId> {
+public interface Orders extends Repository<Order, OrderId>, AssociationResolver<Order, OrderId> {
 
+	Order save(Order order);
 }

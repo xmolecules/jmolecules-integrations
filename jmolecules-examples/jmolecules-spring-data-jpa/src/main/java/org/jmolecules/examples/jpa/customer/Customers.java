@@ -15,13 +15,14 @@
  */
 package org.jmolecules.examples.jpa.customer;
 
+import org.jmolecules.ddd.types.Repository;
 import org.jmolecules.examples.jpa.customer.Customer.CustomerId;
 import org.jmolecules.spring.AssociationResolver;
-import org.springframework.data.repository.CrudRepository;
 
 /**
  * @author Oliver Drotbohm
  */
-public interface Customers extends CrudRepository<Customer, CustomerId>, AssociationResolver<Customer, CustomerId> {
+public interface Customers extends Repository<Customer, CustomerId>, AssociationResolver<Customer, CustomerId> {
 
+	Customer save(Customer customer);
 }

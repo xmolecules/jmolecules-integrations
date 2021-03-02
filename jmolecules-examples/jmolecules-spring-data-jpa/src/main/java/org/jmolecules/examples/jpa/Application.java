@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors.
+ * Copyright 2020-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,8 @@
  */
 package org.jmolecules.examples.jpa;
 
-import org.jmolecules.examples.jpa.customer.Address;
-import org.jmolecules.examples.jpa.customer.Customer;
-import org.jmolecules.examples.jpa.customer.Customers;
-import org.jmolecules.examples.jpa.order.Order;
-import org.jmolecules.examples.jpa.order.Orders;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ApplicationContext;
 
 /**
  * @author Oliver Drotbohm
@@ -31,17 +25,6 @@ import org.springframework.context.ApplicationContext;
 public class Application {
 
 	public static void main(String[] args) {
-
-		ApplicationContext context = SpringApplication.run(Application.class, args);
-
-		var address = new Address("41 Greystreet", "Dreaming Tree", "2731");
-
-		var customers = context.getBean(Customers.class);
-		var customer = customers.save(new Customer("Dave", "Matthews", address));
-
-		var orders = context.getBean(Orders.class);
-		var order = orders.save(new Order(customer));
-
-		customers.resolveRequired(order.getCustomer());
+		SpringApplication.run(Application.class, args);
 	}
 }
