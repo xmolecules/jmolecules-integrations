@@ -101,7 +101,7 @@ public class PrimitivesToAssociationConverter<T extends AggregateRoot<T, Identif
 		Identifier id = resolveIdentifier(source, type, identifierType);
 
 		if (type.resolve(Object.class).equals(Association.class)) {
-			return (Association<T, Identifier>) () -> id;
+			return Association.forId(id);
 		}
 
 		Class<?> associationType = type.resolve(Association.class);
