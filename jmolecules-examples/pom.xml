@@ -15,6 +15,7 @@
 
 	<modules>
 		<module>jmolecules-spring-data-jpa</module>
+		<module>jmolecules-spring-data-mongodb</module>
 	</modules>
 
 	<build>
