@@ -46,6 +46,12 @@
 		</dependency>
 
 		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>jmolecules-spring</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+		<dependency>
 			<groupId>org.springframework.data</groupId>
 			<artifactId>spring-data-commons</artifactId>
 		</dependency>
@@ -79,6 +85,9 @@
 						</transformation>
 						<transformation>
 							<plugin>org.jmolecules.bytebuddy.JMoleculesSpringPlugin</plugin>
+						</transformation>
+						<transformation>
+							<plugin>org.jmolecules.bytebuddy.JMoleculesSpringJpaPlugin</plugin>
 						</transformation>
 						<transformation>
 							<plugin>org.jmolecules.bytebuddy.JMoleculesSpringDataPlugin</plugin>

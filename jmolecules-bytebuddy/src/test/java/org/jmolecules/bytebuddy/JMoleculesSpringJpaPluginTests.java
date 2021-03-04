@@ -15,11 +15,29 @@
  */
 package org.jmolecules.bytebuddy;
 
-import org.jmolecules.ddd.types.Identifier;
+import static org.assertj.core.api.Assertions.*;
+
+import java.lang.reflect.Field;
+
+import javax.persistence.Convert;
+
+import org.jmolecules.spring.jpa.AssociationAttributeConverter;
+import org.junit.jupiter.api.Test;
+import org.springframework.util.ReflectionUtils;
 
 /**
+ * Tests for {@link JMoleculesSpringJpaPlugin}.
+ *
  * @author Oliver Drotbohm
  */
-public class SampleAggregateIdentifier implements Identifier {
-	String id;
+class JMoleculesSpringJpaPluginTests {
+
+	@Test // #27
+	void registersAssociationAttributeConverter() {
+
+		Field field = ReflectionUtils.findField(SampleAggregate.class, "association");
+		Convert annotation = field.getDeclaredAnnotation(Convert.class);
+
+		assertThat(AssociationAttributeConverter.class).isAssignableFrom(annotation.converter());
+	}
 }

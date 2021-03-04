@@ -26,9 +26,10 @@ import java.util.UUID;
 import javax.persistence.Table;
 
 import org.jmolecules.ddd.types.AggregateRoot;
+import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Identifier;
 import org.jmolecules.examples.jpa.customer.Customer;
-import org.jmolecules.examples.jpa.customer.Customer.CustomerAssociation;
+import org.jmolecules.examples.jpa.customer.Customer.CustomerId;
 
 /**
  * @author Oliver Drotbohm
@@ -41,12 +42,12 @@ public class Order implements AggregateRoot<Order, Order.OrderId> {
 
 	private final @EqualsAndHashCode.Include OrderId id;
 	private List<LineItem> lineItems;
-	private CustomerAssociation customer;
+	private Association<Customer, CustomerId> customer;
 
 	public Order(Customer customer) {
 
 		this.id = OrderId.of(UUID.randomUUID());
-		this.customer = new CustomerAssociation(customer);
+		this.customer = Association.forAggregate(customer);
 	}
 
 	@Value

@@ -49,7 +49,7 @@ public class JMoleculesPlugin implements WithPreprocessor {
 
 			ClassWorld world = ClassWorld.of(classFileLocator);
 
-			return Stream.of(jpaPlugin(world), springPlugin(world), springDataPlugin(world))
+			return Stream.of(jpaPlugin(world), springPlugin(world), springJpaPlugin(world), springDataPlugin(world))
 					.flatMap(Function.identity())
 					.filter(plugin -> plugin.matches(typeDescription))
 					.collect(Collectors.toList());
@@ -115,5 +115,14 @@ public class JMoleculesPlugin implements WithPreprocessor {
 		return world.isAvailable("org.springframework.data.repository.Repository")
 				? Stream.of(new JMoleculesSpringDataPlugin())
 				: Stream.empty();
+	}
+
+	private static Stream<Plugin> springJpaPlugin(ClassWorld world) {
+
+		return world.isAvailable("org.springframework.stereotype.Component")
+				&& world.isAvailable("javax.persistence.Entity")
+				&& world.isAvailable("org.jmolecules.spring.jpa.AssociationAttributeConverter")
+						? Stream.of(new JMoleculesSpringJpaPlugin())
+						: Stream.empty();
 	}
 }

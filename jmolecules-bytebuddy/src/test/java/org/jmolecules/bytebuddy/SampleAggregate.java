@@ -23,6 +23,7 @@ import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 
 import org.jmolecules.ddd.types.AggregateRoot;
+import org.jmolecules.ddd.types.Association;
 
 /**
  * @author Oliver Drotbohm
@@ -38,7 +39,9 @@ public class SampleAggregate implements AggregateRoot<SampleAggregate, SampleAgg
 	private @ManyToOne SampleEntity annotatedEntity;
 	private @ManyToMany Collection<SampleEntity> annotatedListOfEntity;
 
-	public SampleAggregate() {
-		this.id = new SampleAggregateIdentifier();
+	private Association<SampleAggregate, SampleAggregateIdentifier> association;
+
+	public SampleAggregate(SampleAggregateIdentifier id) {
+		this.id = id;
 	}
 }

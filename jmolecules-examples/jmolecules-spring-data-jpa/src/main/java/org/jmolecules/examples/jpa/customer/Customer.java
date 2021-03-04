@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.UUID;
 
 import org.jmolecules.ddd.types.AggregateRoot;
-import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Identifier;
 import org.jmolecules.examples.jpa.customer.Customer.CustomerId;
 import org.springframework.util.Assert;
@@ -42,7 +41,7 @@ public class Customer implements AggregateRoot<Customer, CustomerId> {
 
 		Assert.notNull(address, "Address must not be null!");
 
-		this.id = CustomerId.of(UUID.randomUUID());
+		this.id = CustomerId.of(UUID.randomUUID().toString());
 
 		this.firstname = firstname;
 		this.lastname = lastname;
@@ -53,16 +52,6 @@ public class Customer implements AggregateRoot<Customer, CustomerId> {
 
 	@Value(staticConstructor = "of")
 	public static class CustomerId implements Identifier {
-		private final UUID id;
-	}
-
-	@Getter
-	public static class CustomerAssociation implements Association<Customer, CustomerId> {
-
-		private CustomerId id;
-
-		public CustomerAssociation(Customer customer) {
-			this.id = customer.getId();
-		}
+		private final String id;
 	}
 }
