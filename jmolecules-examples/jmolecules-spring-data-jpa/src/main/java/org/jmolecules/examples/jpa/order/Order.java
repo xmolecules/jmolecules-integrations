@@ -15,7 +15,6 @@
  */
 package org.jmolecules.examples.jpa.order;
 
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
@@ -37,10 +36,9 @@ import org.jmolecules.examples.jpa.customer.Customer.CustomerId;
 @Table(name = "SAMPLE_ORDER")
 @Getter
 @RequiredArgsConstructor
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Order implements AggregateRoot<Order, Order.OrderId> {
 
-	private final @EqualsAndHashCode.Include OrderId id;
+	private final OrderId id;
 	private List<LineItem> lineItems;
 	private Association<Customer, CustomerId> customer;
 

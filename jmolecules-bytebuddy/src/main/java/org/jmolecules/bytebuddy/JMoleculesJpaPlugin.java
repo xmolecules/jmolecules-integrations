@@ -219,7 +219,7 @@ public class JMoleculesJpaPlugin implements Plugin {
 
 	private static Builder<?> handleEntity(Builder<?> builder, TypeDescription type, boolean forAggregateRoot) {
 
-		builder = declareNullVerificationMethod(builder, type);
+		// builder = declareNullVerificationMethod(builder, type);
 		builder = addDefaultConstructorIfMissing(builder, type);
 
 		// Annotate identifier types
@@ -283,6 +283,7 @@ public class JMoleculesJpaPlugin implements Plugin {
 				.build();
 	}
 
+	@SuppressWarnings("unused")
 	private static Builder<?> declareNullVerificationMethod(Builder<?> builder, TypeDescription type) {
 
 		String typeName = type.getSimpleName();

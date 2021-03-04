@@ -92,6 +92,9 @@
 						<transformation>
 							<plugin>org.jmolecules.bytebuddy.JMoleculesSpringDataPlugin</plugin>
 						</transformation>
+						<transformation>
+							<plugin>org.jmolecules.bytebuddy.JMoleculesSpringDataJpaPlugin</plugin>
+						</transformation>
 					</transformations>
 				</configuration>
 			</plugin>
