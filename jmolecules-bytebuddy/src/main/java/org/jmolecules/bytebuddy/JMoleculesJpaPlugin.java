@@ -146,7 +146,7 @@ public class JMoleculesJpaPlugin implements Plugin {
 
 				String ownerName = it.getDeclaringType().asErasure().getSimpleName();
 
-				log.info("jMolecules JPA Plugin - {} - Defaulting {}.{} to {} mapping.",
+				log.info("jMolecules JPA - {} - Defaulting {}.{} to {} mapping.",
 						ownerName, ownerName, it.getName(), annotation);
 			}
 
@@ -200,7 +200,7 @@ public class JMoleculesJpaPlugin implements Plugin {
 
 		if (!type.isAssignableTo(Serializable.class)) {
 
-			log.info("jMolecules JPA Plugin - {} - Implement Serializable.", type.getSimpleName());
+			log.info("jMolecules JPA - {} - Implement Serializable.", type.getSimpleName());
 
 			builder = builder.implement(Serializable.class);
 		}
@@ -257,7 +257,7 @@ public class JMoleculesJpaPlugin implements Plugin {
 			boolean found = existing.isAnnotationPresent(it);
 
 			if (found) {
-				log.info("jMolecules JPA Plugin - {} - Not adding @{} because type is already annotated with @{}.",
+				log.info("jMolecules JPA - {} - Not adding @{} because type is already annotated with @{}.",
 						type.getSimpleName(), annotation.getSimpleName(), it.getSimpleName());
 			}
 
@@ -268,7 +268,7 @@ public class JMoleculesJpaPlugin implements Plugin {
 			return builder;
 		}
 
-		log.info("jMolecules JPA Plugin - {} - Adding @{}.", type.getSimpleName(), annotation.getName());
+		log.info("jMolecules JPA - {} - Adding @{}.", type.getSimpleName(), annotation.getName());
 
 		return builder.annotateType(createAnnotation(annotation));
 	}
@@ -289,16 +289,16 @@ public class JMoleculesJpaPlugin implements Plugin {
 		String typeName = type.getSimpleName();
 
 		if (type.isAbstract()) {
-			log.info("jMolecules JPA Plugin - {} - Not generating nullability method for abstract type.", typeName);
+			log.info("jMolecules JPA - {} - Not generating nullability method for abstract type.", typeName);
 			return builder;
 		}
 
 		if (type.getDeclaredMethods().filter(it -> it.getName().equals(NULLABILITY_METHOD_NAME)).size() > 0) {
-			log.info("jMolecules JPA Plugin - {} - Found existing nullability method.", typeName);
+			log.info("jMolecules JPA - {} - Found existing nullability method.", typeName);
 			return builder;
 		}
 
-		log.info("jMolecules JPA Plugin - {} - Adding nullability verification method.", typeName);
+		log.info("jMolecules JPA - {} - Adding nullability verification method.", typeName);
 
 		return builder.defineMethod(NULLABILITY_METHOD_NAME, void.class, Visibility.PACKAGE_PRIVATE)
 				.intercept(MethodDelegation.to(JMoleculesJpa.class))
@@ -315,7 +315,7 @@ public class JMoleculesJpaPlugin implements Plugin {
 
 		if (hasDefaultConstructor) {
 
-			log.info("jMolecules JPA Plugin - {} - Default constructor already present.", type.getSimpleName());
+			log.info("jMolecules JPA - {} - Default constructor already present.", type.getSimpleName());
 
 			return builder;
 		}
@@ -329,11 +329,11 @@ public class JMoleculesJpaPlugin implements Plugin {
 
 		if (superClassConstructor == null) {
 			log.info(
-					"jMolecules JPA Plugin - {} - No default constructor found on superclass {}. Skipping default constructor creation.",
+					"jMolecules JPA - {} - No default constructor found on superclass {}. Skipping default constructor creation.",
 					type.getName(), superClass.asErasure().getName());
 		}
 
-		log.info("jMolecules JPA Plugin - {} - Adding default constructor.", type.getSimpleName());
+		log.info("jMolecules JPA - {} - Adding default constructor.", type.getSimpleName());
 
 		return builder.defineConstructor(Visibility.PUBLIC)
 				.intercept(MethodCall.invoke(superClassConstructor));

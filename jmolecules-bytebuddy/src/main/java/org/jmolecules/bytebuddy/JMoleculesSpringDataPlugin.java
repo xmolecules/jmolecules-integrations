@@ -83,7 +83,7 @@ public class JMoleculesSpringDataPlugin implements Plugin {
 			builder = translateRepositoryInterfaces(builder, typeDescription, typeDescription.asGenericType());
 		}
 
-		return mapAnnotationOrInterfaces("jMolecules Spring Data Plugin", builder, typeDescription, TYPES);
+		return mapAnnotationOrInterfaces("jMolecules Spring Data", builder, typeDescription, TYPES);
 	}
 
 	/*
@@ -105,7 +105,7 @@ public class JMoleculesSpringDataPlugin implements Plugin {
 				ForLoadedType loadedType = new TypeDescription.ForLoadedType(SPRING_DATA_REPOSITORY);
 				Generic repositoryType = Generic.Builder.parameterizedType(loadedType, aggregateType, idType).build();
 
-				log.info("jMolecules Spring Data Plugin - {} - Implement {}<{}, {}>.", original.getSimpleName(),
+				log.info("jMolecules Spring Data - {} - Implement {}<{}, {}>.", original.getSimpleName(),
 						repositoryType.asErasure().getName(), aggregateType.asErasure().getSimpleName(),
 						idType.asErasure().getSimpleName());
 
@@ -114,7 +114,7 @@ public class JMoleculesSpringDataPlugin implements Plugin {
 			} catch (Exception o_O) {
 
 				log.info(
-						"jMolecules Spring Data Plugin - {} - No generics declared. Cannot translate into Spring Data repository!",
+						"jMolecules Spring Data - {} - No generics declared. Cannot translate into Spring Data repository!",
 						original.getSimpleName());
 
 				return builder;

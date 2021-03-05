@@ -102,7 +102,7 @@ public class JMoleculesSpringPlugin implements Plugin {
 	@Override
 	public Builder<?> apply(Builder<?> builder, TypeDescription type, ClassFileLocator classFileLocator) {
 
-		builder = mapAnnotationOrInterfaces("jMolecules Spring Plugin", builder, type, TYPES);
+		builder = mapAnnotationOrInterfaces("jMolecules Spring", builder, type, TYPES);
 
 		for (Entry<Class<? extends Annotation>, Class<? extends Annotation>> entry : METHOD_ANNOTATIONS.entrySet()) {
 
@@ -141,16 +141,16 @@ public class JMoleculesSpringPlugin implements Plugin {
 			String signature = toLog(method);
 
 			if (annotations.isAnnotationPresent(target)) {
-				log.debug("jMolecules Spring Plugin - {} - Already annotated with @{}.", signature, target.getName());
+				log.debug("jMolecules Spring - {} - Already annotated with @{}.", signature, target.getName());
 				return false;
 			}
 
 			if (!annotations.isAnnotationPresent(source)) {
-				log.debug("jMolecules Spring Plugin - {} - Annotation {} not found.", signature, source.getName());
+				log.debug("jMolecules Spring - {} - Annotation {} not found.", signature, source.getName());
 				return false;
 			}
 
-			log.info("jMolecules Spring Plugin - {} - Adding {}.", signature, target.getName());
+			log.info("jMolecules Spring - {} - Adding {}.", signature, target.getName());
 
 			return true;
 		};
