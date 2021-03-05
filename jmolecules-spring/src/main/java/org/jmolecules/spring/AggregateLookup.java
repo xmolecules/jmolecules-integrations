@@ -17,15 +17,12 @@ package org.jmolecules.spring;
 
 import java.util.Optional;
 
-import org.jmolecules.ddd.types.AggregateRoot;
-import org.jmolecules.ddd.types.Identifier;
-
 /**
  * Lookup interface to be implemented e.g. some repository to find an aggregate by their identifiers.
  *
  * @author Oliver Drotbohm
  */
-public interface AggregateLookup<T extends AggregateRoot<T, ID>, ID extends Identifier> {
+public interface AggregateLookup<T, ID> {
 
 	/**
 	 * Returns the
