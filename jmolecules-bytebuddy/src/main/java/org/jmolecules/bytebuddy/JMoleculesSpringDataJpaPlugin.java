@@ -94,11 +94,11 @@ public class JMoleculesSpringDataJpaPlugin implements Plugin {
 				.annotateField(getAnnotation(Transient.class));
 
 		// Tweak constructors to set the newly introduced field to true.
-		builder = builder.visit(Advice.to(Helper.class).on(ElementMatchers.isConstructor()));
+		builder = builder.visit(Advice.to(IsNewInitializer.class).on(ElementMatchers.isConstructor()));
 
 		// Add lifecycle callbacks to flip isNew flag
 		builder = new LifecycleMethods(builder, PrePersist.class, PostLoad.class)
-				.apply(() -> Advice.to(Helper.class), () -> FieldAccessor.ofField(IS_NEW_FIELD).setsValue(false));
+				.apply(() -> Advice.to(NotNewSetter.class), () -> FieldAccessor.ofField(IS_NEW_FIELD).setsValue(false));
 
 		// Add isNew() method
 		builder = builder.defineMethod(IS_NEW_METHOD, boolean.class, Visibility.PUBLIC)
@@ -143,11 +143,19 @@ public class JMoleculesSpringDataJpaPlugin implements Plugin {
 	@Override
 	public void close() throws IOException {}
 
-	public static class Helper {
+	public static class IsNewInitializer {
 
 		@OnMethodExit
 		public static void initIsNewAsTrue(@FieldValue(value = IS_NEW_FIELD, readOnly = false) boolean value) {
 			value = true;
+		}
+	}
+
+	public static class NotNewSetter {
+
+		@OnMethodExit
+		public static void initIsNewAsTrue(@FieldValue(value = IS_NEW_FIELD, readOnly = false) boolean value) {
+			value = false;
 		}
 	}
 }

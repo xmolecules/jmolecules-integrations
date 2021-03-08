@@ -219,7 +219,7 @@ public class JMoleculesJpaPlugin implements Plugin {
 
 	private static Builder<?> handleEntity(Builder<?> builder, TypeDescription type, boolean forAggregateRoot) {
 
-		// builder = declareNullVerificationMethod(builder, type);
+		builder = declareNullVerificationMethod(builder, type);
 		builder = addDefaultConstructorIfMissing(builder, type);
 
 		// Annotate identifier types
