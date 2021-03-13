@@ -16,6 +16,7 @@
 	<modules>
 		<module>jmolecules-spring-data-jpa</module>
 		<module>jmolecules-spring-data-mongodb</module>
+		<module>jmolecules-spring-data-jdbc</module>
 	</modules>
 
 	<build>
@@ -27,6 +28,7 @@
 				<configuration>
 					<source>11</source>
 					<target>11</target>
+					<parameters>true</parameters>
 				</configuration>
 			</plugin>
 		</plugins>

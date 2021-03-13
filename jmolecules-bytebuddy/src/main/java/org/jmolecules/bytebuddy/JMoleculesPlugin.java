@@ -54,6 +54,7 @@ public class JMoleculesPlugin implements WithPreprocessor {
 					springPlugin(world),
 					springJpaPlugin(world),
 					springDataPlugin(world),
+					springDataJdbcPlugin(world),
 					springDataJpaPlugin(world))
 					.flatMap(Function.identity())
 					.filter(plugin -> plugin.matches(typeDescription))
@@ -129,6 +130,13 @@ public class JMoleculesPlugin implements WithPreprocessor {
 				&& world.isAvailable("org.jmolecules.spring.jpa.AssociationAttributeConverter")
 						? Stream.of(new JMoleculesSpringJpaPlugin())
 						: Stream.empty();
+	}
+
+	private static Stream<Plugin> springDataJdbcPlugin(ClassWorld world) {
+
+		return world.isAvailable("org.springframework.data.jdbc.core.mapping.AggregateReference")
+				? Stream.of(new JMoleculesSpringDataJdbcPlugin())
+				: Stream.empty();
 	}
 
 	private static Stream<Plugin> springDataJpaPlugin(ClassWorld world) {
