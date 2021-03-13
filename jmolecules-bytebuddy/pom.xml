@@ -61,6 +61,11 @@
 			<artifactId>spring-data-jdbc</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>org.springframework.data</groupId>
+			<artifactId>spring-data-mongodb</artifactId>
+		</dependency>
+
 	</dependencies>
 
 	<build>
@@ -99,6 +104,9 @@
 						</transformation>
 						<transformation>
 							<plugin>org.jmolecules.bytebuddy.JMoleculesSpringDataJpaPlugin</plugin>
+						</transformation>
+						<transformation>
+							<plugin>org.jmolecules.bytebuddy.JMoleculesSpringDataMongoDbPlugin</plugin>
 						</transformation>
 					</transformations>
 				</configuration>

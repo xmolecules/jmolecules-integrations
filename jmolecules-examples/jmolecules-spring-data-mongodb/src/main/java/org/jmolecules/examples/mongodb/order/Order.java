@@ -15,7 +15,6 @@
  */
 package org.jmolecules.examples.mongodb.order;
 
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
@@ -30,19 +29,16 @@ import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Identifier;
 import org.jmolecules.examples.mongodb.customer.Customer;
 import org.jmolecules.examples.mongodb.customer.Customer.CustomerId;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
  * @author Oliver Drotbohm
  */
-@Document
 @Getter
 @ToString
 @RequiredArgsConstructor
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Order implements AggregateRoot<Order, Order.OrderId> {
 
-	private final @EqualsAndHashCode.Include OrderId id;
+	private final OrderId id;
 	private List<LineItem> lineItems;
 	private Association<Customer, CustomerId> customer;
 

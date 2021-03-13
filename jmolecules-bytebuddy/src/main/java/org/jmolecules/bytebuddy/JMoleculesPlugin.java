@@ -55,7 +55,8 @@ public class JMoleculesPlugin implements WithPreprocessor {
 					springJpaPlugin(world),
 					springDataPlugin(world),
 					springDataJdbcPlugin(world),
-					springDataJpaPlugin(world))
+					springDataJpaPlugin(world),
+					springDataMongDbPlugin(world))
 					.flatMap(Function.identity())
 					.filter(plugin -> plugin.matches(typeDescription))
 					.collect(Collectors.toList());
@@ -143,6 +144,13 @@ public class JMoleculesPlugin implements WithPreprocessor {
 
 		return world.isAvailable("org.springframework.data.jpa.repository.JpaRepository")
 				? Stream.of(new JMoleculesSpringDataJpaPlugin())
+				: Stream.empty();
+	}
+
+	private static Stream<Plugin> springDataMongDbPlugin(ClassWorld world) {
+
+		return world.isAvailable("org.springframework.data.mongodb.core.mapping.Document")
+				? Stream.of(new JMoleculesSpringDataMongoDbPlugin())
 				: Stream.empty();
 	}
 }
