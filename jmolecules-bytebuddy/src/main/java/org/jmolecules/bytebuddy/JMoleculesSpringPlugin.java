@@ -141,16 +141,18 @@ public class JMoleculesSpringPlugin implements Plugin {
 			String signature = toLog(method);
 
 			if (annotations.isAnnotationPresent(target)) {
-				log.debug("jMolecules Spring - {} - Already annotated with @{}.", signature, target.getName());
+				log.debug("jMolecules Spring - {} - Already annotated with @{}.", signature,
+						PluginUtils.abbreviate(target));
 				return false;
 			}
 
 			if (!annotations.isAnnotationPresent(source)) {
-				log.debug("jMolecules Spring - {} - Annotation {} not found.", signature, source.getName());
+				log.debug("jMolecules Spring - {} - Annotation {} not found.", signature,
+						PluginUtils.abbreviate(source));
 				return false;
 			}
 
-			log.info("jMolecules Spring - {} - Adding {}.", signature, target.getName());
+			log.info("jMolecules Spring - {} - Adding @{}.", signature, PluginUtils.abbreviate(target));
 
 			return true;
 		};
@@ -166,7 +168,7 @@ public class JMoleculesSpringPlugin implements Plugin {
 				.map(TypeDescription::getSimpleName)
 				.collect(Collectors.joining(", "));
 
-		return type.asErasure().getSimpleName()
+		return PluginUtils.abbreviate(type)
 				.concat(".")
 				.concat(method.getName())
 				.concat("(")

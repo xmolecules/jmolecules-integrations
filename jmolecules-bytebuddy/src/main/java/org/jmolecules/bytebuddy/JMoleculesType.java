@@ -1,0 +1,335 @@
+/*
+ * Copyright 2021 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.jmolecules.bytebuddy;
+
+import static net.bytebuddy.matcher.ElementMatchers.*;
+
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import net.bytebuddy.description.annotation.AnnotationDescription;
+import net.bytebuddy.description.annotation.AnnotationList;
+import net.bytebuddy.description.annotation.AnnotationSource;
+import net.bytebuddy.description.field.FieldDescription.InDefinedShape;
+import net.bytebuddy.description.method.MethodDescription.InGenericShape;
+import net.bytebuddy.description.modifier.Visibility;
+import net.bytebuddy.description.type.TypeDefinition;
+import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.description.type.TypeDescription.Generic;
+import net.bytebuddy.dynamic.DynamicType.Builder;
+import net.bytebuddy.implementation.MethodCall;
+import net.bytebuddy.matcher.ElementMatcher;
+import net.bytebuddy.matcher.ElementMatcher.Junction;
+import net.bytebuddy.matcher.ElementMatchers;
+
+import java.lang.annotation.Annotation;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.jmolecules.ddd.types.AggregateRoot;
+import org.jmolecules.ddd.types.Association;
+import org.jmolecules.ddd.types.Entity;
+import org.jmolecules.ddd.types.Identifier;
+import org.springframework.util.Assert;
+
+/**
+ * A wrapper around a {@link Builder} to allow issuing bytecode manipulations working with JMolecules abstractions like
+ * aggregates etc.
+ *
+ * @author Oliver Drotbohm
+ */
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+class JMoleculesType {
+
+	private final PluginLogger logger;
+	private final Builder<?> builder;
+	private final TypeDescription type;
+
+	/**
+	 * Creates a new {@link JMoleculesType} for the given {@link PluginLogger} and {@link Builder}.
+	 *
+	 * @param logger must not be {@literal null}.
+	 * @param builder must not be {@literal null}.
+	 * @return
+	 */
+	public static JMoleculesType of(PluginLogger logger, Builder<?> builder) {
+
+		Assert.notNull(logger, "PluginLogger must not be null!");
+		Assert.notNull(builder, "Builder must not be null!");
+
+		return new JMoleculesType(logger, builder, builder.toTypeDescription());
+	}
+
+	/**
+	 * Returns whether the type implements the given type or is annotated with it.
+	 *
+	 * @param types either interfaces or annotations, must not be {@literal null}.
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public boolean hasOrImplements(Class<?>... types) {
+
+		return Arrays.stream(types).anyMatch(it -> {
+
+			return it.isAnnotation() && hasAnnotation((Class<? extends Annotation>) it)
+					|| isAssignableTo(it);
+		});
+	}
+
+	public boolean hasAnnotation(Class<? extends Annotation> annotation) {
+		return JMoleculesElementMatchers.hasAnnotation(type, annotation);
+	}
+
+	public boolean hasMethod(ElementMatcher<net.bytebuddy.description.method.MethodDescription.InDefinedShape> matcher) {
+		return !type.getDeclaredMethods().filter(matcher).isEmpty();
+	}
+
+	public boolean hasField(ElementMatcher<InDefinedShape> matcher) {
+		return !type.getDeclaredFields().filter(matcher).isEmpty();
+	}
+
+	public boolean isAssignableTo(Class<?> candidate) {
+		return type.isAssignableTo(candidate);
+	}
+
+	public boolean isAbstract() {
+		return type.isAbstract();
+	}
+
+	public boolean isAggregateRoot() {
+		return hasOrImplements(AggregateRoot.class, org.jmolecules.ddd.annotation.AggregateRoot.class);
+	}
+
+	public boolean isEntity() {
+		return hasOrImplements(Entity.class, org.jmolecules.ddd.annotation.Entity.class);
+	}
+
+	public boolean isAssociation() {
+		return isAssignableTo(Association.class);
+	}
+
+	public boolean isIdentifier() {
+		return isAssignableTo(Identifier.class);
+	}
+
+	public String getAbbreviatedName() {
+		return PluginUtils.abbreviate(type);
+	}
+
+	public TypeDescription getTypeDescription() {
+		return type;
+	}
+
+	public JMoleculesType implement(Class<?> interfaze) {
+
+		if (type.isAssignableTo(interfaze)) {
+			return this;
+		}
+
+		logger.info("{} - Implement {}.", PluginUtils.abbreviate(type),
+				PluginUtils.abbreviate(interfaze));
+
+		return map((it, log) -> it.implement(interfaze));
+	}
+
+	public JMoleculesType implement(Class<?> interfaze, TypeDefinition... generics) {
+
+		TypeDescription loadedType = Generic.Builder.rawType(interfaze).build().asErasure();
+		Generic build = Generic.Builder.parameterizedType(loadedType, generics).build();
+
+		String types = Arrays.stream(generics)
+				.map(PluginUtils::abbreviate)
+				.collect(Collectors.joining(", "));
+
+		logger.info("{} - Implementing {}.", getAbbreviatedName(),
+				PluginUtils.abbreviate(interfaze).concat("<").concat(types).concat(">"));
+
+		return mapBuilder(builder -> builder.implement(build));
+	}
+
+	@SafeVarargs
+	public final JMoleculesType annotateTypeIfMissing(Class<? extends Annotation> annotation,
+			Class<? extends Annotation>... additionalFilters) {
+
+		return addAnnotationIfMissing(annotation, additionalFilters);
+	}
+
+	@SafeVarargs
+	public final JMoleculesType annotateTypeIfMissing(Function<TypeDescription, Class<? extends Annotation>> producer,
+			Class<? extends Annotation>... additionalFilters) {
+		return addAnnotationIfMissing(producer, additionalFilters);
+	}
+
+	public JMoleculesType implementPersistable(PersistableOptions options) {
+		return PersistableImplementor.of(options).implementPersistable(this);
+	}
+
+	@SafeVarargs
+	public final JMoleculesType annotateIdentifierWith(Class<? extends Annotation> annotation,
+			Class<? extends Annotation>... filterAnnotations) {
+
+		AnnotationDescription idAnnotation = PluginUtils.getAnnotation(annotation);
+		Junction<AnnotationSource> alreadyAnnotated = ElementMatchers.isAnnotatedWith(annotation);
+
+		for (Class<? extends Annotation> filterAnnotation : filterAnnotations) {
+			alreadyAnnotated = alreadyAnnotated.or(ElementMatchers.isAnnotatedWith(filterAnnotation));
+		}
+
+		return JMoleculesType.of(logger, builder
+				.field(PluginUtils.defaultMapping(logger,
+						fieldType(isSubTypeOf(Identifier.class)).and(not(alreadyAnnotated)), idAnnotation))
+				.annotateField(idAnnotation));
+	}
+
+	public JMoleculesType map(BiFunction<Builder<?>, PluginLogger, Builder<?>> mapper) {
+		return JMoleculesType.of(logger, mapper.apply(builder, logger));
+	}
+
+	public JMoleculesType mapBuilder(Function<Builder<?>, Builder<?>> mapper) {
+		return JMoleculesType.of(logger, mapper.apply(builder));
+	}
+
+	public JMoleculesType mapBuilder(Predicate<JMoleculesType> filter, Function<Builder<?>, Builder<?>> mapper) {
+
+		return filter.test(this)
+				? JMoleculesType.of(logger, mapper.apply(builder))
+				: this;
+	}
+
+	public JMoleculesType map(Predicate<JMoleculesType> filter, Function<JMoleculesType, JMoleculesType> mapper) {
+
+		return filter.test(this)
+				? mapper.apply(this)
+				: this;
+	}
+
+	public JMoleculesType mapIdField(BiFunction<InDefinedShape, JMoleculesType, JMoleculesType> mapper) {
+		return findIdField().map(it -> mapper.apply(it, this)).orElse(this);
+	}
+
+	public JMoleculesType addDefaultConstructorIfMissing() {
+
+		return map((builder, logger) -> {
+
+			String typeName = PluginUtils.abbreviate(type);
+
+			boolean hasDefaultConstructor = !type.getDeclaredMethods()
+					.filter(it -> it.isConstructor())
+					.filter(it -> it.getParameters().size() == 0)
+					.isEmpty();
+
+			if (hasDefaultConstructor) {
+
+				logger.info("{} - Default constructor already present.", typeName);
+
+				return builder;
+			}
+
+			Generic superClass = type.getSuperClass();
+			Iterator<InGenericShape> superClassConstructors = superClass.getDeclaredMethods()
+					.filter(it -> it.isConstructor())
+					.filter(it -> it.getParameters().size() == 0).iterator();
+
+			InGenericShape superClassConstructor = superClassConstructors.hasNext() ? superClassConstructors.next() : null;
+			String superClassName = PluginUtils.abbreviate(superClass);
+
+			if (superClassConstructor == null) {
+				logger.info(
+						"{} - No default constructor found on superclass {}. Skipping default constructor creation.",
+						typeName, superClassName);
+			}
+
+			logger.info("{} - Adding default constructor.", typeName);
+
+			return builder.defineConstructor(Visibility.PUBLIC)
+					.intercept(MethodCall.invoke(superClassConstructor));
+
+		});
+	}
+
+	public Builder<?> conclude() {
+		return builder;
+	}
+
+	@SafeVarargs
+	private final JMoleculesType addAnnotationIfMissing(Class<? extends Annotation> annotation,
+			Class<? extends Annotation>... exclusions) {
+
+		return addAnnotationIfMissing(__ -> annotation, exclusions);
+	}
+
+	@SafeVarargs
+	private final JMoleculesType addAnnotationIfMissing(Function<TypeDescription, Class<? extends Annotation>> producer,
+			Class<? extends Annotation>... exclusions) {
+
+		AnnotationList existing = type.getDeclaredAnnotations();
+		Class<? extends Annotation> annotation = producer.apply(type);
+
+		String typeName = PluginUtils.abbreviate(type);
+		String annotationName = PluginUtils.abbreviate(annotation);
+
+		if (existing.isAnnotationPresent(annotation)) {
+
+			logger.info("{} - Not adding @{} because type is already annotated with it.", typeName, annotationName);
+
+			return this;
+		}
+
+		boolean existingFound = Stream.of(exclusions).anyMatch(it -> {
+
+			boolean found = existing.isAnnotationPresent(it);
+
+			if (found) {
+				logger.info("{} - Not adding @{} because type is already annotated with @{}.",
+						typeName, annotationName, PluginUtils.abbreviate(it));
+			}
+
+			return found;
+		});
+
+		if (existingFound) {
+			return this;
+		}
+
+		logger.info("{} - Adding @{}.", typeName, annotationName);
+
+		return JMoleculesType.of(logger, builder.annotateType(PluginUtils.getAnnotation(annotation)));
+	}
+
+	public Optional<InDefinedShape> findIdField() {
+
+		TypeDescription type = builder.toTypeDescription();
+
+		Generic superType = type.getInterfaces().stream()
+				.filter(it -> it.asErasure().represents(AggregateRoot.class))
+				.findFirst().orElse(null);
+
+		if (superType == null) {
+			return Optional.empty();
+		}
+
+		Generic aggregateIdType = superType.asGenericType().getTypeArguments().get(1);
+
+		return type.getDeclaredFields().stream()
+				.filter(it -> it.getType().equals(aggregateIdType))
+				.findFirst();
+	}
+}

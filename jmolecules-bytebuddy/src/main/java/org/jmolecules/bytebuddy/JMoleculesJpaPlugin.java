@@ -16,42 +16,29 @@
 package org.jmolecules.bytebuddy;
 
 import static net.bytebuddy.matcher.ElementMatchers.*;
+import static org.jmolecules.bytebuddy.JMoleculesElementMatchers.*;
 
-import lombok.extern.slf4j.Slf4j;
-import net.bytebuddy.build.Plugin;
 import net.bytebuddy.description.annotation.AnnotationDescription;
-import net.bytebuddy.description.annotation.AnnotationList;
 import net.bytebuddy.description.annotation.AnnotationSource;
-import net.bytebuddy.description.field.FieldDescription;
-import net.bytebuddy.description.method.MethodDescription.InGenericShape;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.description.type.TypeDescription.Generic;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.DynamicType.Builder;
-import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.matcher.ElementMatcher;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Objects;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 import javax.persistence.*;
 
-import org.jmolecules.ddd.types.AggregateRoot;
-import org.jmolecules.ddd.types.Association;
-import org.jmolecules.ddd.types.Entity;
-import org.jmolecules.ddd.types.Identifier;
 import org.jmolecules.jpa.JMoleculesJpa;
 
-@Slf4j
-public class JMoleculesJpaPlugin implements Plugin {
+public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
+
+	private static final PluginLogger logger = new PluginLogger("JPA");
 
 	static final String NULLABILITY_METHOD_NAME = "__verifyNullability";
 
@@ -78,53 +65,12 @@ public class JMoleculesJpaPlugin implements Plugin {
 	@Override
 	public Builder<?> apply(Builder<?> builder, TypeDescription type, ClassFileLocator classFileLocator) {
 
-		boolean isAggregateRoot = type.isAssignableTo(AggregateRoot.class)
-				|| hasAnnotation(type, org.jmolecules.ddd.annotation.AggregateRoot.class);
-
-		if (isAggregateRoot) {
-			builder = handleAggregateRoot(builder, type);
-		}
-
-		if (type.isAssignableTo(Entity.class)
-				|| hasAnnotation(type, org.jmolecules.ddd.annotation.Entity.class)) {
-			builder = handleEntity(builder, type, isAggregateRoot);
-		}
-
-		if (type.isAssignableTo(Association.class)) {
-			builder = handleAssociation(builder, type);
-		}
-
-		if (type.isAssignableTo(Identifier.class)) {
-			builder = handleIdentifier(builder, type);
-		}
-
-		return builder;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see java.io.Closeable#close()
-	 */
-	@Override
-	public void close() throws IOException {}
-
-	private static Builder<?> handleAggregateRoot(Builder<?> builder, TypeDescription type) {
-
-		// Default entity references to OneToOne mapping
-		AnnotationDescription oneToOneDescription = createCascadingAnnotation(OneToOne.class);
-
-		builder = builder.field(wrap(fieldType(isEntity(type))
-				.and(not(hasJpaRelationShipAnnotation())), oneToOneDescription))
-				.annotateField(oneToOneDescription);
-
-		// Default collection entity references to @OneToMany mapping
-		AnnotationDescription oneToManyDescription = createCascadingAnnotation(OneToMany.class);
-
-		builder = builder.field(wrap(genericFieldType(isCollectionOfEntity(type))
-				.and(not(hasJpaRelationShipAnnotation())), oneToManyDescription))
-				.annotateField(oneToManyDescription);
-
-		return builder;
+		return JMoleculesType.of(logger, builder)
+				.mapBuilder(JMoleculesType::isAggregateRoot, this::handleAggregateRoot)
+				.map(JMoleculesType::isEntity, this::handleEntity)
+				.map(JMoleculesType::isAssociation, this::handleAssociation)
+				.map(JMoleculesType::isIdentifier, this::handleIdentifier)
+				.conclude();
 	}
 
 	private static <T extends AnnotationSource> ElementMatcher.Junction<T> hasJpaRelationShipAnnotation() {
@@ -135,146 +81,47 @@ public class JMoleculesJpaPlugin implements Plugin {
 				.or(isAnnotatedWith(ManyToMany.class));
 	}
 
-	private static ElementMatcher<FieldDescription> wrap(Junction<FieldDescription> source,
-			AnnotationDescription annotation) {
+	private JMoleculesType handleIdentifier(JMoleculesType type) {
 
-		return it -> {
-
-			boolean matches = source.matches(it);
-
-			if (matches) {
-
-				String ownerName = it.getDeclaringType().asErasure().getSimpleName();
-
-				log.info("jMolecules JPA - {} - Defaulting {}.{} to {} mapping.",
-						ownerName, ownerName, it.getName(), annotation);
-			}
-
-			return matches;
-		};
+		return type.implement(Serializable.class)
+				.addDefaultConstructorIfMissing()
+				.annotateTypeIfMissing(Embeddable.class);
 	}
 
-	private static ElementMatcher<TypeDescription> isEntity(TypeDescription reference) {
+	private JMoleculesType handleAssociation(JMoleculesType type) {
 
-		return it -> {
-
-			boolean match = it.isAssignableTo(Entity.class)
-					|| hasAnnotation(it, org.jmolecules.ddd.annotation.Entity.class);
-
-			return match;
-		};
+		return type.addDefaultConstructorIfMissing()
+				.annotateTypeIfMissing(Embeddable.class);
 	}
 
-	private static ElementMatcher<? super Generic> isCollectionOfEntity(TypeDescription reference) {
+	private JMoleculesType handleEntity(JMoleculesType type) {
 
-		return it -> {
+		Function<TypeDescription, Class<? extends Annotation>> selector = it -> !type.isAggregateRoot()
+				&& type.isAbstract()
+						? MappedSuperclass.class
+						: javax.persistence.Entity.class;
 
-			boolean match = it.asErasure().isAssignableTo(Collection.class)
-					&& isEntity(reference).matches(it.asGenericType().getTypeArguments().get(0).asErasure());
-
-			return match;
-		};
+		return type.addDefaultConstructorIfMissing()
+				.annotateIdentifierWith(EmbeddedId.class, Id.class)
+				.annotateTypeIfMissing(selector, javax.persistence.Entity.class, MappedSuperclass.class)
+				.map(this::declareNullVerificationMethod);
 	}
 
-	private static boolean hasAnnotation(TypeDescription type, Class<? extends Annotation> annotation) {
+	private Builder<?> handleAggregateRoot(Builder<?> builder) {
 
-		Objects.requireNonNull(type, "Type must not be null!");
+		// Default entity references to OneToOne mapping
+		AnnotationDescription oneToOneDescription = createCascadingAnnotation(OneToOne.class);
 
-		AnnotationList found = type.getDeclaredAnnotations();
+		builder = builder.field(PluginUtils.defaultMapping(logger, fieldType(isEntity())
+				.and(not(hasJpaRelationShipAnnotation())), oneToOneDescription))
+				.annotateField(oneToOneDescription);
 
-		if (found.isAnnotationPresent(annotation)) {
-			return true;
-		}
+		// Default collection entity references to @OneToMany mapping
+		AnnotationDescription oneToManyDescription = createCascadingAnnotation(OneToMany.class);
 
-		if (found.isEmpty()) {
-			return false;
-		}
-
-		return found.asTypeList() //
-				.stream() //
-				.filter(it -> !it.getPackage().getName().startsWith("java")) //
-				.anyMatch(it -> hasAnnotation(it, annotation));
-	}
-
-	private static Builder<?> handleIdentifier(Builder<?> builder, TypeDescription type) {
-
-		if (!type.isAssignableTo(Serializable.class)) {
-
-			log.info("jMolecules JPA - {} - Implement Serializable.", type.getSimpleName());
-
-			builder = builder.implement(Serializable.class);
-		}
-
-		builder = addDefaultConstructorIfMissing(builder, type);
-
-		return addAnnotationIfMissing(Embeddable.class, builder, type, Embeddable.class);
-	}
-
-	private static Builder<?> handleAssociation(Builder<?> builder, TypeDescription type) {
-
-		builder = addDefaultConstructorIfMissing(builder, type);
-
-		return addAnnotationIfMissing(Embeddable.class, builder, type, Embeddable.class);
-	}
-
-	private static Builder<?> handleEntity(Builder<?> builder, TypeDescription type, boolean forAggregateRoot) {
-
-		builder = declareNullVerificationMethod(builder, type);
-		builder = addDefaultConstructorIfMissing(builder, type);
-
-		// Annotate identifier types
-		AnnotationDescription annotation = createAnnotation(EmbeddedId.class);
-
-		builder = builder
-				.field(wrap(fieldType(isSubTypeOf(Identifier.class))
-						.and(not(isAnnotatedWith(EmbeddedId.class).or(isAnnotatedWith(Id.class)))), annotation))
-				.annotateField(annotation);
-
-		Function<TypeDescription, Class<? extends Annotation>> selector = it -> !forAggregateRoot && type.isAbstract()
-				? MappedSuperclass.class
-				: javax.persistence.Entity.class;
-
-		return addAnnotationIfMissing(selector, builder, type, javax.persistence.Entity.class,
-				MappedSuperclass.class);
-	}
-
-	@SafeVarargs
-	private static Builder<?> addAnnotationIfMissing(Class<? extends Annotation> annotation, Builder<?> builder,
-			TypeDescription type, Class<? extends Annotation>... exclusions) {
-		return addAnnotationIfMissing(__ -> annotation, builder, type, exclusions);
-	}
-
-	@SafeVarargs
-	private static Builder<?> addAnnotationIfMissing(Function<TypeDescription, Class<? extends Annotation>> producer,
-			Builder<?> builder,
-			TypeDescription type, Class<? extends Annotation>... exclusions) {
-
-		AnnotationList existing = type.getDeclaredAnnotations();
-		Class<? extends Annotation> annotation = producer.apply(type);
-
-		boolean existingFound = Stream.of(exclusions).anyMatch(it -> {
-
-			boolean found = existing.isAnnotationPresent(it);
-
-			if (found) {
-				log.info("jMolecules JPA - {} - Not adding @{} because type is already annotated with @{}.",
-						type.getSimpleName(), annotation.getSimpleName(), it.getSimpleName());
-			}
-
-			return found;
-		});
-
-		if (existingFound) {
-			return builder;
-		}
-
-		log.info("jMolecules JPA - {} - Adding @{}.", type.getSimpleName(), annotation.getName());
-
-		return builder.annotateType(createAnnotation(annotation));
-	}
-
-	private static AnnotationDescription createAnnotation(Class<? extends Annotation> type) {
-		return AnnotationDescription.Builder.ofType(type).build();
+		return builder.field(PluginUtils.defaultMapping(logger, genericFieldType(isCollectionOfEntity())
+				.and(not(hasJpaRelationShipAnnotation())), oneToManyDescription))
+				.annotateField(oneToManyDescription);
 	}
 
 	private static AnnotationDescription createCascadingAnnotation(Class<? extends Annotation> type) {
@@ -283,59 +130,26 @@ public class JMoleculesJpaPlugin implements Plugin {
 				.build();
 	}
 
-	@SuppressWarnings("unused")
-	private static Builder<?> declareNullVerificationMethod(Builder<?> builder, TypeDescription type) {
+	private Builder<?> declareNullVerificationMethod(Builder<?> builder, PluginLogger logger) {
 
-		String typeName = type.getSimpleName();
+		TypeDescription type = builder.toTypeDescription();
+		String typeName = PluginUtils.abbreviate(type);
 
 		if (type.isAbstract()) {
-			log.info("jMolecules JPA - {} - Not generating nullability method for abstract type.", typeName);
+			logger.info("{} - Not generating nullability method for abstract type.", typeName);
 			return builder;
 		}
 
 		if (type.getDeclaredMethods().filter(it -> it.getName().equals(NULLABILITY_METHOD_NAME)).size() > 0) {
-			log.info("jMolecules JPA - {} - Found existing nullability method.", typeName);
+			logger.info("{} - Found existing nullability method.", typeName);
 			return builder;
 		}
 
-		log.info("jMolecules JPA - {} - Adding nullability verification method.", typeName);
+		logger.info("{} - Adding nullability verification method.", typeName);
 
 		return builder.defineMethod(NULLABILITY_METHOD_NAME, void.class, Visibility.PACKAGE_PRIVATE)
 				.intercept(MethodDelegation.to(JMoleculesJpa.class))
-				.annotateMethod(createAnnotation(PrePersist.class))
-				.annotateMethod(createAnnotation(PostLoad.class));
-	}
-
-	private static Builder<?> addDefaultConstructorIfMissing(Builder<?> builder, TypeDescription type) {
-
-		boolean hasDefaultConstructor = !type.getDeclaredMethods()
-				.filter(it -> it.isConstructor())
-				.filter(it -> it.getParameters().size() == 0)
-				.isEmpty();
-
-		if (hasDefaultConstructor) {
-
-			log.info("jMolecules JPA - {} - Default constructor already present.", type.getSimpleName());
-
-			return builder;
-		}
-
-		Generic superClass = type.getSuperClass();
-		Iterator<InGenericShape> superClassConstructors = superClass.getDeclaredMethods()
-				.filter(it -> it.isConstructor())
-				.filter(it -> it.getParameters().size() == 0).iterator();
-
-		InGenericShape superClassConstructor = superClassConstructors.hasNext() ? superClassConstructors.next() : null;
-
-		if (superClassConstructor == null) {
-			log.info(
-					"jMolecules JPA - {} - No default constructor found on superclass {}. Skipping default constructor creation.",
-					type.getName(), superClass.asErasure().getName());
-		}
-
-		log.info("jMolecules JPA - {} - Adding default constructor.", type.getSimpleName());
-
-		return builder.defineConstructor(Visibility.PUBLIC)
-				.intercept(MethodCall.invoke(superClassConstructor));
+				.annotateMethod(PluginUtils.getAnnotation(PrePersist.class))
+				.annotateMethod(PluginUtils.getAnnotation(PostLoad.class));
 	}
 }

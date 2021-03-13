@@ -53,6 +53,8 @@ import org.jmolecules.spring.jpa.AssociationAttributeConverter;
 @Slf4j
 public class JMoleculesSpringJpaPlugin implements Plugin {
 
+	private static PluginLogger logger = new PluginLogger("Spring JPA");
+
 	/*
 	 * (non-Javadoc)
 	 * @see net.bytebuddy.matcher.ElementMatcher#matches(java.lang.Object)
@@ -70,24 +72,29 @@ public class JMoleculesSpringJpaPlugin implements Plugin {
 	@Override
 	public Builder<?> apply(Builder<?> builder, TypeDescription typeDescription, ClassFileLocator classFileLocator) {
 
-		List<InDefinedShape> associationFields = builder.toTypeDescription().getDeclaredFields().stream()
-				.filter(it -> it.getType().asErasure().represents(Association.class))
-				.collect(Collectors.toList());
+		return JMoleculesType.of(logger, builder)
+				.map((it, log) -> {
 
-		for (InDefinedShape field : associationFields) {
+					List<InDefinedShape> associationFields = builder.toTypeDescription().getDeclaredFields().stream()
+							.filter(field -> field.getType().asErasure().represents(Association.class))
+							.collect(Collectors.toList());
 
-			if (field.getDeclaredAnnotations().isAnnotationPresent(Convert.class)) {
+					for (InDefinedShape field : associationFields) {
 
-				log.info("jMolecules Spring JPA - {}.{} - Found existing converter registration.",
-						field.getDeclaringType().getSimpleName(), field.getName());
+						if (field.getDeclaredAnnotations().isAnnotationPresent(Convert.class)) {
 
-				continue;
-			}
+							log.info("jMolecules Spring JPA - {}.{} - Found existing converter registration.",
+									field.getDeclaringType().getSimpleName(), field.getName());
 
-			builder = createConvertAnnotation(field, builder);
-		}
+							continue;
+						}
 
-		return builder;
+						it = createConvertAnnotation(field, it);
+					}
+
+					return it;
+
+				}).conclude();
 	}
 
 	/*
@@ -107,7 +114,8 @@ public class JMoleculesSpringJpaPlugin implements Plugin {
 		if (idPrimitiveType == null) {
 
 			log.info("jMolecules Spring JPA - {}.{} - Unable to detect id primitive in {}.",
-					field.getDeclaringType().getSimpleName(), field.getName(), idType.asErasure().getSimpleName());
+					PluginUtils.abbreviate(field.getDeclaringType()), field.getName(),
+					PluginUtils.abbreviate(idType));
 
 			return builder;
 		}
@@ -124,8 +132,9 @@ public class JMoleculesSpringJpaPlugin implements Plugin {
 
 		builder = builder.require(converterType);
 
-		log.info("jMolecules Spring JPA - {}.{} - Adding @Convert(converter={}).",
-				field.getDeclaringType().getSimpleName(), field.getName(), superType.getTypeName());
+		log.info("jMolecules Spring JPA - {}.{} - Adding @j.p.Convert(converter={}).",
+				PluginUtils.abbreviate(field.getDeclaringType()), field.getName(),
+				PluginUtils.abbreviate(converterType.getTypeDescription()));
 
 		return builder.field(ElementMatchers.is(field))
 				.annotateField(AnnotationDescription.Builder.ofType(Convert.class)

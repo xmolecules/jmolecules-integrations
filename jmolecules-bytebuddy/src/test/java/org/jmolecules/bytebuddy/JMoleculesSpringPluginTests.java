@@ -40,7 +40,7 @@ import org.springframework.util.ReflectionUtils;
  *
  * @author Oliver Drotbohm
  */
-public class JMoleculesSpringPluginTests {
+class JMoleculesSpringPluginTests {
 
 	@TestFactory
 	Stream<DynamicTest> annotatesTypes() {

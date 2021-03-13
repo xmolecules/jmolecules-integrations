@@ -37,10 +37,10 @@ import org.springframework.util.ReflectionUtils;
 /**
  * @author Oliver Drotbohm
  */
-public class JMoleculesJpaPluginTests {
+class JMoleculesJpaPluginTests {
 
 	@Test
-	public void defaultsAggregateType() throws Exception {
+	void defaultsAggregateType() throws Exception {
 
 		// Defaults @Entity
 		assertThat(SampleAggregate.class.getDeclaredAnnotations())

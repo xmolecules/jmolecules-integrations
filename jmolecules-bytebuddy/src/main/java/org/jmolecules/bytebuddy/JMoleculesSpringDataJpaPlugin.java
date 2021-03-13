@@ -15,27 +15,9 @@
  */
 package org.jmolecules.bytebuddy;
 
-import static org.jmolecules.bytebuddy.PluginUtils.*;
-
-import lombok.extern.slf4j.Slf4j;
-import net.bytebuddy.asm.Advice;
-import net.bytebuddy.asm.Advice.FieldValue;
-import net.bytebuddy.asm.Advice.OnMethodExit;
-import net.bytebuddy.build.Plugin;
-import net.bytebuddy.description.field.FieldDescription.InDefinedShape;
-import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.description.type.TypeDescription;
-import net.bytebuddy.description.type.TypeDescription.Generic;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.DynamicType.Builder;
-import net.bytebuddy.implementation.EqualsMethod;
-import net.bytebuddy.implementation.FieldAccessor;
-import net.bytebuddy.implementation.HashCodeMethod;
-import net.bytebuddy.matcher.ElementMatcher;
-import net.bytebuddy.matcher.ElementMatchers;
-
-import java.io.IOException;
-import java.util.Optional;
 
 import javax.persistence.PostLoad;
 import javax.persistence.PrePersist;
@@ -49,12 +31,16 @@ import org.springframework.data.domain.Persistable;
  *
  * @author Oliver Drotbohm
  */
-@Slf4j
-public class JMoleculesSpringDataJpaPlugin implements Plugin {
+public class JMoleculesSpringDataJpaPlugin extends JMoleculesPluginSupport {
 
-	static final String IS_NEW_METHOD = "isNew";
-	static final String MARK_NOT_NEW_METHOD = "__jMolecules__markNotNew";
-	static final String IS_NEW_FIELD = "__jMolecules__isNew";
+	private static final PluginLogger logger = new PluginLogger("Spring Data JPA");
+	private final PersistableOptions options;
+
+	public JMoleculesSpringDataJpaPlugin() {
+
+		this.options = PersistableOptions.of(Transient.class)
+				.withCallbackAnnotations(PrePersist.class, PostLoad.class);
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -72,90 +58,8 @@ public class JMoleculesSpringDataJpaPlugin implements Plugin {
 	@Override
 	public Builder<?> apply(Builder<?> builder, TypeDescription typeDescription, ClassFileLocator classFileLocator) {
 
-		if (builder.toTypeDescription().isAssignableTo(Persistable.class)) {
-			return builder;
-		}
-
-		InDefinedShape idField = findIdField(builder).orElse(null);
-
-		if (idField == null) {
-			return builder;
-		}
-
-		log.info("jMolecules Spring Data JPA - {} - Implementing Persistable.", typeDescription.getSimpleName());
-
-		// Implement Persistable
-		TypeDescription loadedType = Generic.Builder.rawType(Persistable.class).build().asErasure();
-		builder = builder.implement(Generic.Builder.parameterizedType(loadedType, idField.getType()).build());
-
-		// Add isNew field
-		builder = builder.defineField(IS_NEW_FIELD, boolean.class, Visibility.PRIVATE)
-				.value(true)
-				.annotateField(getAnnotation(Transient.class));
-
-		// Tweak constructors to set the newly introduced field to true.
-		builder = builder.visit(Advice.to(IsNewInitializer.class).on(ElementMatchers.isConstructor()));
-
-		// Add lifecycle callbacks to flip isNew flag
-		builder = new LifecycleMethods(builder, PrePersist.class, PostLoad.class)
-				.apply(() -> Advice.to(NotNewSetter.class), () -> FieldAccessor.ofField(IS_NEW_FIELD).setsValue(false));
-
-		// Add isNew() method
-		builder = builder.defineMethod(IS_NEW_METHOD, boolean.class, Visibility.PUBLIC)
-				.intercept(FieldAccessor.ofField(IS_NEW_FIELD));
-
-		// Equals and hashCode method
-		ElementMatcher<? super InDefinedShape> isIdField = it -> !it.getName().equals(idField.getName());
-
-		builder = builder.defineMethod("equals", boolean.class, Visibility.PUBLIC)
-				.withParameter(Object.class)
-				.intercept(EqualsMethod.isolated().withIgnoredFields(isIdField));
-
-		builder = builder.defineMethod("hashCode", int.class, Visibility.PUBLIC)
-				.intercept(HashCodeMethod.usingDefaultOffset().withIgnoredFields(isIdField));
-
-		return builder;
-	}
-
-	private static Optional<InDefinedShape> findIdField(Builder<?> builder) {
-
-		TypeDescription type = builder.toTypeDescription();
-
-		Generic superType = type.getInterfaces().stream()
-				.filter(it -> it.asErasure().represents(AggregateRoot.class))
-				.findFirst().orElse(null);
-
-		if (superType == null) {
-			return Optional.empty();
-		}
-
-		Generic aggregateIdType = superType.asGenericType().getTypeArguments().get(1);
-
-		return type.getDeclaredFields().stream()
-				.filter(it -> it.getType().equals(aggregateIdType))
-				.findFirst();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see java.io.Closeable#close()
-	 */
-	@Override
-	public void close() throws IOException {}
-
-	public static class IsNewInitializer {
-
-		@OnMethodExit
-		public static void initIsNewAsTrue(@FieldValue(value = IS_NEW_FIELD, readOnly = false) boolean value) {
-			value = true;
-		}
-	}
-
-	public static class NotNewSetter {
-
-		@OnMethodExit
-		public static void initIsNewAsTrue(@FieldValue(value = IS_NEW_FIELD, readOnly = false) boolean value) {
-			value = false;
-		}
+		return JMoleculesType.of(logger, builder)
+				.implementPersistable(options)
+				.conclude();
 	}
 }

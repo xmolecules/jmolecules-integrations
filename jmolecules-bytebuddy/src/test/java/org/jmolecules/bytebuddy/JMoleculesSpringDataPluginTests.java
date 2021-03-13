@@ -38,7 +38,7 @@ import org.springframework.data.repository.RepositoryDefinition;
  *
  * @author Oliver Drotbohm
  */
-public class JMoleculesSpringDataPluginTests<T extends AggregateRoot<T, ID>, ID extends Identifier> {
+class JMoleculesSpringDataPluginTests<T extends AggregateRoot<T, ID>, ID extends Identifier> {
 
 	@TestFactory
 	Stream<DynamicTest> processesSpringDataTypes() {

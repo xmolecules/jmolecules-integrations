@@ -73,7 +73,7 @@ class JMoleculesSpringDataJpaTests {
 	@Test // #28
 	void registersIsNewFieldAndDefaultsThatToTrue() {
 
-		Field isNewField = ReflectionUtils.findField(SampleAggregate.class, JMoleculesSpringDataJpaPlugin.IS_NEW_FIELD);
+		Field isNewField = ReflectionUtils.findField(SampleAggregate.class, PersistableImplementor.IS_NEW_FIELD);
 		assertThat(isNewField).isNotNull();
 		assertThat(isNewField.getAnnotation(Transient.class)).isNotNull();
 
