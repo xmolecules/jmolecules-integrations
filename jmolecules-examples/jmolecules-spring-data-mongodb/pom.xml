@@ -6,12 +6,12 @@
 	<parent>
 		<groupId>org.jmolecules.integrations</groupId>
 		<artifactId>jmolecules-examples</artifactId>
-		<version>0.2.0-SNAPSHOT</version>
+		<version>0.3.0-SNAPSHOT</version>
 	</parent>
 
 	<name>jMolecules - Spring Data MongoDB Example</name>
 	<artifactId>jmolecules-spring-data-mongodb</artifactId>
-	
+
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -37,7 +37,7 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-mongodb</artifactId>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>de.flapdoodle.embed</groupId>
 			<artifactId>de.flapdoodle.embed.mongo</artifactId>
