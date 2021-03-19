@@ -48,14 +48,8 @@ public class Order implements AggregateRoot<Order, Order.OrderId> {
 		this.customer = Association.forAggregate(customer);
 	}
 
-	@Value
-	@RequiredArgsConstructor(staticName = "of")
+	@Value(staticConstructor = "of")
 	public static class OrderId implements Identifier {
-
 		private final UUID orderId;
-
-		public static OrderId create() {
-			return OrderId.of(UUID.randomUUID());
-		}
 	}
 }

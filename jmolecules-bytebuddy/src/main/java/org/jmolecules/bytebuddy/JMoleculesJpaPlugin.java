@@ -97,9 +97,7 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 	private JMoleculesType handleEntity(JMoleculesType type) {
 
 		Function<TypeDescription, Class<? extends Annotation>> selector = it -> !type.isAggregateRoot()
-				&& type.isAbstract()
-						? MappedSuperclass.class
-						: javax.persistence.Entity.class;
+				&& type.isAbstract() ? MappedSuperclass.class : javax.persistence.Entity.class;
 
 		return type.addDefaultConstructorIfMissing()
 				.annotateIdentifierWith(EmbeddedId.class, Id.class)
