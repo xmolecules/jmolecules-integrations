@@ -61,7 +61,6 @@ public class JMoleculesSpringDataMongoDbPlugin extends JMoleculesPluginSupport {
 
 		return JMoleculesType.of(logger, builder)
 				.annotateIdentifierWith(Id.class)
-				// -- see https://github.com/raphw/byte-buddy/issues/1022#issuecomment-797437535
 				.annotateTypeIfMissing(Document.class)
 				.implementPersistable(options)
 				.conclude();

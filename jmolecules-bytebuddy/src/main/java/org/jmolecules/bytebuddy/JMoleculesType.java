@@ -19,6 +19,8 @@ import static net.bytebuddy.matcher.ElementMatchers.*;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import net.bytebuddy.asm.AsmVisitorWrapper;
+import net.bytebuddy.asm.MemberAttributeExtension;
 import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.annotation.AnnotationList;
 import net.bytebuddy.description.annotation.AnnotationSource;
@@ -193,10 +195,12 @@ class JMoleculesType {
 			alreadyAnnotated = alreadyAnnotated.or(ElementMatchers.isAnnotatedWith(filterAnnotation));
 		}
 
-		return JMoleculesType.of(logger, builder
-				.field(PluginUtils.defaultMapping(logger,
-						fieldType(isSubTypeOf(Identifier.class)).and(not(alreadyAnnotated)), idAnnotation))
-				.annotateField(idAnnotation));
+		AsmVisitorWrapper annotationSpec = new MemberAttributeExtension.ForField()
+				.annotate(idAnnotation)
+				.on(PluginUtils.defaultMapping(logger, fieldType(isSubTypeOf(Identifier.class)).and(not(alreadyAnnotated)),
+						idAnnotation));
+
+		return JMoleculesType.of(logger, builder.visit(annotationSpec));
 	}
 
 	public JMoleculesType map(BiFunction<Builder<?>, PluginLogger, Builder<?>> mapper) {

@@ -53,8 +53,7 @@ class JMoleculesJpaPluginTests {
 		// Defaults @EmbeddedId
 		assertThat(SampleAggregate.class.getDeclaredField("id").getAnnotations())
 				.filteredOn(it -> it.annotationType().equals(EmbeddedId.class))
-				.hasSize(0);
-		// .hasSize(1);
+				.hasSize(1);
 
 		// Defaults OneToOne annotation
 		assertThat(SampleAggregate.class.getDeclaredField("entity").getAnnotation(OneToOne.class))
