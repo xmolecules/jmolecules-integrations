@@ -259,6 +259,8 @@ class JMoleculesType {
 				logger.info(
 						"{} - No default constructor found on superclass {}. Skipping default constructor creation.",
 						typeName, superClassName);
+
+				return builder;
 			}
 
 			logger.info("{} - Adding default constructor.", typeName);
