@@ -32,11 +32,14 @@ import org.springframework.util.ReflectionUtils;
  */
 class JMoleculesSpringJpaPluginTests {
 
-	@Test // #27
+	@Test // #27, #36
 	void registersAssociationAttributeConverter() {
 
 		Field field = ReflectionUtils.findField(SampleAggregate.class, "association");
 		Convert annotation = field.getDeclaredAnnotation(Convert.class);
+
+		assertThat(annotation.converter().getPackage().getName())
+				.isEqualTo(SampleAggregate.class.getPackage().getName());
 
 		assertThat(AssociationAttributeConverter.class).isAssignableFrom(annotation.converter());
 	}

@@ -18,6 +18,7 @@ package org.jmolecules.bytebuddy;
 import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.ClassFileVersion;
+import net.bytebuddy.NamingStrategy.SuffixingRandom;
 import net.bytebuddy.build.Plugin;
 import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.field.FieldDescription.InDefinedShape;
@@ -39,6 +40,7 @@ import java.util.stream.Collectors;
 
 import javax.persistence.AttributeConverter;
 import javax.persistence.Convert;
+import javax.persistence.Converter;
 
 import org.jmolecules.ddd.annotation.Entity;
 import org.jmolecules.ddd.types.Association;
@@ -125,7 +127,9 @@ public class JMoleculesSpringJpaPlugin implements Plugin {
 				.parameterizedType(loadedType, aggregateType, idType, getIdPrimitiveType(idType)).build();
 
 		Unloaded<?> converterType = new ByteBuddy(ClassFileVersion.JAVA_V8)
+				.with(new ReferenceTypePackageNamingStrategy(field.getDeclaringType()))
 				.subclass(superType)
+				.annotateType(PluginUtils.getAnnotation(Converter.class))
 				.defineConstructor(Visibility.PACKAGE_PRIVATE)
 				.intercept(MethodCall.invoke(getConverterConstructor()).onSuper().with(idType.asErasure()))
 				.make();
@@ -152,6 +156,32 @@ public class JMoleculesSpringJpaPlugin implements Plugin {
 			return AssociationAttributeConverter.class.getDeclaredConstructor(Class.class);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * A naming strategy that returns a name for a type to be created so that it will be generated into the package of a
+	 * reference type.
+	 *
+	 * @author Oliver Drotbohm
+	 */
+	private static class ReferenceTypePackageNamingStrategy extends SuffixingRandom {
+
+		ReferenceTypePackageNamingStrategy(TypeDescription contextualType) {
+
+			super("jMolecules", new BaseNameResolver() {
+
+				/*
+				 * (non-Javadoc)
+				 * @see net.bytebuddy.NamingStrategy.SuffixingRandom.BaseNameResolver#resolve(net.bytebuddy.description.type.TypeDescription)
+				 */
+				public String resolve(TypeDescription type) {
+
+					return contextualType.getPackage().getName()
+							.concat(".")
+							.concat(type.getSimpleName());
+				}
+			});
 		}
 	}
 }
