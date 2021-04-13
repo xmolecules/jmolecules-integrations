@@ -2,6 +2,7 @@
 
 This module contains core Spring Framework integration for jMolecules abstractions particularly in the domain model and conversion space.
 
+[[association-resolver]]
 == `AssociationResolver`
 
 The `AssociationResolver` is compatible with both jMolecules as well as Spring Data's `CrudRepository`.
@@ -21,7 +22,8 @@ Customers customers = … // obtain repository
 Customer customers.resolveRequired(order.customer); // resolve Association
 ----
 
-== `Converter implementations
+[[identifier-and-association-spring-converters]]
+== `Converter` implementations
 
 The module contains a set of primitive and transitive implementations of Spring's `Converter` infrastructure to convert between primitives, `Identifier` implementations and ``Association``s.
 
@@ -31,6 +33,7 @@ By default, both `String` and `UUID` are supported for that.
 
 Additional converters for the translation back into primitives exist, too.
 
+[[association-jpa-attribute-converter]]
 == Base class for JPA `AttributeConverter` implementations to persist ``Association``s
 
 The `AssociationAttributeConverter` base class allows easy implementation of JPA `AttributeConverter` implementations to persist `Association` instances.
@@ -58,6 +61,7 @@ class Order {
 As you can see, you need to provide a custom sub class of `AssociationAttributeConverter` to set up the converter with the identifier type it is supposed to work with and annotate the `Association` field to use that converter implementation.
 You can avoid all this boilerplate code by using the jMolecules ByteBuddy Plugin that will transparently create such a class based on the type declared in the `Association` declaration and automatically annotate the entity's association field to use the generated converter.
 
+[[persistable-implementation]]
 == Support code to implement for `Persistable` for MongoDB, JPA and JDBC
 
 The link:../jmolecules-bytebuddy[jMolecules ByteBuddy plugin] allows to generate implementations of Spring Data's `Persistable` for domain types mapped by JPA, JDBC and MongoDB.
