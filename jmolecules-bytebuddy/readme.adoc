@@ -1,0 +1,37 @@
+= jMolecules ByteBuddy plugin
+
+This module contains a ByteBuddy plugin implementation that will generate technology specific boilerplate code based on concepts expressed via jMolecules DDD building block interfaces.
+
+* It will transparently add `Persistable` implementations for `AggregateRoot` types for JPA, JDBC and MongoDB.
+* It automatically adds default mapping annotations to make aggregate
+
+== Technology annotation translation
+
+The plugin will translate jMolecules architectural annotations into framework specific ones and vice versa.
+This allows user code to use jMolecules annotations like `@Service` and they're still fully functional e.g. Spring beans as they get Spring's `@Service` annotation added at compile time but at the same time avoids having to double annotate types.
+At the same time, code that uses Spring specific annotations is still able to use tools that expect to find jMolecules annotations for e.g. documentation purposes.
+
+* `o.j.d.a.Repository` <-> `o.s.s.Repository`
+* `o.j.d.a.Service` <-> `o.s.s.Service`
+* `o.j.d.a.Factory` <-> `o.s.s.Component`
+* `o.j.e.a.DomainEventHandler` <-> `o.s.c.e.EventListener`
+
+== Reduce boilerplate for `AggregateRoot` implementations
+
+=== JPA backed aggregates
+
+* Annotates `AggregateRoot` and `Entity` types with `@Entity` and adds a default constructor if missing.
+* Annotates fields implementing `Identifier` with `@EmbeddedId`.
+* Annotates types implementing `Identifier` with `@Embeddable`, implements `Serializable` (required by Hibernate) and declares a default constructor if missing.
+* Annotates fields of type `Entity` with `@OneToOne`, collections of `Entity` with `@OneToMany` defaulting to cascade all persistence operations (i.e. applying composition semantics to the aggregate: the lifecycle of the related entities is tied to the one of the aggregate).
+* Registers a dedicated `AttributeConverter` implementation for the identifier types defined in `Association` fields so that they're automatically persisted as the target identifier.
+The base implementation for that can be found in the `jmolecules-spring` module.
+
+Annotations are only added unless the relevant annotations are already present.
+
+=== `Persistable` implementations for JPA, JDBC and MongoDB
+
+The plugin automatically makes all `AggregateRoot` implementations implement Spring Data's `Persistable` so that they work properly with manually assigned identifier types (usually based on ``UUID``s).
+The implementation is based on `MutablePersistable` defined in the `jmolecules-spring` module and the store specific `NotNewCallback` implementations that interact with the callback APIs of the dedicated stores.
+It also generates a transient `boolean` flag to keep the new state around and properly set that to `false` upon instance load.
+Also, `Entity` implementations are annotated with the store-specific marker like `@Document` for MongoDB and `@Table` for JDBC.

@@ -1,0 +1,64 @@
+= JMolecules Spring integration
+
+This module contains core Spring Framework integration for jMolecules abstractions particularly in the domain model and conversion space.
+
+== `AssociationResolver`
+
+The `AssociationResolver` is compatible with both jMolecules as well as Spring Data's `CrudRepository`.
+That means that Spring Data repository implementations can simply add `AssociationResolver` as additional fragment interface and by that expose API to easily resolve `Association` instances into their target aggregate:
+
+[source, java]
+----
+class Order implements AggregateRoot<Order, OrderIdentifier> {
+  Association<Customer, CustomerIdentifier> customer;
+}
+
+class Customer implements AggregateRoot<Customer, CustomerIdentifier> { /* … */ }
+
+interface Customers implements AssociationResolver<Customer, CustomerIdentifier> { /* … */ }
+
+Customers customers = … // obtain repository
+Customer customers.resolveRequired(order.customer); // resolve Association
+----
+
+== `Converter implementations
+
+The module contains a set of primitive and transitive implementations of Spring's `Converter` infrastructure to convert between primitives, `Identifier` implementations and ``Association``s.
+
+* `PrimitivesToIdentifierConverter` converts from primitive values to `Identifier` implementations by expecting a static factory method named `of(…)` on the identifier type taking the primitive value as argument.
+By default, both `String` and `UUID` are supported for that.
+* `PrimitivesToAssociationConverter` uses the just mentioned one but adds a conversion step using `Association.forId(…)` to create an `Association` instance.
+
+Additional converters for the translation back into primitives exist, too.
+
+== Base class for JPA `AttributeConverter` implementations to persist ``Association``s
+
+The `AssociationAttributeConverter` base class allows easy implementation of JPA `AttributeConverter` implementations to persist `Association` instances.
+If you want to implement them manually, this looks like this:
+
+[source, java]
+----
+@Converter
+class CustomerAssociationConverter extends AssociationAttributeConverter {
+
+  CustomerAssociationConverter() {
+    super(CustomerIdentifier.class);
+  }
+}
+
+@Entity
+class Order {
+
+  @Id OrderIdentifier id;
+  @Convert(converter = CustomerAssociationConverter.class)
+  Association<Customer, CustomerIdentifier> customer;
+}
+----
+
+As you can see, you need to provide a custom sub class of `AssociationAttributeConverter` to set up the converter with the identifier type it is supposed to work with and annotate the `Association` field to use that converter implementation.
+You can avoid all this boilerplate code by using the jMolecules ByteBuddy Plugin that will transparently create such a class based on the type declared in the `Association` declaration and automatically annotate the entity's association field to use the generated converter.
+
+== Support code to implement for `Persistable` for MongoDB, JPA and JDBC
+
+The link:../jmolecules-bytebuddy[jMolecules ByteBuddy plugin] allows to generate implementations of Spring Data's `Persistable` for domain types mapped by JPA, JDBC and MongoDB.
+The necessary infrastructure code (`NotNewCallback`, `MutablePersistable`) is contained in this module.
