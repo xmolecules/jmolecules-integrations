@@ -17,10 +17,14 @@ package org.jmolecules.spring;
 
 import static org.assertj.core.api.Assertions.*;
 
+import lombok.Value;
+
 import java.util.UUID;
 
+import org.jmolecules.ddd.types.Identifier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.convert.ConverterNotFoundException;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
@@ -51,7 +55,7 @@ class PrimitivesToIdentifierConverterUnitTests {
 		assertThat(conversionService.convert(uuid, SampleIdentifier.class).getId()).isEqualTo(uuid);
 		assertThat(conversionService.convert(uuid.toString(), SampleIdentifier.class).getId()).isEqualTo(uuid);
 
-		assertThatExceptionOfType(IllegalStateException.class)
+		assertThatExceptionOfType(ConverterNotFoundException.class)
 				.isThrownBy(() -> converter.convert(1L, LONG_DESCRIPTOR, IDENTIFIER_DESCRIPTOR));
 	}
 
@@ -66,5 +70,26 @@ class PrimitivesToIdentifierConverterUnitTests {
 	@Test // #16
 	void handlesNullValues() {
 		assertThat(converter.convert(null, UUID_DESCRIPTOR, IDENTIFIER_DESCRIPTOR)).isNull();
+	}
+
+	@Test // #46
+	void handlesIdentifierWithoutFactoryMethod() {
+
+		TypeDescriptor descriptor = TypeDescriptor.valueOf(IdentifierWithoutFactoryMethod.class);
+
+		assertThat(converter.matches(STRING_DESCRIPTOR, descriptor)).isTrue();
+		assertThat(converter.matches(UUID_DESCRIPTOR, descriptor)).isTrue();
+		assertThat(converter.matches(TypeDescriptor.valueOf(Long.class), descriptor)).isFalse();
+
+		UUID uuid = UUID.randomUUID();
+		IdentifierWithoutFactoryMethod expected = new IdentifierWithoutFactoryMethod(uuid);
+
+		assertThat(converter.convert(uuid, UUID_DESCRIPTOR, descriptor)).isEqualTo(expected);
+		assertThat(converter.convert(uuid.toString(), STRING_DESCRIPTOR, descriptor)).isEqualTo(expected);
+	}
+
+	@Value
+	static class IdentifierWithoutFactoryMethod implements Identifier {
+		UUID id;
 	}
 }
