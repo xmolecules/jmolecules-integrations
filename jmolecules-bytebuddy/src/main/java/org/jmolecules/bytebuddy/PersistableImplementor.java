@@ -30,15 +30,11 @@ import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.description.type.TypeDescription.Generic;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.DynamicType.Builder;
-import net.bytebuddy.dynamic.DynamicType.Unloaded;
 import net.bytebuddy.implementation.EqualsMethod;
 import net.bytebuddy.implementation.FieldAccessor;
 import net.bytebuddy.implementation.HashCodeMethod;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
-
-import java.io.File;
-import java.io.IOException;
 
 import org.jmolecules.spring.data.MutablePersistable;
 import org.springframework.data.domain.Persistable;
@@ -133,21 +129,11 @@ class PersistableImplementor {
 		Generic callbackType = Generic.Builder
 				.parameterizedType(new TypeDescription.ForLoadedType(options.callbackInterface), typeDescription).build();
 
-		Unloaded<?> callback = new ByteBuddy(ClassFileVersion.JAVA_V8)
+		return new ByteBuddy(ClassFileVersion.JAVA_V8)
 				.subclass(callbackType)
 				.name(typeDescription.getName().concat("JMoleculesCallbacks"))
 				.annotateType(PluginUtils.getAnnotation(Component.class))
 				.make();
-
-		File destination = new File("target/classes");
-
-		try {
-			callback.saveIn(destination);
-		} catch (IOException o_O) {
-			throw new RuntimeException(o_O);
-		}
-
-		return callback;
 	}
 
 	public static class IsNewInitializer {
