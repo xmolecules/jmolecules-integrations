@@ -1,0 +1,67 @@
+buildscript {
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath platform('org.jmolecules:jmolecules-bom:2021.0.2')
+		classpath 'org.jmolecules.integrations:jmolecules-bytebuddy' 
+	}
+}
+
+plugins {
+	id "java"
+	id "eclipse"
+	id "idea"
+	id "org.springframework.boot" version "2.5.2"
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id "net.bytebuddy.byte-buddy-gradle-plugin" version "1.11.8"
+}
+
+sourceCompatibility = 11
+targetCompatibility = 11
+
+repositories {
+	mavenCentral()
+}
+
+gradle.projectsEvaluated {
+     tasks.withType(JavaCompile) {
+         options.compilerArgs << "-parameters"
+     }
+}
+
+dependencies {
+
+	// Lombok
+	implementation 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	testAnnotationProcessor 'org.projectlombok:lombok'
+
+	// Persistence
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'com.h2database:h2'
+	
+	// JMolecules
+	implementation platform('org.jmolecules:jmolecules-bom:2021.0.2')
+	implementation 'org.jmolecules:jmolecules-ddd'
+	implementation 'org.jmolecules:jmolecules-events'
+	implementation 'org.jmolecules.integrations:jmolecules-spring' // only for AssociationResolver
+	implementation 'org.jmolecules.integrations:jmolecules-jpa'
+	
+	// Test
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+byteBuddy {
+	transformation{
+		plugin = org.jmolecules.bytebuddy.JMoleculesPlugin
+	}
+}
+
+test {
+	useJUnitPlatform()
+}
+
+repositories {
+	mavenCentral()
+}

@@ -5,6 +5,71 @@ This module contains a ByteBuddy plugin implementation that will generate techno
 * It will transparently add `Persistable` implementations for `AggregateRoot` types for JPA, JDBC and MongoDB.
 * It automatically adds default mapping annotations to make aggregates work with persistence implementations out of the box.
 
+[[quickstart]]
+== Quickstart
+
+All you need to do to get the technology derivation started is adding the ByteBuddy build plugin to your project and let it work with the `org.jmolecules.integrations:jmolecules-bytebuddy` dependency.
+It will automatically detect which transformations to apply based on your classpath arrangement.
+
+[[quickstart.maven]]
+=== Maven
+
+In the `build/plugins` section of your Maven POM add:
+
+[source, xml]
+----
+<plugin>
+  <groupId>net.bytebuddy</groupId>
+  <artifactId>byte-buddy-maven-plugin</artifactId>
+  <version>${bytebuddy.version}</version>
+  <executions>
+    <execution>
+      <goals>
+        <goal>transform</goal> <!-- Enable the source code transformation -->
+      </goals>
+    </execution>
+  </executions>
+  <dependencies>
+    <dependency> <!-- Apply jMolecules transformations -->
+      <groupId>org.jmolecules.integrations</groupId>
+      <artifactId>jmolecules-bytebuddy</artifactId>
+      <version>${jmolecules.version}</version>
+    </dependency>
+  </dependencies>
+</plugin>
+----
+
+=== Gradle
+
+[source, groovy]
+----
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    classpath platform('org.jmolecules:jmolecules-bom:2021.0.2')
+    classpath 'org.jmolecules.integrations:jmolecules-bytebuddy'
+  }
+}
+
+plugins {
+  id "java"
+  id "net.bytebuddy.byte-buddy-gradle-plugin" version "$byteBuddyVersion"
+}
+
+dependencies {
+  // Depending on which technologies you integrate with
+}
+
+byteBuddy {
+  transformation{
+    // Needs to be declared explicitly
+    plugin = org.jmolecules.bytebuddy.JMoleculesPlugin
+  }
+}
+----
+
 [[annotation-translation]]
 == Technology annotation translation
 
@@ -16,6 +81,20 @@ At the same time, code that uses Spring specific annotations is still able to us
 * `o.j.d.a.Service` <-> `o.s.s.Service`
 * `o.j.d.a.Factory` <-> `o.s.s.Component`
 * `o.j.e.a.DomainEventHandler` <-> `o.s.c.e.EventListener`
+
+NOTE: A repository _interface_ annotated with `o.j.d.a.Repository` will not cause it to be supported by Spring Data out of the box as the jMolecules annotation currently lacks the generics information for the corresponding aggregate root and identifier type that's needed for Spring Data to work properly.
+
+[[interface-translation]]
+== Repository interface translation
+
+Similarly to the <<annotation-translation, annotation translation>>, the build plugin will translate jMolecules DDD `Repository` interface into the Spring Data equivalent if Spring Data is on the classpath.
+
+[source, java]
+----
+interface Orders implements o.j.ddd.types.Repository<Order, OderId> {}
+----
+
+The transformation also carries over the declared generics so that the application repository interface will become a fully-working Spring Data repository instance.
 
 == Reduce boilerplate for `AggregateRoot` implementations
 
