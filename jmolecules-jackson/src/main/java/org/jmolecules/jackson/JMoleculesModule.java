@@ -22,7 +22,8 @@ import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 /**
- * A Jackson {@link Module} to support JMolecules' {@link ValueObject} and {@link Identifier} types.
+ * A Jackson {@link Module} to support JMolecules' {@link ValueObject}, {@link org.jmolecules.ddd.types.ValueObject} and
+ * {@link Identifier} types.
  *
  * @author Oliver Drotbohm
  */

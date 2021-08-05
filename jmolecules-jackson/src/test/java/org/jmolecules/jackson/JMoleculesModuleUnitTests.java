@@ -41,13 +41,16 @@ class JMoleculesModuleUnitTests {
 
 		SampleIdentifier identifier = SampleIdentifier.of(UUID.randomUUID());
 		SampleValueObject valueObject = SampleValueObject.of(42L);
+		ImplementingValueObject implementingValueObject = ImplementingValueObject.of(27L);
+		Document source = new Document(identifier, valueObject, implementingValueObject);
 
-		String result = mapper.writeValueAsString(new Document(identifier, valueObject));
+		String result = mapper.writeValueAsString(source);
 
 		DocumentContext document = JsonPath.parse(result);
 
 		assertThat(document.read("$.identifier", String.class)).isEqualTo(identifier.getId().toString());
 		assertThat(document.read("$.valueObject", Long.class)).isEqualTo(42L);
+		assertThat(document.read("$.implementingValueObject", Long.class)).isEqualTo(27L);
 	}
 
 	@Test // #19
@@ -56,12 +59,14 @@ class JMoleculesModuleUnitTests {
 		String uuidSource = "fe6f3370-5551-4251-86d3-b4db049a7ddd";
 		UUID uuid = UUID.fromString(uuidSource);
 
-		Document document = mapper.readValue(
-				"{ \"identifier\" : \"" + uuidSource + "\", \"valueObject\" : 42 }",
+		Document document = mapper.readValue("{ \"identifier\" : \"" + uuidSource + "\","
+				+ " \"valueObject\" : 42,"
+				+ " \"implementingValueObject\" : 27 }",
 				Document.class);
 
 		assertThat(document.identifier).isEqualTo(SampleIdentifier.of(uuid));
 		assertThat(document.valueObject).isEqualTo(SampleValueObject.of(42L));
+		assertThat(document.implementingValueObject).isEqualTo(ImplementingValueObject.of(27L));
 	}
 
 	@Data
@@ -70,6 +75,7 @@ class JMoleculesModuleUnitTests {
 	static class Document {
 		SampleIdentifier identifier;
 		SampleValueObject valueObject;
+		ImplementingValueObject implementingValueObject;
 	}
 
 	@Value(staticConstructor = "of")
@@ -81,5 +87,10 @@ class JMoleculesModuleUnitTests {
 	@Value(staticConstructor = "of")
 	static class SampleValueObject {
 		Long number;
+	}
+
+	@Value(staticConstructor = "of")
+	static class ImplementingValueObject implements org.jmolecules.ddd.types.ValueObject {
+		Long value;
 	}
 }

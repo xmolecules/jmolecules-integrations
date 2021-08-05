@@ -57,6 +57,7 @@ class SingleValueWrappingTypeSerializerModifier extends BeanSerializerModifier {
 		Class<?> type = description.getBeanClass();
 
 		if (AnnotatedElementUtils.hasAnnotation(type, ValueObject.class)
+				|| org.jmolecules.ddd.types.ValueObject.class.isAssignableFrom(type)
 				|| Identifier.class.isAssignableFrom(type)) {
 			return new SingleAttributeSerializer(properties.get(0).getAccessor());
 		}

@@ -62,6 +62,7 @@ class SingleValueWrappingTypeDeserializerModifier extends BeanDeserializerModifi
 		Class<?> type = descriptor.getBeanClass();
 
 		if (DETECTOR.hasAnnotation(type, ValueObject.class)
+				|| org.jmolecules.ddd.types.ValueObject.class.isAssignableFrom(type)
 				|| Identifier.class.isAssignableFrom(type)) {
 
 			BeanPropertyDefinition definition = properties.get(0);
