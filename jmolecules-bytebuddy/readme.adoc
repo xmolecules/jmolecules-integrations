@@ -33,7 +33,7 @@ In the `build/plugins` section of your Maven POM add:
     <dependency> <!-- Apply jMolecules transformations -->
       <groupId>org.jmolecules.integrations</groupId>
       <artifactId>jmolecules-bytebuddy</artifactId>
-      <version>${jmolecules.version}</version>
+      <version>${jmolecules-integrations.version}</version>
     </dependency>
   </dependencies>
 </plugin>
