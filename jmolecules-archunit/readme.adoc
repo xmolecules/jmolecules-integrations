@@ -18,18 +18,27 @@ The provided rules can then be used in a JUnit test as follows:
 
 [source, java, tabsize="2"]
 ----
-@AnalyzeClasses(packages = "example")
+@AnalyzeClasses(packages = "example") // <1>
 class JMoleculesRulesUnitTest {
 
-  @ArchTest
+  @ArchTest ArchRule dddRules = JMoleculesDddRules.all(); // <2>
+  @ArchTest ArchRule onion = JMoleculesArchitectureRules.ensureOnionSimple(); // <2>
+
+  // alternatively
+
+  @ArchTest // <3>
   void detectsViolations(JavaClasses classes) {
 
-    EvaluationResult result = JMoleculesRules.all().evaluate(classes);
+    EvaluationResult result = JMoleculesDddRules.all().evaluate(classes);
 
     assertThat(result.hasViolation()).isFalse();
   }
 }
 ----
+<1> The `@AnalyzeClasses(…)` annotation defines the scope of the classes to be verified.
+This is likely to be the base package of your application.
+<2> The property style architecture definition can be used simply declaring the rule as a field annotated with `@ArchTest`.
+ArchUnit will verify the classes pointed to by <1> and the test will fail if violations occur.
+<3> If you prefer to manually evaluate the violations, you can also declare a method annotated with `@ArchTest` and get the classes scanned for handed in as method argument.
 
-This test bootstraps ArchUnit, includes all classes contained in the package `example` and verifies all classes contained in it using the `JMoleculesRules.all()` rule.
-For detailed information about the rules, be sure to check out the method definitions of `JMoleculesRules` https://github.com/xmolecules/jmolecules-integrations/blob/main/jmolecules-archunit/src/main/java/org/jmolecules/archunit/JMoleculesRules.java[here].
+For detailed information about the rules, be sure to check out the types and method definitions in  https://github.com/xmolecules/jmolecules-integrations/blob/main/jmolecules-archunit/src/main/java/org/jmolecules/archunit[`org.jmolecules.archunit`].
