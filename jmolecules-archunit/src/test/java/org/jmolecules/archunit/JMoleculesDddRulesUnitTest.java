@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors.
+ * Copyright 2020-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,18 @@
 package org.jmolecules.archunit;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.jmolecules.archunit.TestUtils.*;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
+import org.jmolecules.ddd.annotation.Identity;
 import org.jmolecules.ddd.types.AggregateRoot;
 import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Entity;
 import org.jmolecules.ddd.types.Identifier;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
-import com.tngtech.archunit.core.domain.JavaField;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.EvaluationResult;
@@ -38,7 +37,7 @@ import com.tngtech.archunit.lang.EvaluationResult;
  *
  * @author Oliver Drotbohm
  */
-@AnalyzeClasses(packages = "org.jmolecules")
+@AnalyzeClasses(packages = "org.jmolecules.archunit")
 class JMoleculesDddRulesUnitTest {
 
 	@ArchTest
@@ -46,24 +45,16 @@ class JMoleculesDddRulesUnitTest {
 
 		EvaluationResult result = JMoleculesDddRules.all().evaluate(classes);
 
-		List<String> invalidProperties = Arrays.asList("invalid", //
-				"invalidInCollection", //
-				"invalidInMap", //
-				"invalidAggregate", //
-				"invalidAggregateInCollection", //
-				"invalidAggregateInMap", //
-				"invalidAnnotatedAggregate");
-
-		assertThat(result.hasViolation()).isTrue();
-		assertThat(result.getFailureReport().getDetails()).hasSize(invalidProperties.size());
-
-		result.handleViolations((objects, message) -> {
-			assertThat(objects).allSatisfy(it -> {
-				assertThat(it).isInstanceOfSatisfying(JavaField.class, field -> {
-					assertThat(field.getName()).isIn(invalidProperties);
-				});
-			});
-		});
+		assertThat(result.getFailureReport().getDetails())
+				.satisfiesExactlyInAnyOrder( //
+						violation(SampleAggregate.class, "invalid", OtherEntity.class, OtherAggregate.class),
+						violation(SampleAggregate.class, "invalidAggregate", OtherAggregate.class, Association.class), //
+						violation(SampleAggregate.class, "invalidAggregateInCollection", Collection.class, Association.class), //
+						violation(SampleAggregate.class, "invalidAggregateInMap", Map.class, Association.class), //
+						violation(SampleAggregate.class, "invalidAnnotatedAggregate", AnnotatedAggregate.class, Association.class), //
+						violation(SampleAggregate.class, "invalidInCollection", Collection.class, OtherAggregate.class), //
+						violation(SampleAggregate.class, "invalidInMap", Map.class, OtherAggregate.class), //
+						violation("Type.*%s.*%s.*", AnnotatedAggregate.class.getSimpleName(), Identity.class.getName()));
 	}
 
 	static class SampleIdentifier implements Identifier {}

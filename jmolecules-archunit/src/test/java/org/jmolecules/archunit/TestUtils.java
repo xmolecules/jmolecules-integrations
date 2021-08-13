@@ -18,6 +18,10 @@ package org.jmolecules.archunit;
 import static org.assertj.core.api.Assertions.*;
 
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.springframework.util.ClassUtils;
 
 /**
  * @author Oliver Drotbohm
@@ -34,5 +38,31 @@ class TestUtils {
 			assertThat(value.indexOf(to.getName())).isGreaterThan(fromIndex)
 					.describedAs("Did not find target type %s.", to.getName());
 		};
+	}
+
+	static Consumer<String> violation(String template, Object... arguments) {
+
+		String expanded = String.format(template, arguments);
+
+		return value -> {
+			assertThat(value).matches(expanded);
+		};
+	}
+
+	static Consumer<String> violation(Class<?> source, String field, Class<?> expected, Class<?> actual) {
+
+		return violation("Field.*%s\\.%s.*%s.*%s.*", //
+				source.getSimpleName(), field, expected.getSimpleName(), actual.getSimpleName());
+	}
+
+	static String abbreviate(Class<?> type) {
+
+		String abbreviatedPackage = Stream //
+				.of(type.getPackage().getName().split("\\.")) //
+				.map(it -> it.substring(0, 1)) //
+				.collect(Collectors.joining("."));
+
+		return abbreviatedPackage.concat(".") //
+				.concat(ClassUtils.getShortName(type.getName()));
 	}
 }

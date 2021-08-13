@@ -16,18 +16,22 @@
 package org.jmolecules.archunit;
 
 import static com.tngtech.archunit.base.DescribedPredicate.*;
+import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.*;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Map;
 
+import org.jmolecules.ddd.annotation.Identity;
 import org.jmolecules.ddd.types.AggregateRoot;
 import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Entity;
+import org.jmolecules.ddd.types.Identifier;
 import org.springframework.core.ResolvableType;
 
 import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaField;
 import com.tngtech.archunit.core.domain.properties.CanBeAnnotated;
 import com.tngtech.archunit.lang.ArchCondition;
@@ -62,7 +66,8 @@ public class JMoleculesDddRules {
 
 		return CompositeArchRule //
 				.of(entitiesShouldBeDeclaredForUseInSameAggregate()) //
-				.and(aggregateReferencesShouldBeViaIdOrAssociation());
+				.and(aggregateReferencesShouldBeViaIdOrAssociation()) //
+				.and(annotatedEntitiesAndAggregatesNeedToHaveAnIdentifier());
 	}
 
 	/**
@@ -113,6 +118,24 @@ public class JMoleculesDddRules {
 				.that(areAssignableTo(AggregateRoot.class))
 				.or(hasFieldTypeAnnotatedWith(org.jmolecules.ddd.annotation.AggregateRoot.class)) //
 				.should(new ShouldUseIdReferenceOrAssociation());
+	}
+
+	/**
+	 * Verifies that classes annotated with {@link org.jmolecules.ddd.annotation.AggregateRoot} or
+	 * {@link org.jmolecules.ddd.annotation.Entity} declare a field annotated with {@link Identifier}.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public static ArchRule annotatedEntitiesAndAggregatesNeedToHaveAnIdentifier() {
+
+		DescribedPredicate<CanBeAnnotated> areIdentifiable = annotatedWith(
+				org.jmolecules.ddd.annotation.AggregateRoot.class)
+						.or(annotatedWith(org.jmolecules.ddd.annotation.Entity.class));
+
+		return ArchRuleDefinition.classes()
+				.that(areIdentifiable)
+				.and().areNotAnnotations()
+				.should(new DeclaresAnnotatedField(Identity.class));
 	}
 
 	private static IsDeclaredToUseTheSameAggregate beDeclaredToBeUsedWithDeclaringAggregate() {
@@ -244,6 +267,37 @@ public class JMoleculesDddRules {
 			}
 
 			return fieldType;
+		}
+	}
+
+	private static class DeclaresAnnotatedField extends ArchCondition<JavaClass> {
+
+		private final Class<? extends Annotation> annotation;
+
+		DeclaresAnnotatedField(Class<? extends Annotation> annotation) {
+
+			super("declares field (meta-)annotated with %s", annotation.getName());
+
+			this.annotation = annotation;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see com.tngtech.archunit.lang.ArchCondition#check(java.lang.Object, com.tngtech.archunit.lang.ConditionEvents)
+		 */
+		@Override
+		public void check(JavaClass input, ConditionEvents events) {
+
+			boolean annotatedFieldDeclared = input.getAllFields().stream()
+					.anyMatch(it -> it.isAnnotatedWith(annotation) || it.isMetaAnnotatedWith(annotation));
+
+			if (!annotatedFieldDeclared) {
+
+				String message = String.format("Type %s must declare a field annotated with %s!", //
+						FormatableJavaClass.of(input).getAbbreviatedFullName(), annotation.getName());
+
+				events.add(SimpleConditionEvent.violated(input, message));
+			}
 		}
 	}
 }
