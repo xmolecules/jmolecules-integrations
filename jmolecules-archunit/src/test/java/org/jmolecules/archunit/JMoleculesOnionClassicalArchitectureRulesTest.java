@@ -38,7 +38,7 @@ import com.tngtech.archunit.lang.EvaluationResult;
  * @author Oliver Drotbohm
  */
 @AnalyzeClasses(packagesOf = OnionClassical.class)
-public class JMoleculesOnionClassicalArchitectureRulesTest {
+class JMoleculesOnionClassicalArchitectureRulesTest {
 
 	@ArchTest
 	void ensureOnionClasical(JavaClasses types) {

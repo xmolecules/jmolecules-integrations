@@ -36,7 +36,7 @@ import com.tngtech.archunit.lang.EvaluationResult;
  * @author Oliver Drotbohm
  */
 @AnalyzeClasses(packagesOf = OnionSimple.class)
-public class JMoleculesOnionSimpleArchitectureRulesTest {
+class JMoleculesOnionSimpleArchitectureRulesTest {
 
 	@ArchTest
 	void ensureOnionSimple(JavaClasses types) {

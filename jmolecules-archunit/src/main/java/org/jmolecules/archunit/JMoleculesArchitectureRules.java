@@ -16,7 +16,6 @@
 package org.jmolecules.archunit;
 
 import java.lang.annotation.Annotation;
-import java.util.Arrays;
 
 import org.jmolecules.architecture.layered.ApplicationLayer;
 import org.jmolecules.architecture.layered.DomainLayer;
@@ -172,14 +171,6 @@ public class JMoleculesArchitectureRules {
 				.layer(ONION_SIMPLE_INFRASTRUCTURE).definedBy(layerType(InfrastructureRing.class))
 				.layer(ONION_SIMPLE_APPLICATION).definedBy(layerType(ApplicationRing.class))
 				.layer(ONION_SIMPLE_DOMAIN).definedBy(layerType(DomainRing.class));
-	}
-
-	@SafeVarargs
-	private static DescribedPredicate<JavaClass> noLayerType(Class<? extends Annotation>... annotations) {
-
-		return Arrays.stream(annotations)
-				.<DescribedPredicate<JavaClass>> map(IsLayerType::new)
-				.reduce(DescribedPredicate.alwaysFalse(), DescribedPredicate::or);
 	}
 
 	private static DescribedPredicate<JavaClass> layerType(Class<? extends Annotation> annotation) {

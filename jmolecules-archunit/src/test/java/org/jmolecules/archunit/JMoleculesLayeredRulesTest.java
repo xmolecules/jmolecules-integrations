@@ -39,7 +39,7 @@ import com.tngtech.archunit.lang.EvaluationResult;
  * @author Oliver Drotbohm
  */
 @AnalyzeClasses(packagesOf = Layered.class)
-public class JMoleculesLayeredRulesTest {
+class JMoleculesLayeredRulesTest {
 
 	@ArchTest
 	void ensureLayering(JavaClasses types) {
