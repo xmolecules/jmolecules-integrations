@@ -129,6 +129,9 @@ public class JMoleculesDddRules {
 
 	private static class IsDeclaredToUseTheSameAggregate extends ArchCondition<JavaField> {
 
+		private static final ResolvableType COLLECTION_TYPE = ResolvableType.forClass(Collection.class);
+		private static final ResolvableType MAP_TYPE = ResolvableType.forClass(Map.class);
+
 		private IsDeclaredToUseTheSameAggregate() {
 			super("belong to aggregate the field is declared in", new Object[] {});
 		}
@@ -141,7 +144,7 @@ public class JMoleculesDddRules {
 		public void check(JavaField item, ConditionEvents events) {
 
 			Field field = item.reflect();
-			ResolvableType type = ResolvableType.forField(field);
+			ResolvableType type = getActualType(ResolvableType.forField(field));
 			ResolvableType expectedAggregateType = type.as(Entity.class).getGeneric(0);
 			ResolvableType owningType = ResolvableType.forClass(field.getDeclaringClass());
 
@@ -152,6 +155,15 @@ public class JMoleculesDddRules {
 							String.format("Field %s.%s is of type %s and declared to be used from aggregate %s!", ownerName,
 									item.getName(), item.getRawType().getSimpleName(),
 									expectedAggregateType.resolve(Object.class).getSimpleName())));
+		}
+
+		private static ResolvableType getActualType(ResolvableType type) {
+
+			if (COLLECTION_TYPE.isAssignableFrom(type)) {
+				return type.getGeneric(0);
+			}
+
+			return MAP_TYPE.isAssignableFrom(type) ? type.getGeneric(1) : type;
 		}
 	}
 
