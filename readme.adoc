@@ -14,6 +14,3 @@ This repository contains a variety of integrations of jMolecules abstractions in
 * link:jmolecules-jackson[`jmolecules-jackson`] -- Runtime library to make concepts from `jmolecules-ddd` work with Jackson out of the box.
 ** A Jackson module to tweak the serialization of single attribute `@ValueObject` and `Identifier` instances to (de)serializes (from) as their wrapped instances.
 ** Spring Boot auto-configuration to transparently register the module with Jackson in Spring Boot applications.
-
-== Examples
-* link:jmolecules-examples[`jmolecules-examples`] -- A collection of examples to showcase the usage of the concept types and annotations as well as the technology integration.
