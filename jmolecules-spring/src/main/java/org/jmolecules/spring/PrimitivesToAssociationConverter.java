@@ -42,7 +42,7 @@ import org.springframework.util.ReflectionUtils;
  *
  * @author Oliver Drotbohm
  */
-public class PrimitivesToAssociationConverter<T extends AggregateRoot<T, Identifier>>
+public class PrimitivesToAssociationConverter<T extends AggregateRoot<T, ID>, ID extends Identifier<T, ID>>
 		implements GenericConverter {
 
 	private static final Map<FactoryMethodKey, Method> CACHE = new ConcurrentReferenceHashMap<>();

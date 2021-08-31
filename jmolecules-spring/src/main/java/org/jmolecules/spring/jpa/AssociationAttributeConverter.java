@@ -37,14 +37,14 @@ import org.springframework.util.Assert;
  * @see PrimitivesToAssociationConverter
  * @see AssociationToPrimitivesConverter
  */
-public class AssociationAttributeConverter<T extends AggregateRoot<T, ID>, ID extends Identifier, S>
+public class AssociationAttributeConverter<T extends AggregateRoot<T, ID>, ID extends Identifier<T, ID>, S>
 		implements AttributeConverter<Association<T, ID>, S> {
 
 	private static ConversionService CONVERSION_SERVICE = DefaultConversionService.getSharedInstance();
 	private static TypeDescriptor OBJECT_TYPE_DESCRIPTOR = TypeDescriptor.valueOf(Object.class);
 
-	private final PrimitivesToAssociationConverter<?> toAssociation;
-	private final AssociationToPrimitivesConverter<?> toPrimitive;
+	private final PrimitivesToAssociationConverter<?, ?> toAssociation;
+	private final AssociationToPrimitivesConverter<?, ?> toPrimitive;
 	private final TypeDescriptor idTypeDescriptor;
 
 	/**

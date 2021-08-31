@@ -25,7 +25,7 @@ import org.springframework.util.Assert;
 /**
  * @author Oliver Drotbohm
  */
-public interface AssociationResolver<T extends AggregateRoot<T, ID>, ID extends Identifier>
+public interface AssociationResolver<T extends AggregateRoot<T, ID>, ID extends Identifier<T, ID>>
 		extends AggregateLookup<T, ID> {
 
 	/**

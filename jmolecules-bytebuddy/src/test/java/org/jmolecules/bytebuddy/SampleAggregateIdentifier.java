@@ -20,6 +20,6 @@ import org.jmolecules.ddd.types.Identifier;
 /**
  * @author Oliver Drotbohm
  */
-public class SampleAggregateIdentifier implements Identifier {
+public class SampleAggregateIdentifier implements Identifier<SampleAggregate, SampleAggregateIdentifier> {
 	String id;
 }

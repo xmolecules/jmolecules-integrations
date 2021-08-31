@@ -16,6 +16,7 @@
 package org.jmolecules.spring.data;
 
 import org.jmolecules.ddd.types.Identifiable;
+import org.jmolecules.ddd.types.Identifier;
 import org.springframework.data.domain.Persistable;
 
 /**
@@ -23,7 +24,8 @@ import org.springframework.data.domain.Persistable;
  *
  * @author Oliver Drotbohm
  */
-public interface MutablePersistable<T extends Identifiable<ID>, ID> extends Persistable<ID>, Identifiable<ID> {
+public interface MutablePersistable<T extends Identifiable<T, ID>, ID extends Identifier<T, ID>>
+		extends Persistable<ID>, Identifiable<T, ID> {
 
 	void __jMolecules__markNotNew();
 }

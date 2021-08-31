@@ -40,7 +40,7 @@ class JMoleculesSpringDataJpaTests {
 	SampleAggregateIdentifier id = new SampleAggregateIdentifier();
 
 	@SuppressWarnings("unchecked") //
-	Persistable<?> persistable = (Persistable<?>) new SampleAggregate(id);
+	Persistable<SampleAggregateIdentifier> persistable = (Persistable<SampleAggregateIdentifier>) new SampleAggregate(id);
 
 	@Test // #28
 	void implementsPersistable() {

@@ -35,7 +35,7 @@ import org.springframework.util.Assert;
  * @author Oliver Drotbohm
  * @see IdentifierToPrimitivesConverter
  */
-public class AssociationToPrimitivesConverter<T extends AggregateRoot<T, Identifier>>
+public class AssociationToPrimitivesConverter<T extends AggregateRoot<T, ID>, ID extends Identifier<T, ID>>
 		implements GenericConverter {
 
 	private static final TypeDescriptor OBJECT_DESCRIPTOR = TypeDescriptor.valueOf(Object.class);
@@ -89,7 +89,7 @@ public class AssociationToPrimitivesConverter<T extends AggregateRoot<T, Identif
 			return null;
 		}
 
-		Identifier identifier = ((Association<?, Identifier>) source).getId();
+		Identifier<?, ?> identifier = ((Association<?, ?>) source).getId();
 
 		if (identifier == null) {
 			throw new IllegalStateException(

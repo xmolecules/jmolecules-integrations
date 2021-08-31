@@ -38,7 +38,7 @@ import org.springframework.data.repository.RepositoryDefinition;
  *
  * @author Oliver Drotbohm
  */
-class JMoleculesSpringDataPluginTests<T extends AggregateRoot<T, ID>, ID extends Identifier> {
+class JMoleculesSpringDataPluginTests<T extends AggregateRoot<T, ID>, ID extends Identifier<T, ID>> {
 
 	@TestFactory
 	Stream<DynamicTest> processesSpringDataTypes() {
@@ -60,12 +60,14 @@ class JMoleculesSpringDataPluginTests<T extends AggregateRoot<T, ID>, ID extends
 	@SuppressWarnings("rawtypes")
 	interface RawJMoleculesRepository extends org.jmolecules.ddd.types.Repository {};
 
-	interface JMoleculesRepository extends org.jmolecules.ddd.types.Repository<SampleAggregate, Identifier> {};
+	interface JMoleculesRepository extends org.jmolecules.ddd.types.Repository<SampleAggregate, SampleIdentifier> {};
 
 	@Getter
-	static class SampleAggregate implements AggregateRoot<SampleAggregate, Identifier> {
-		Identifier id;
+	static class SampleAggregate implements AggregateRoot<SampleAggregate, SampleIdentifier> {
+		SampleIdentifier id;
 	}
+
+	static class SampleIdentifier implements Identifier<SampleAggregate, SampleIdentifier> {}
 
 	interface DynamicTestSource<T> {
 

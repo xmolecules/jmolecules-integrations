@@ -16,6 +16,7 @@
 package org.jmolecules.bytebuddy;
 
 import org.jmolecules.ddd.types.Entity;
+import org.jmolecules.ddd.types.Identifier;
 
 /**
  * @author Oliver Drotbohm
@@ -24,7 +25,7 @@ import org.jmolecules.ddd.types.Entity;
 public abstract class SampleBaseClass implements Entity {
 
 	@Override
-	public Object getId() {
+	public Identifier getId() {
 		return null;
 	}
 }

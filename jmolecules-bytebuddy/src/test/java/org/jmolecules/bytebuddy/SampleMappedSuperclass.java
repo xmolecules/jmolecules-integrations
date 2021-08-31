@@ -18,6 +18,7 @@ package org.jmolecules.bytebuddy;
 import javax.persistence.MappedSuperclass;
 
 import org.jmolecules.ddd.types.Entity;
+import org.jmolecules.ddd.types.Identifier;
 
 /**
  * @author Oliver Drotbohm
@@ -27,7 +28,7 @@ import org.jmolecules.ddd.types.Entity;
 abstract class SampleMappedSuperclass implements Entity {
 
 	@Override
-	public Object getId() {
+	public Identifier getId() {
 		return null;
 	}
 }

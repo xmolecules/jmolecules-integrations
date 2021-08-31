@@ -21,6 +21,7 @@ import lombok.Value;
 
 import java.util.UUID;
 
+import org.jmolecules.ddd.types.AggregateRoot;
 import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Identifier;
 import org.junit.jupiter.api.Test;
@@ -32,7 +33,7 @@ import org.junit.jupiter.api.Test;
  */
 class AssociationAttributeConverterTests {
 
-	AssociationAttributeConverter<?, SampleIdentifier, UUID> converter = new AssociationAttributeConverter<>(
+	AssociationAttributeConverter<SampleIdentifiable, SampleIdentifier, UUID> converter = new AssociationAttributeConverter<SampleIdentifiable, SampleIdentifier, UUID>(
 			SampleIdentifier.class);
 
 	UUID uuid = UUID.randomUUID();
@@ -48,8 +49,13 @@ class AssociationAttributeConverterTests {
 		assertThat(converter.convertToEntityAttribute(uuid)).isEqualTo(Association.forId(identifier));
 	}
 
+	@Value
+	static class SampleIdentifiable implements AggregateRoot<SampleIdentifiable, SampleIdentifier> {
+		SampleIdentifier id;
+	}
+
 	@Value(staticConstructor = "of")
-	static class SampleIdentifier implements Identifier {
+	static class SampleIdentifier implements Identifier<SampleIdentifiable, SampleIdentifier> {
 		UUID id;
 	}
 }

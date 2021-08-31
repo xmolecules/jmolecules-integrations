@@ -15,18 +15,20 @@
  */
 package org.jmolecules.spring;
 
+import org.jmolecules.ddd.types.Identifier;
+import org.jmolecules.spring.SamplePersistable.SampleIdentifier;
 import org.jmolecules.spring.data.MutablePersistable;
 
-public class SamplePersistable implements MutablePersistable<SamplePersistable, Object> {
+public class SamplePersistable implements MutablePersistable<SamplePersistable, SampleIdentifier> {
 
-	private Object id;
+	private SampleIdentifier id;
 
 	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.domain.Persistable#getId()
 	 */
 	@Override
-	public Object getId() {
+	public SampleIdentifier getId() {
 		return id;
 	}
 
@@ -45,6 +47,8 @@ public class SamplePersistable implements MutablePersistable<SamplePersistable, 
 	 */
 	@Override
 	public void __jMolecules__markNotNew() {
-		this.id = new Object();
+		this.id = new SampleIdentifier();
 	}
+
+	static class SampleIdentifier implements Identifier<SamplePersistable, SampleIdentifier> {}
 }

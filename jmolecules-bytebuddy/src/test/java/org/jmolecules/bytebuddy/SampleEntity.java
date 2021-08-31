@@ -17,14 +17,17 @@ package org.jmolecules.bytebuddy;
 
 import lombok.Getter;
 
+import org.jmolecules.bytebuddy.SampleEntity.SampleIdentifier;
 import org.jmolecules.ddd.types.Entity;
+import org.jmolecules.ddd.types.Identifier;
 
 /**
  * @author Oliver Drotbohm
  */
 @Getter
-public class SampleEntity implements Entity<SampleAggregate, Long> {
+public class SampleEntity implements Entity<SampleAggregate, SampleIdentifier, SampleEntity> {
 
-	private Long id;
+	private SampleIdentifier id;
 
+	static class SampleIdentifier implements Identifier<SampleEntity, SampleIdentifier> {}
 }

@@ -32,11 +32,11 @@ import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.util.ReflectionUtils;
 
-class AssociationConversionUnitTests<T extends AggregateRoot<T, Identifier>> {
+class AssociationConversionUnitTests<T extends AggregateRoot<T, ID>, ID extends Identifier<T, ID>> {
 
 	Supplier<ConversionService> conversionService = () -> DefaultConversionService.getSharedInstance();
-	AssociationToPrimitivesConverter<T> writing = new AssociationToPrimitivesConverter<>(conversionService);
-	PrimitivesToAssociationConverter<?> reading = new PrimitivesToAssociationConverter<>(conversionService);
+	AssociationToPrimitivesConverter<T, ID> writing = new AssociationToPrimitivesConverter<>(conversionService);
+	PrimitivesToAssociationConverter<?, ?> reading = new PrimitivesToAssociationConverter<>(conversionService);
 
 	UUID uuid = UUID.randomUUID();
 	SampleAggregateIdentifier identifier = SampleAggregateIdentifier.of(uuid);
@@ -116,7 +116,7 @@ class AssociationConversionUnitTests<T extends AggregateRoot<T, Identifier>> {
 	}
 
 	@Value(staticConstructor = "of")
-	static class SampleAggregateIdentifier implements Identifier {
+	static class SampleAggregateIdentifier implements Identifier<SampleAggregate, SampleAggregateIdentifier> {
 		UUID uuid;
 	}
 

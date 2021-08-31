@@ -57,9 +57,9 @@ class JMoleculesDddRulesUnitTest {
 						violation("Type.*%s.*%s.*", AnnotatedAggregate.class.getSimpleName(), Identity.class.getName()));
 	}
 
-	static class SampleIdentifier implements Identifier {}
+	static class SampleAggregateIdentifier implements Identifier<SampleAggregate, SampleAggregateIdentifier> {}
 
-	static abstract class SampleAggregate implements AggregateRoot<SampleAggregate, SampleIdentifier> {
+	static abstract class SampleAggregate implements AggregateRoot<SampleAggregate, SampleAggregateIdentifier> {
 
 		SampleEntity valid;
 
@@ -73,14 +73,20 @@ class JMoleculesDddRulesUnitTest {
 
 		AnnotatedAggregate invalidAnnotatedAggregate;
 
-		Association<OtherAggregate, SampleIdentifier> association;
+		Association<OtherAggregate, OtherAggregateIdentifier> association;
 	}
 
-	static abstract class SampleEntity implements Entity<SampleAggregate, SampleIdentifier> {}
+	static abstract class SampleEntity implements Entity<SampleAggregate, SampleEntityIdentifier, SampleEntity> {}
 
-	static abstract class OtherAggregate implements AggregateRoot<OtherAggregate, SampleIdentifier> {}
+	static class SampleEntityIdentifier implements Identifier<SampleEntity, SampleEntityIdentifier> {}
 
-	static abstract class OtherEntity implements Entity<OtherAggregate, SampleIdentifier> {}
+	static abstract class OtherAggregate implements AggregateRoot<OtherAggregate, OtherAggregateIdentifier> {}
+
+	static class OtherAggregateIdentifier implements Identifier<OtherAggregate, OtherAggregateIdentifier> {}
+
+	static abstract class OtherEntity implements Entity<OtherAggregate, OtherEntityIdentifier, OtherEntity> {}
+
+	static class OtherEntityIdentifier implements Identifier<OtherEntity, OtherEntityIdentifier> {}
 
 	@org.jmolecules.ddd.annotation.AggregateRoot
 	static class AnnotatedAggregate {}
