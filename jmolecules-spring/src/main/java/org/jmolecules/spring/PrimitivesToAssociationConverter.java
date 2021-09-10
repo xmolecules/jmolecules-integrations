@@ -88,7 +88,7 @@ public class PrimitivesToAssociationConverter<T extends AggregateRoot<T, Identif
 	 */
 	@Nullable
 	@Override
-	public Object convert(Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
+	public Association<?, ?> convert(Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
 
 		if (source == null) {
 			return null;
@@ -108,7 +108,7 @@ public class PrimitivesToAssociationConverter<T extends AggregateRoot<T, Identif
 		FactoryMethodKey key = FactoryMethodKey.of(associationType, identifierType);
 		Method method = CACHE.computeIfAbsent(key, it -> it.findFactoryMethod());
 
-		return ReflectionUtils.invokeMethod(method, null, id);
+		return (Association<?, ?>) ReflectionUtils.invokeMethod(method, null, id);
 	}
 
 	private Identifier resolveIdentifier(Object source, ResolvableType type, Class<?> identifierType) {

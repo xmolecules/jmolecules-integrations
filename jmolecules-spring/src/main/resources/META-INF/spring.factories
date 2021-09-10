@@ -1,1 +1,3 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=org.jmolecules.spring.config.JMoleculesWebAutoConfiguration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+org.jmolecules.spring.config.JMoleculesSpringJacksonAutoConfiguration,\
+org.jmolecules.spring.config.JMoleculesWebAutoConfiguration

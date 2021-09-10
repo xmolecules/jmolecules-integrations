@@ -43,7 +43,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnWebApplication(type = Type.SERVLET)
-public class JMoleculesWebAutoConfiguration {
+class JMoleculesWebAutoConfiguration {
 
 	@Bean
 	WebMvcConfigurer jMoleculesWebMvcConfigurer() {
