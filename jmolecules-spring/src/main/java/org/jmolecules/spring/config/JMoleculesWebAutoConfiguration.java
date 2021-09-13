@@ -15,8 +15,6 @@
  */
 package org.jmolecules.spring.config;
 
-import java.util.function.Supplier;
-
 import org.jmolecules.spring.AssociationToPrimitivesConverter;
 import org.jmolecules.spring.IdentifierToPrimitivesConverter;
 import org.jmolecules.spring.PrimitivesToAssociationConverter;
@@ -25,7 +23,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.convert.ConversionService;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.format.support.FormattingConversionService;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -33,8 +30,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 /**
  * Auto-configuration to register the following converters with Spring MVC.
  * <ul>
- * <li>{@link IdentifierToPrimitivesConverter}</li>
  * <li>{@link PrimitivesToIdentifierConverter}</li>
+ * <li>{@link IdentifierToPrimitivesConverter}</li>
+ * <li>{@link PrimitivesToAssociationConverter}</li>
+ * <li>{@link AssociationToPrimitivesConverter}</li>
  * </ul>
  *
  * @author Oliver Drotbohm
@@ -61,15 +60,7 @@ class JMoleculesWebAutoConfiguration {
 					return;
 				}
 
-				Supplier<ConversionService> supplier = () -> ((FormattingConversionService) registry);
-
-				IdentifierToPrimitivesConverter identifierToPrimitives = new IdentifierToPrimitivesConverter(supplier);
-				PrimitivesToIdentifierConverter primitivesToIdentifier = new PrimitivesToIdentifierConverter(supplier);
-
-				registry.addConverter(identifierToPrimitives);
-				registry.addConverter(primitivesToIdentifier);
-				registry.addConverter(new PrimitivesToAssociationConverter<>(primitivesToIdentifier));
-				registry.addConverter(new AssociationToPrimitivesConverter<>(identifierToPrimitives));
+				JMoleculesConverterConfigUtils.registerConverters((FormattingConversionService) registry);
 			}
 		};
 	}

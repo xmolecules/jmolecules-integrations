@@ -23,13 +23,14 @@ import java.util.function.Supplier;
 import org.jmolecules.ddd.types.Association;
 import org.jmolecules.spring.AssociationToPrimitivesConverter;
 import org.jmolecules.spring.PrimitivesToAssociationConverter;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.TypeDescriptor;
+import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -60,9 +61,15 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 class JMoleculesSpringJacksonAutoConfiguration {
 
 	@Bean
-	AssociationResolvingJacksonModule associationResolvingJacksonModule(
-			@Qualifier("mvcConversionService") ConversionService conversionService) {
-		return new AssociationResolvingJacksonModule(() -> conversionService);
+	AssociationResolvingJacksonModule associationResolvingJacksonModule(BeanFactory beanFactory) {
+
+		Supplier<ConversionService> conversionService = () -> beanFactory.containsBean("mvcConversionService")
+				? beanFactory.getBean("mvcConversionService", ConversionService.class)
+				: beanFactory.getBeanProvider(ConversionService.class).getIfAvailable(() -> {
+					return JMoleculesConverterConfigUtils.registerConverters(new DefaultFormattingConversionService());
+				});
+
+		return new AssociationResolvingJacksonModule(conversionService);
 	}
 
 	private static class AssociationResolvingJacksonModule extends SimpleModule {
@@ -141,7 +148,6 @@ class JMoleculesSpringJacksonAutoConfiguration {
 				}
 
 				List<JavaType> parameters = property.getType().getBindings().getTypeParameters();
-
 				ResolvableType associationType = ResolvableType.forClassWithGenerics(Association.class,
 						parameters.get(0).getRawClass(), parameters.get(1).getRawClass());
 
