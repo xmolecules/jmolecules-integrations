@@ -74,6 +74,9 @@ class LifecycleMethods {
 		Builder<?> result = builder;
 		Set<String> handledMethods = new HashSet<>();
 
+		forExisting = PluginUtils.memoized(forExisting);
+		forNew = PluginUtils.memoized(forNew);
+
 		for (Entry<Class<? extends Annotation>, Optional<String>> entry : methods.entrySet()) {
 
 			Class<? extends Annotation> annotationType = entry.getKey();

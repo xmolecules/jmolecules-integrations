@@ -16,7 +16,9 @@
 package org.jmolecules.jpa;
 
 import lombok.extern.slf4j.Slf4j;
-import net.bytebuddy.implementation.bind.annotation.This;
+import net.bytebuddy.asm.Advice.OnMethodExit;
+import net.bytebuddy.asm.Advice.OnMethodExit;
+import net.bytebuddy.asm.Advice.This;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -32,7 +34,7 @@ public class JMoleculesJpa {
 
 	private static Map<Class<?>, Collection<Field>> fields = new ConcurrentHashMap<>();
 
-	public static void verifyNullability(@This Object object) throws Exception {
+	public static void verifyNullability(@net.bytebuddy.implementation.bind.annotation.This Object object) {
 
 		if (object == null) {
 			return;
@@ -56,6 +58,11 @@ public class JMoleculesJpa {
 								String.format("%s.%s must not be null!", it.getDeclaringClass().getSimpleName(), it.getName()));
 					}
 				});
+	}
+
+	@OnMethodExit
+	public static void adviceVerifyNullability(@This Object object) {
+		verifyNullability(object);
 	}
 
 	private static Collection<Field> fieldsToNullCheckFor(Class<?> type) {

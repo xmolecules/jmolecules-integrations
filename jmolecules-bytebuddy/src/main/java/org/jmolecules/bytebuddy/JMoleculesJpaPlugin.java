@@ -18,6 +18,7 @@ package org.jmolecules.bytebuddy;
 import static net.bytebuddy.matcher.ElementMatchers.*;
 import static org.jmolecules.bytebuddy.JMoleculesElementMatchers.*;
 
+import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.annotation.AnnotationSource;
 import net.bytebuddy.description.modifier.Visibility;
@@ -25,12 +26,15 @@ import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.description.type.TypeDescription.Generic;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.DynamicType.Builder;
+import net.bytebuddy.implementation.Implementation;
 import net.bytebuddy.implementation.MethodDelegation;
+import net.bytebuddy.implementation.StubMethod;
 import net.bytebuddy.matcher.ElementMatcher;
 
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import javax.persistence.*;
 
@@ -134,20 +138,33 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 		String typeName = PluginUtils.abbreviate(type);
 
 		if (type.isAbstract()) {
-			logger.info("{} - Not generating nullability method for abstract type.", typeName);
+			logger.info("{} - Not adding nullability verification to abstract type.", typeName);
 			return builder;
 		}
 
 		if (type.getDeclaredMethods().filter(it -> it.getName().equals(NULLABILITY_METHOD_NAME)).size() > 0) {
-			logger.info("{} - Found existing nullability method.", typeName);
+			logger.info("{} - Nullability verification already added.", typeName);
 			return builder;
 		}
 
-		logger.info("{} - Adding nullability verification method.", typeName);
+		// Add marker method, so that we know, we already processed the class
+		builder = builder.defineMethod(NULLABILITY_METHOD_NAME, void.class, Visibility.PACKAGE_PRIVATE)
+				.intercept(StubMethod.INSTANCE);
 
-		return builder.defineMethod(NULLABILITY_METHOD_NAME, void.class, Visibility.PACKAGE_PRIVATE)
-				.intercept(MethodDelegation.to(JMoleculesJpa.class))
-				.annotateMethod(PluginUtils.getAnnotation(PrePersist.class))
-				.annotateMethod(PluginUtils.getAnnotation(PostLoad.class));
+		Supplier<Advice> advice = () -> {
+
+			logger.info("{} - Adding nullability verification to existing callback methods.", typeName);
+
+			return Advice.to(JMoleculesJpa.class);
+		};
+
+		Supplier<Implementation> implementation = () -> {
+
+			logger.info("{} - Adding nullability verification using new callback methods.", typeName);
+
+			return MethodDelegation.to(JMoleculesJpa.class);
+		};
+
+		return new LifecycleMethods(builder, PrePersist.class, PostLoad.class).apply(advice, implementation);
 	}
 }

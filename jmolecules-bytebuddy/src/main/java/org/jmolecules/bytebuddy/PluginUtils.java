@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -192,6 +193,37 @@ class PluginUtils {
 		return builder.annotateType(getAnnotation(annotation));
 	}
 
+	/**
+	 * Returns a {@link Supplier} memoizing the value provided by the given source {@link Supplier} to avoid multiple
+	 * lookups of the original value.
+	 *
+	 * @param <T> the actual value type
+	 * @param source must not be {@literal null}.
+	 * @return
+	 * @since 0.6
+	 */
+	static <T> Supplier<T> memoized(Supplier<T> source) {
+
+		return new Supplier<T>() {
+
+			private T instance;
+
+			/*
+			 * (non-Javadoc)
+			 * @see java.util.function.Supplier#get()
+			 */
+			@Override
+			public T get() {
+
+				if (instance == null) {
+					instance = source.get();
+				}
+
+				return instance;
+			}
+		};
+	}
+
 	private static String abbreviate(String fullyQualifiedTypeName) {
 
 		String abbreviatedPackage = Arrays.stream(ClassUtils.getPackageName(fullyQualifiedTypeName).split("\\."))
@@ -214,5 +246,4 @@ class PluginUtils {
 
 		return builder.annotateType(getAnnotation(annotation));
 	}
-
 }
