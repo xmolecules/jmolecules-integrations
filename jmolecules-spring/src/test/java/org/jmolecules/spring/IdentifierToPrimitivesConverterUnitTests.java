@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.*;
 
 import java.util.UUID;
 
+import org.jmolecules.ddd.types.Identifier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.convert.ConversionService;
@@ -69,5 +70,23 @@ class IdentifierToPrimitivesConverterUnitTests {
 		assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> {
 			converter.convert(SampleIdentifier.of(null), IDENTIFIER_DESCRIPTOR, UUID_DESCRIPTOR);
 		});
+	}
+
+	@Test // #71
+	void detectsIdentifierFieldInSuperClass() {
+
+		ConcreteIdentifier identifier = new ConcreteIdentifier();
+		identifier.id = UUID.randomUUID();
+
+		assertThat(converter.convert(identifier, TypeDescriptor.forObject(identifier), UUID_DESCRIPTOR))
+				.isEqualTo(identifier.id);
+	}
+
+	static abstract class IdentifierBase implements Identifier {
+		UUID id;
+	}
+
+	static class ConcreteIdentifier extends IdentifierBase {
+
 	}
 }

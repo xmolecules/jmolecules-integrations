@@ -22,6 +22,7 @@ import net.bytebuddy.NamingStrategy.SuffixingRandom;
 import net.bytebuddy.build.Plugin;
 import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.field.FieldDescription.InDefinedShape;
+import net.bytebuddy.description.field.FieldDescription.InGenericShape;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.description.type.TypeDescription.ForLoadedType;
@@ -124,7 +125,7 @@ public class JMoleculesSpringJpaPlugin implements Plugin {
 
 		ForLoadedType loadedType = new TypeDescription.ForLoadedType(AssociationAttributeConverter.class);
 		Generic superType = TypeDescription.Generic.Builder
-				.parameterizedType(loadedType, aggregateType, idType, getIdPrimitiveType(idType)).build();
+				.parameterizedType(loadedType, aggregateType, idType, idPrimitiveType).build();
 
 		Unloaded<?> converterType = new ByteBuddy(ClassFileVersion.JAVA_V8)
 				.with(new ReferenceTypePackageNamingStrategy(field.getDeclaringType()))
@@ -147,7 +148,14 @@ public class JMoleculesSpringJpaPlugin implements Plugin {
 	}
 
 	private static TypeDescription.Generic getIdPrimitiveType(Generic idType) {
-		return idType.getDeclaredFields().get(0).getType();
+
+		List<InGenericShape> fields = idType.getDeclaredFields().stream()
+				.filter(it -> !it.isStatic())
+				.collect(Collectors.toList());
+
+		return fields.isEmpty()
+				? getIdPrimitiveType(idType.getSuperClass())
+				: fields.get(0).getType();
 	}
 
 	private static Constructor<?> getConverterConstructor() {

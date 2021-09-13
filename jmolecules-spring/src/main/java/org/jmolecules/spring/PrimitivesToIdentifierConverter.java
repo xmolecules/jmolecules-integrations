@@ -119,7 +119,7 @@ public class PrimitivesToIdentifierConverter implements ConditionalGenericConver
 		Class<?> valueType = source.getClass();
 
 		Instantiator instantiator = CREATORS
-				.computeIfAbsent(type, it -> lookupInstantiator(it, type))
+				.computeIfAbsent(type, it -> lookupInstantiator(valueType, it))
 				.orElseThrow(() -> new IllegalStateException(
 						String.format("No factory method taking a parameter of type %s on %s!", valueType.getSimpleName(),
 								type.getSimpleName())));

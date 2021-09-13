@@ -23,6 +23,7 @@ import javax.persistence.Convert;
 
 import org.jmolecules.spring.jpa.AssociationAttributeConverter;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.ResolvableType;
 import org.springframework.util.ReflectionUtils;
 
 /**
@@ -32,15 +33,22 @@ import org.springframework.util.ReflectionUtils;
  */
 class JMoleculesSpringJpaPluginTests {
 
-	@Test // #27, #36
+	@Test // #27, #36, #71
 	void registersAssociationAttributeConverter() {
 
 		Field field = ReflectionUtils.findField(SampleAggregate.class, "association");
 		Convert annotation = field.getDeclaredAnnotation(Convert.class);
 
-		assertThat(annotation.converter().getPackage().getName())
-				.isEqualTo(SampleAggregate.class.getPackage().getName());
+		Class<?> converterType = annotation.converter();
 
-		assertThat(AssociationAttributeConverter.class).isAssignableFrom(annotation.converter());
+		assertThat(converterType.getPackage().getName())
+				.isEqualTo(SampleAggregate.class.getPackage().getName());
+		assertThat(AssociationAttributeConverter.class).isAssignableFrom(converterType);
+
+		ResolvableType boundGenerics = ResolvableType.forClass(converterType).as(AssociationAttributeConverter.class);
+
+		assertThat(boundGenerics.getGeneric(0).getRawClass()).isEqualTo(SampleAggregate.class);
+		assertThat(boundGenerics.getGeneric(1).getRawClass()).isEqualTo(SampleAggregateIdentifier.class);
+		assertThat(boundGenerics.getGeneric(2).getRawClass()).isEqualTo(String.class);
 	}
 }

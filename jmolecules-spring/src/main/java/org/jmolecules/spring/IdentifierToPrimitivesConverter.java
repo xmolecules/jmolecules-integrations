@@ -76,7 +76,7 @@ public class IdentifierToPrimitivesConverter implements ConditionalGenericConver
 	@Override
 	public boolean matches(TypeDescriptor sourceType, TypeDescriptor targetType) {
 
-		return CACHE.computeIfAbsent(sourceType.getType(), it -> detectIdentifierField(it))
+		return CACHE.computeIfAbsent(sourceType.getType(), it -> detectAndCacheIdentifierField(it))
 				.filter(it -> isAssignableOrConvertable(it.getType(), targetType.getType()))
 				.isPresent();
 	}
@@ -95,7 +95,7 @@ public class IdentifierToPrimitivesConverter implements ConditionalGenericConver
 
 		Class<? extends Object> type = source.getClass();
 
-		Field idField = CACHE.computeIfAbsent(type, it -> detectIdentifierField(type))
+		Field idField = CACHE.computeIfAbsent(type, it -> detectAndCacheIdentifierField(type))
 				.orElseThrow(() -> new IllegalStateException("Unable to find identifier field on " + type + "!"));
 
 		Object id = ReflectionUtils.getField(idField, source);
@@ -111,15 +111,23 @@ public class IdentifierToPrimitivesConverter implements ConditionalGenericConver
 		return conversionService.get().convert(id, TypeDescriptor.forObject(id), targetType);
 	}
 
+	private Optional<Field> detectAndCacheIdentifierField(Class<?> source) {
+		return CACHE.computeIfAbsent(source, type -> detectIdentifierField(source));
+	}
+
 	private Optional<Field> detectIdentifierField(Class<?> source) {
 
-		return CACHE.computeIfAbsent(source, type -> {
-			return Arrays.stream(type.getDeclaredFields())
-					.filter(it -> !Modifier.isStatic(it.getModifiers()))
-					.filter(it -> primitives.contains(it.getType()))
-					.peek(ReflectionUtils::makeAccessible)
-					.findFirst();
-		});
+		if (source.equals(Object.class)) {
+			return Optional.empty();
+		}
+
+		Optional<Field> result = Arrays.stream(source.getDeclaredFields())
+				.filter(it -> !Modifier.isStatic(it.getModifiers()))
+				.filter(it -> primitives.contains(it.getType()))
+				.peek(ReflectionUtils::makeAccessible)
+				.findFirst();
+
+		return result.isPresent() ? result : detectIdentifierField(source.getSuperclass());
 	}
 
 	private boolean isAssignableOrConvertable(Class<?> source, Class<?> target) {
