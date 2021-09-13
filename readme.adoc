@@ -4,7 +4,7 @@ This repository contains a variety of integrations of jMolecules abstractions in
 
 == Supported technologies
 * link:jmolecules-archunit[`jmolecules-archunit`] -- ArchUnit rules that verify the aggregate structures in your model.
-* link:jmolecules-bytebuddy[`jmolecules-bytebuddy`] -- A ByteBuddy plugin to translate jMolecules patterns implemented in `jmolecules-ddd` into different technologies. See the link:jmolecules-examples/jmolecules-spring-data-jpa[example] for details.
+* link:jmolecules-bytebuddy[`jmolecules-bytebuddy`] -- A ByteBuddy plugin to translate jMolecules patterns implemented in `jmolecules-ddd` into different technologies. See the link:https://github.com/xmolecules/jmolecules-examples/tree/main/jmolecules-spring-data-jpa[example] for details.
 ** Spring -- translates jMolecules annotations like `@Service` etc. into the Spring equivalents so that the annotated classes can be used out of the box with Spring.
 ** JPA -- translates `jmolecules-ddd` annotations and interfaces into default mapping annotations and boilerplate code required by JPA.
 * link:jmolecules-spring[`jmolecules-spring`] -- Runtime library to make concepts from `jmolecules-ddd` work with Spring out of the box.
