@@ -47,7 +47,8 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class JMoleculesSpringPlugin implements Plugin {
 
-	private static final Map<Class<?>, Class<? extends Annotation>> TYPES;
+	private static final Map<Class<?>, Class<? extends Annotation>> MAPPINGS;
+	private static final Set<Class<?>> TRIGGERS;
 	private static final Map<Class<? extends Annotation>, Class<? extends Annotation>> METHOD_ANNOTATIONS;
 	private static final Set<String> TYPES_TO_SKIP;
 
@@ -63,7 +64,15 @@ public class JMoleculesSpringPlugin implements Plugin {
 		types.put(org.springframework.stereotype.Service.class, Service.class);
 		types.put(org.springframework.stereotype.Repository.class, Repository.class);
 
-		TYPES = Collections.unmodifiableMap(types);
+		MAPPINGS = Collections.unmodifiableMap(types);
+
+		/**
+		 * Which annotations trigger the processing?
+		 */
+		Set<Class<?>> triggers = new HashSet<>(MAPPINGS.keySet());
+		triggers.add(Component.class);
+
+		TRIGGERS = Collections.unmodifiableSet(triggers);
 
 		Set<String> toSkip = new HashSet<>();
 		toSkip.add("java.");
@@ -90,7 +99,7 @@ public class JMoleculesSpringPlugin implements Plugin {
 			return false;
 		}
 
-		return TYPES.keySet().stream().anyMatch(it -> it.isAnnotation()
+		return TRIGGERS.stream().anyMatch(it -> it.isAnnotation()
 				? isAnnotatedWith(type, it)
 				: type.isAssignableTo(it));
 	}
@@ -102,7 +111,7 @@ public class JMoleculesSpringPlugin implements Plugin {
 	@Override
 	public Builder<?> apply(Builder<?> builder, TypeDescription type, ClassFileLocator classFileLocator) {
 
-		builder = mapAnnotationOrInterfaces("jMolecules Spring", builder, type, TYPES);
+		builder = mapAnnotationOrInterfaces("jMolecules Spring", builder, type, MAPPINGS);
 
 		for (Entry<Class<? extends Annotation>, Class<? extends Annotation>> entry : METHOD_ANNOTATIONS.entrySet()) {
 

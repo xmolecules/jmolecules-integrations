@@ -32,6 +32,7 @@ import org.jmolecules.event.annotation.DomainEventHandler;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
@@ -66,6 +67,13 @@ class JMoleculesSpringPluginTests {
 	static class SpringType {
 
 		@EventListener
+		void on(Object event) {}
+	}
+
+	@Component
+	static class SpringComponent {
+
+		@DomainEventHandler
 		void on(Object event) {}
 	}
 
@@ -117,7 +125,7 @@ class JMoleculesSpringPluginTests {
 		static Stream<AnnotatedMethods> stream() {
 
 			Supplier<Stream<Method>> source = () -> Stream //
-					.of(JMoleculesType.class, SpringType.class)
+					.of(JMoleculesType.class, SpringType.class, SpringComponent.class)
 					.map(type -> ReflectionUtils.findMethod(type, "on", Object.class));
 
 			return Stream.of(EventListener.class, DomainEventHandler.class)
