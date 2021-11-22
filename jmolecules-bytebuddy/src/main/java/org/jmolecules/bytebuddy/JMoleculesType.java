@@ -50,6 +50,7 @@ import org.jmolecules.ddd.types.AggregateRoot;
 import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Entity;
 import org.jmolecules.ddd.types.Identifier;
+import org.jmolecules.ddd.types.ValueObject;
 import org.springframework.util.Assert;
 
 /**
@@ -130,6 +131,10 @@ class JMoleculesType {
 
 	public boolean isIdentifier() {
 		return isAssignableTo(Identifier.class);
+	}
+
+	public boolean isValueObject() {
+		return hasOrImplements(ValueObject.class, org.jmolecules.ddd.annotation.ValueObject.class);
 	}
 
 	public String getAbbreviatedName() {

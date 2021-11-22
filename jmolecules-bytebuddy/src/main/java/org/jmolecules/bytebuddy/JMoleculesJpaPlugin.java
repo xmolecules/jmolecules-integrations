@@ -74,6 +74,7 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 				.map(JMoleculesType::isEntity, this::handleEntity)
 				.map(JMoleculesType::isAssociation, this::handleAssociation)
 				.map(JMoleculesType::isIdentifier, this::handleIdentifier)
+				.map(JMoleculesType::isValueObject, this::handleValueObject)
 				.conclude();
 	}
 
@@ -86,10 +87,7 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 	}
 
 	private JMoleculesType handleIdentifier(JMoleculesType type) {
-
-		return type.implement(Serializable.class)
-				.addDefaultConstructorIfMissing()
-				.annotateTypeIfMissing(Embeddable.class);
+		return handleValueObject(type.implement(Serializable.class));
 	}
 
 	private JMoleculesType handleAssociation(JMoleculesType type) {
@@ -166,5 +164,11 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 		};
 
 		return new LifecycleMethods(builder, PrePersist.class, PostLoad.class).apply(advice, implementation);
+	}
+
+	private JMoleculesType handleValueObject(JMoleculesType type) {
+
+		return type.addDefaultConstructorIfMissing()
+				.annotateTypeIfMissing(Embeddable.class);
 	}
 }

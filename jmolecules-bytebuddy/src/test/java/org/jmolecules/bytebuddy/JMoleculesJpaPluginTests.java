@@ -32,6 +32,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.ReflectionUtils;
 
 /**
@@ -119,6 +120,13 @@ class JMoleculesJpaPluginTests {
 
 		assertThat(SampleAggregate.class.getDeclaredField("annotatedEntity")
 				.getAnnotation(OneToOne.class)).isNull();
+	}
+
+	@Test // #76
+	void defaultsJpaMappingsForValueObjects() {
+
+		assertThat(AnnotatedElementUtils.hasAnnotation(SampleValueObject.class, Embeddable.class)).isTrue();
+		assertThat(SampleValueObject.class.getDeclaredConstructors()).hasSize(2);
 	}
 
 	private static void assertDoesNotHaveAnnotation(Class<?> type, Class<? extends Annotation> expected) {
