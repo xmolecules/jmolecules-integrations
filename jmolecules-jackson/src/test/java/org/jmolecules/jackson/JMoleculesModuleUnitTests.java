@@ -40,15 +40,19 @@ class JMoleculesModuleUnitTests {
 	void serialize() throws Exception {
 
 		SampleIdentifier identifier = SampleIdentifier.of(UUID.randomUUID());
+		SampleIdentifierWithConstructor identifierWithConstructor = new SampleIdentifierWithConstructor(UUID.randomUUID());
 		SampleValueObject valueObject = SampleValueObject.of(42L);
 		ImplementingValueObject implementingValueObject = ImplementingValueObject.of(27L);
-		Document source = new Document(identifier, valueObject, implementingValueObject);
+
+		Document source = new Document(identifier, identifierWithConstructor, valueObject, implementingValueObject);
 
 		String result = mapper.writeValueAsString(source);
 
 		DocumentContext document = JsonPath.parse(result);
 
 		assertThat(document.read("$.identifier", String.class)).isEqualTo(identifier.getId().toString());
+		assertThat(document.read("$.identifierWithConstructor", String.class))
+				.isEqualTo(identifierWithConstructor.getId().toString());
 		assertThat(document.read("$.valueObject", Long.class)).isEqualTo(42L);
 		assertThat(document.read("$.implementingValueObject", Long.class)).isEqualTo(27L);
 	}
@@ -60,6 +64,7 @@ class JMoleculesModuleUnitTests {
 		UUID uuid = UUID.fromString(uuidSource);
 
 		Document document = mapper.readValue("{ \"identifier\" : \"" + uuidSource + "\","
+				+ " \"identifierWithConstructor\" : \"" + uuidSource + "\","
 				+ " \"valueObject\" : 42,"
 				+ " \"implementingValueObject\" : 27 }",
 				Document.class);
@@ -74,12 +79,18 @@ class JMoleculesModuleUnitTests {
 	@AllArgsConstructor
 	static class Document {
 		SampleIdentifier identifier;
+		SampleIdentifierWithConstructor identifierWithConstructor;
 		SampleValueObject valueObject;
 		ImplementingValueObject implementingValueObject;
 	}
 
 	@Value(staticConstructor = "of")
 	static class SampleIdentifier implements Identifier {
+		UUID id;
+	}
+
+	@Value
+	static class SampleIdentifierWithConstructor implements Identifier {
 		UUID id;
 	}
 

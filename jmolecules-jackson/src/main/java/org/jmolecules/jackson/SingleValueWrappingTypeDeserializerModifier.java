@@ -16,12 +16,15 @@
 package org.jmolecules.jackson;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
 
 import org.jmolecules.ddd.annotation.ValueObject;
 import org.jmolecules.ddd.types.Identifier;
+import org.springframework.beans.BeanUtils;
+import org.springframework.util.ReflectionUtils;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -61,16 +64,31 @@ class SingleValueWrappingTypeDeserializerModifier extends BeanDeserializerModifi
 
 		Class<?> type = descriptor.getBeanClass();
 
-		if (DETECTOR.hasAnnotation(type, ValueObject.class)
-				|| org.jmolecules.ddd.types.ValueObject.class.isAssignableFrom(type)
-				|| Identifier.class.isAssignableFrom(type)) {
+		if (!DETECTOR.hasAnnotation(type, ValueObject.class)
+				&& !org.jmolecules.ddd.types.ValueObject.class.isAssignableFrom(type)
+				&& !Identifier.class.isAssignableFrom(type)) {
+			return super.modifyDeserializer(config, descriptor, deserializer);
+		}
 
-			BeanPropertyDefinition definition = properties.get(0);
-			Method method = findFactoryMethodOn(type, definition.getRawPrimaryType());
+		BeanPropertyDefinition definition = properties.get(0);
+		Method method = findFactoryMethodOn(type, definition.getRawPrimaryType());
 
-			return method != null
-					? new FactoryMethodDeserializer(method, definition.getPrimaryType())
-					: super.modifyDeserializer(config, descriptor, deserializer);
+		if (method != null) {
+
+			ReflectionUtils.makeAccessible(method);
+			ThrowingFunction instantiator = it -> method.invoke(null, it);
+
+			return new InstantiatorDeserializer(descriptor.getType(), instantiator, definition.getPrimaryType());
+		}
+
+		Constructor<?> findConstructor = findConstructor(type, definition.getRawPrimaryType());
+
+		if (findConstructor != null) {
+
+			ReflectionUtils.makeAccessible(findConstructor);
+			ThrowingFunction instantiator = it -> BeanUtils.instantiateClass(findConstructor, it);
+
+			return new InstantiatorDeserializer(descriptor.getType(), instantiator, definition.getPrimaryType());
 		}
 
 		return super.modifyDeserializer(config, descriptor, deserializer);
@@ -88,26 +106,39 @@ class SingleValueWrappingTypeDeserializerModifier extends BeanDeserializerModifi
 		}
 	}
 
-	private static class FactoryMethodDeserializer extends StdDeserializer<Object> {
+	private static Constructor<?> findConstructor(Class<?> type, Class<?> parameterType) {
+
+		try {
+			return type.getDeclaredConstructor(parameterType);
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	private interface ThrowingFunction {
+		Object apply(Object source) throws Exception;
+	}
+
+	private static class InstantiatorDeserializer extends StdDeserializer<Object> {
 
 		private static final long serialVersionUID = -874251080013013301L;
 
-		private final Method method;
-		private final JavaType parameterType;
+		private final ThrowingFunction instantiator;
+		private final JavaType parameterType, targetType;
 
 		/**
-		 * Create a new {@link FactoryMethodDeserializer} for the given Method and parameter type.
+		 * Create a new {@link InstantiatorDeserializer} for the given Method and parameter type.
 		 *
-		 * @param method must not be {@literal null}.
+		 * @param target must not be {@literal null}.
+		 * @param instantiator must not be {@literal null}.
 		 * @param parameterType must not be {@literal null}.
 		 */
-		public FactoryMethodDeserializer(Method method, JavaType parameterType) {
+		public InstantiatorDeserializer(JavaType target, ThrowingFunction instantiator, JavaType parameterType) {
 
 			super(Object.class);
 
-			method.setAccessible(true);
-
-			this.method = method;
+			this.targetType = target;
+			this.instantiator = instantiator;
 			this.parameterType = parameterType;
 		}
 
@@ -123,9 +154,9 @@ class SingleValueWrappingTypeDeserializerModifier extends BeanDeserializerModifi
 			Object nested = deserializer.deserialize(parser, context);
 
 			try {
-				return method.invoke(null, nested);
+				return instantiator.apply(nested);
 			} catch (Exception o_O) {
-				throw new JsonParseException(parser, String.format("Failed to invoke factory method %s!", method), o_O);
+				throw new JsonParseException(parser, String.format("Failed to instantiate %s!", targetType), o_O);
 			}
 		}
 	}
