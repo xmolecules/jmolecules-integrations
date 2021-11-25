@@ -25,6 +25,7 @@ import lombok.Value;
 import java.util.UUID;
 
 import org.jmolecules.ddd.annotation.ValueObject;
+import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Identifier;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +37,7 @@ class JMoleculesModuleUnitTests {
 
 	ObjectMapper mapper = new ObjectMapper().registerModule(new JMoleculesModule());
 
-	@Test // #19
+	@Test // #19, #79, #78
 	void serialize() throws Exception {
 
 		SampleIdentifier identifier = SampleIdentifier.of(UUID.randomUUID());
@@ -44,7 +45,8 @@ class JMoleculesModuleUnitTests {
 		SampleValueObject valueObject = SampleValueObject.of(42L);
 		ImplementingValueObject implementingValueObject = ImplementingValueObject.of(27L);
 
-		Document source = new Document(identifier, identifierWithConstructor, valueObject, implementingValueObject);
+		Document source = new Document(identifier, identifierWithConstructor, valueObject, implementingValueObject,
+				Association.forId(identifier));
 
 		String result = mapper.writeValueAsString(source);
 
@@ -55,9 +57,10 @@ class JMoleculesModuleUnitTests {
 				.isEqualTo(identifierWithConstructor.getId().toString());
 		assertThat(document.read("$.valueObject", Long.class)).isEqualTo(42L);
 		assertThat(document.read("$.implementingValueObject", Long.class)).isEqualTo(27L);
+		assertThat(document.read("$.association", String.class)).isEqualTo(identifier.getId().toString());
 	}
 
-	@Test // #19
+	@Test // #19, #79, #78
 	void deserialize() throws Exception {
 
 		String uuidSource = "fe6f3370-5551-4251-86d3-b4db049a7ddd";
@@ -66,12 +69,14 @@ class JMoleculesModuleUnitTests {
 		Document document = mapper.readValue("{ \"identifier\" : \"" + uuidSource + "\","
 				+ " \"identifierWithConstructor\" : \"" + uuidSource + "\","
 				+ " \"valueObject\" : 42,"
-				+ " \"implementingValueObject\" : 27 }",
+				+ " \"implementingValueObject\" : 27,"
+				+ " \"association\" : \"" + uuidSource + "\" }",
 				Document.class);
 
 		assertThat(document.identifier).isEqualTo(SampleIdentifier.of(uuid));
 		assertThat(document.valueObject).isEqualTo(SampleValueObject.of(42L));
 		assertThat(document.implementingValueObject).isEqualTo(ImplementingValueObject.of(27L));
+		assertThat(document.association).isEqualTo(Association.forId(SampleIdentifier.of(uuid)));
 	}
 
 	@Data
@@ -82,6 +87,7 @@ class JMoleculesModuleUnitTests {
 		SampleIdentifierWithConstructor identifierWithConstructor;
 		SampleValueObject valueObject;
 		ImplementingValueObject implementingValueObject;
+		Association<?, SampleIdentifier> association;
 	}
 
 	@Value(staticConstructor = "of")

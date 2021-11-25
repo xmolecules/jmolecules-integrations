@@ -16,6 +16,7 @@
 package org.jmolecules.jackson;
 
 import org.jmolecules.ddd.annotation.ValueObject;
+import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Identifier;
 
 import com.fasterxml.jackson.databind.Module;
@@ -37,5 +38,8 @@ public class JMoleculesModule extends SimpleModule {
 
 		setDeserializerModifier(new SingleValueWrappingTypeDeserializerModifier());
 		setSerializerModifier(new SingleValueWrappingTypeSerializerModifier());
+
+		addSerializer(new AssociationSerializer());
+		addDeserializer(Association.class, new AssociationDeserializer());
 	}
 }
