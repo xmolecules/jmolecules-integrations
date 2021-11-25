@@ -38,8 +38,6 @@ import org.springframework.util.ReflectionUtils;
 class JMoleculesSpringDataJpaTests {
 
 	SampleAggregateIdentifier id = new SampleAggregateIdentifier();
-
-	@SuppressWarnings("unchecked") //
 	Persistable<?> persistable = (Persistable<?>) new SampleAggregate(id);
 
 	@Test // #28
@@ -100,5 +98,20 @@ class JMoleculesSpringDataJpaTests {
 
 									assertThat(persistable.isNew()).isFalse();
 								});
+	}
+
+	@Test // #77
+	void forwardsIsNewStateForWithers() {
+
+		Field isNewField = ReflectionUtils.findField(SampleAggregate.class, PersistableImplementor.IS_NEW_FIELD);
+		ReflectionUtils.makeAccessible(isNewField);
+
+		SampleAggregate aggregate = new SampleAggregate(new SampleAggregateIdentifier());
+		ReflectionUtils.setField(isNewField, aggregate, false);
+
+		SampleAggregate result = aggregate.wither();
+
+		assertThat(result).isNotSameAs(aggregate);
+		assertThat(ReflectionUtils.getField(isNewField, result)).isEqualTo(false);
 	}
 }

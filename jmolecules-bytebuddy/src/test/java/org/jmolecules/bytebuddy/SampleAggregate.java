@@ -44,4 +44,8 @@ public class SampleAggregate implements AggregateRoot<SampleAggregate, SampleAgg
 	public SampleAggregate(SampleAggregateIdentifier id) {
 		this.id = id;
 	}
+
+	public SampleAggregate wither() {
+		return new SampleAggregate(id) {};
+	}
 }
