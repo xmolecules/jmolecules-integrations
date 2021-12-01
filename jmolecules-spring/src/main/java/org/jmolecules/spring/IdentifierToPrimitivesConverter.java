@@ -76,6 +76,11 @@ public class IdentifierToPrimitivesConverter implements ConditionalGenericConver
 	@Override
 	public boolean matches(TypeDescriptor sourceType, TypeDescriptor targetType) {
 
+		if (sourceType.getType().equals(Identifier.class)
+				&& targetType.getType().equals(String.class)) {
+			return true;
+		}
+
 		return CACHE.computeIfAbsent(sourceType.getType(), it -> detectAndCacheIdentifierField(it))
 				.filter(it -> isAssignableOrConvertable(it.getType(), targetType.getType()))
 				.isPresent();
@@ -117,7 +122,7 @@ public class IdentifierToPrimitivesConverter implements ConditionalGenericConver
 
 	private Optional<Field> detectIdentifierField(Class<?> source) {
 
-		if (source.equals(Object.class)) {
+		if (source.isInterface() || source.equals(Object.class)) {
 			return Optional.empty();
 		}
 

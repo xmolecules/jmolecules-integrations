@@ -82,6 +82,13 @@ class IdentifierToPrimitivesConverterUnitTests {
 				.isEqualTo(identifier.id);
 	}
 
+	@Test // #86
+	void generallyMatchesIdentifierToString() {
+
+		assertThat(converter.matches(TypeDescriptor.valueOf(Identifier.class), TypeDescriptor.valueOf(String.class)))
+				.isTrue();
+	}
+
 	static abstract class IdentifierBase implements Identifier {
 		UUID id;
 	}
