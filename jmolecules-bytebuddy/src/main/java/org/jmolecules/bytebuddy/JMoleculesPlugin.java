@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -36,7 +36,7 @@ import java.util.stream.Stream;
 @Slf4j
 public class JMoleculesPlugin implements WithPreprocessor {
 
-	private Map<TypeDescription, List<Plugin>> delegates = new HashMap<>();
+	private Map<TypeDescription, List<? extends Plugin>> delegates = new HashMap<>();
 
 	/*
 	 * (non-Javadoc)
@@ -48,16 +48,17 @@ public class JMoleculesPlugin implements WithPreprocessor {
 		delegates.computeIfAbsent(typeDescription, it -> {
 
 			ClassWorld world = ClassWorld.of(classFileLocator);
+			Optional<Jpa> jpa = Jpa.getJavaPersistence(world);
 
 			return Stream.of(
-					jpaPlugin(world),
+					jpaPlugin(world, jpa),
 					springPlugin(world),
-					springJpaPlugin(world),
+					springJpaPlugin(world, jpa),
 					springDataPlugin(world),
 					springDataJdbcPlugin(world),
-					springDataJpaPlugin(world),
+					springDataJpaPlugin(world, jpa),
 					springDataMongDbPlugin(world))
-					.flatMap(Function.identity())
+					.flatMap(plugins -> (Stream<Plugin>) plugins)
 					.filter(plugin -> plugin.matches(typeDescription))
 					.collect(Collectors.toList());
 		});
@@ -70,7 +71,7 @@ public class JMoleculesPlugin implements WithPreprocessor {
 	@Override
 	public boolean matches(TypeDescription target) {
 
-		List<Plugin> plugins = delegates.get(target);
+		List<? extends Plugin> plugins = delegates.get(target);
 
 		return plugins != null && !plugins.isEmpty();
 	}
@@ -95,19 +96,21 @@ public class JMoleculesPlugin implements WithPreprocessor {
 	@Override
 	public void close() throws IOException {}
 
-	private static Stream<Plugin> jpaPlugin(ClassWorld world) {
+	private static Stream<? extends Plugin> jpaPlugin(ClassWorld world, Optional<Jpa> jpa) {
 
-		if (!world.isAvailable("javax.persistence.Entity")) {
-			return Stream.empty();
-		}
+		return jpa.filter(__ -> {
 
-		boolean jMoleculesJpaAvailable = world.isAvailable("org.jmolecules.jpa.JMoleculesJpa");
+			boolean jMoleculesJpaAvailable = world.isAvailable("org.jmolecules.jpa.JMoleculesJpa");
 
-		if (!jMoleculesJpaAvailable) {
-			log.warn("JMoleculesJpa missing on the classpath! Add org.jmolecules:jmolecules-jpa as dependency!");
-		}
+			if (!jMoleculesJpaAvailable) {
+				log.warn("JMoleculesJpa missing on the classpath! Add org.jmolecules:jmolecules-jpa as dependency!");
+			}
 
-		return Stream.of(new JMoleculesJpaPlugin());
+			return true;
+
+		}).map(it -> new JMoleculesJpaPlugin(it))
+				.map(Stream::of)
+				.orElseGet(Stream::empty);
 	}
 
 	private static Stream<Plugin> springPlugin(ClassWorld world) {
@@ -124,13 +127,13 @@ public class JMoleculesPlugin implements WithPreprocessor {
 				: Stream.empty();
 	}
 
-	private static Stream<Plugin> springJpaPlugin(ClassWorld world) {
+	private static Stream<? extends Plugin> springJpaPlugin(ClassWorld world, Optional<Jpa> jpa) {
 
-		return world.isAvailable("org.springframework.stereotype.Component")
-				&& world.isAvailable("javax.persistence.Entity")
-				&& world.isAvailable("org.jmolecules.spring.jpa.AssociationAttributeConverter")
-						? Stream.of(new JMoleculesSpringJpaPlugin())
-						: Stream.empty();
+		return jpa.filter(__ -> world.isAvailable("org.springframework.stereotype.Component"))
+				.filter(__ -> world.isAvailable("org.jmolecules.spring.jpa.AssociationAttributeConverter"))
+				.map(JMoleculesSpringJpaPlugin::new)
+				.map(Stream::of)
+				.orElseGet(Stream::empty);
 	}
 
 	private static Stream<Plugin> springDataJdbcPlugin(ClassWorld world) {
@@ -140,11 +143,12 @@ public class JMoleculesPlugin implements WithPreprocessor {
 				: Stream.empty();
 	}
 
-	private static Stream<Plugin> springDataJpaPlugin(ClassWorld world) {
+	private static Stream<? extends Plugin> springDataJpaPlugin(ClassWorld world, Optional<Jpa> jpa) {
 
-		return world.isAvailable("org.springframework.data.jpa.repository.JpaRepository")
-				? Stream.of(new JMoleculesSpringDataJpaPlugin())
-				: Stream.empty();
+		return jpa.filter(__ -> world.isAvailable("org.springframework.data.jpa.repository.JpaRepository"))
+				.map(JMoleculesSpringDataJpaPlugin::new)
+				.map(Stream::of)
+				.orElseGet(Stream::empty);
 	}
 
 	private static Stream<Plugin> springDataMongDbPlugin(ClassWorld world) {

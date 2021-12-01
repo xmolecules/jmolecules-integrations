@@ -15,11 +15,13 @@
  */
 package org.jmolecules.bytebuddy;
 
+import jakarta.persistence.AttributeConverter;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.ClassFileVersion;
 import net.bytebuddy.NamingStrategy.SuffixingRandom;
-import net.bytebuddy.build.Plugin;
 import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.field.FieldDescription.InDefinedShape;
 import net.bytebuddy.description.field.FieldDescription.InGenericShape;
@@ -39,24 +41,22 @@ import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.persistence.AttributeConverter;
-import javax.persistence.Convert;
-import javax.persistence.Converter;
-
-import org.jmolecules.ddd.annotation.Entity;
 import org.jmolecules.ddd.types.Association;
-import org.jmolecules.spring.jpa.AssociationAttributeConverter;
 
 /**
- * Registers a dedicated subclass of {@link AssociationAttributeConverter} for each {@link Association} declared without
+ * Registers a dedicated subclass of {@code AssociationAttributeConverter} for each {@link Association} declared without
  * an explicit {@link AttributeConverter} registered via {@link Convert}.
  *
  * @author Oliver Drotbohm
  */
 @Slf4j
-public class JMoleculesSpringJpaPlugin implements Plugin {
+@NoArgsConstructor
+@AllArgsConstructor
+public class JMoleculesSpringJpaPlugin extends JMoleculesPluginSupport {
 
 	private static PluginLogger logger = new PluginLogger("Spring JPA");
+
+	private Jpa jpa;
 
 	/*
 	 * (non-Javadoc)
@@ -64,8 +64,22 @@ public class JMoleculesSpringJpaPlugin implements Plugin {
 	 */
 	@Override
 	public boolean matches(TypeDescription target) {
-		return target.getDeclaredAnnotations().isAnnotationPresent(Entity.class)
+		return target.getDeclaredAnnotations().isAnnotationPresent(jpa.getAnnotation("Entity"))
 				|| target.isAssignableTo(org.jmolecules.ddd.types.Entity.class);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.jmolecules.bytebuddy.JMoleculesPluginSupport#onPreprocess(net.bytebuddy.description.type.TypeDescription, net.bytebuddy.dynamic.ClassFileLocator)
+	 */
+	@Override
+	public void onPreprocess(TypeDescription typeDescription, ClassFileLocator classFileLocator) {
+
+		if (jpa != null) {
+			return;
+		}
+
+		this.jpa = Jpa.getJavaPersistence(ClassWorld.of(classFileLocator)).get();
 	}
 
 	/*
@@ -84,7 +98,7 @@ public class JMoleculesSpringJpaPlugin implements Plugin {
 
 					for (InDefinedShape field : associationFields) {
 
-						if (field.getDeclaredAnnotations().isAnnotationPresent(Convert.class)) {
+						if (field.getDeclaredAnnotations().isAnnotationPresent(jpa.getAnnotation("Convert"))) {
 
 							log.info("jMolecules Spring JPA - {}.{} - Found existing converter registration.",
 									field.getDeclaringType().getSimpleName(), field.getName());
@@ -107,7 +121,7 @@ public class JMoleculesSpringJpaPlugin implements Plugin {
 	@Override
 	public void close() throws IOException {}
 
-	private static Builder<?> createConvertAnnotation(InDefinedShape field, Builder<?> builder) {
+	private Builder<?> createConvertAnnotation(InDefinedShape field, Builder<?> builder) {
 
 		TypeList.Generic generic = field.getType().asGenericType().getTypeArguments();
 		Generic aggregateType = generic.get(0);
@@ -123,14 +137,14 @@ public class JMoleculesSpringJpaPlugin implements Plugin {
 			return builder;
 		}
 
-		ForLoadedType loadedType = new TypeDescription.ForLoadedType(AssociationAttributeConverter.class);
+		ForLoadedType loadedType = new TypeDescription.ForLoadedType(jpa.getAssociationAttributeConverterBaseType());
 		Generic superType = TypeDescription.Generic.Builder
 				.parameterizedType(loadedType, aggregateType, idType, idPrimitiveType).build();
 
 		Unloaded<?> converterType = new ByteBuddy(ClassFileVersion.JAVA_V8)
 				.with(new ReferenceTypePackageNamingStrategy(field.getDeclaringType()))
 				.subclass(superType)
-				.annotateType(PluginUtils.getAnnotation(Converter.class))
+				.annotateType(PluginUtils.getAnnotation(jpa.getAnnotation("Converter")))
 				.defineConstructor(Visibility.PACKAGE_PRIVATE)
 				.intercept(MethodCall.invoke(getConverterConstructor()).onSuper().with(idType.asErasure()))
 				.make();
@@ -142,7 +156,7 @@ public class JMoleculesSpringJpaPlugin implements Plugin {
 				PluginUtils.abbreviate(converterType.getTypeDescription()));
 
 		return builder.field(ElementMatchers.is(field))
-				.annotateField(AnnotationDescription.Builder.ofType(Convert.class)
+				.annotateField(AnnotationDescription.Builder.ofType(jpa.getAnnotation("Convert"))
 						.define("converter", converterType.getTypeDescription())
 						.build());
 	}
@@ -158,10 +172,10 @@ public class JMoleculesSpringJpaPlugin implements Plugin {
 				: fields.get(0).getType();
 	}
 
-	private static Constructor<?> getConverterConstructor() {
+	private Constructor<?> getConverterConstructor() {
 
 		try {
-			return AssociationAttributeConverter.class.getDeclaredConstructor(Class.class);
+			return jpa.getAssociationAttributeConverterBaseType().getDeclaredConstructor(Class.class);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}

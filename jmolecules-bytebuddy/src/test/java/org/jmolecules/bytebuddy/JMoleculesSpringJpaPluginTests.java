@@ -21,7 +21,7 @@ import java.lang.reflect.Field;
 
 import javax.persistence.Convert;
 
-import org.jmolecules.spring.jpa.AssociationAttributeConverter;
+import org.jmolecules.spring.jpa.JpaAssociationAttributeConverter;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.ResolvableType;
 import org.springframework.util.ReflectionUtils;
@@ -43,9 +43,10 @@ class JMoleculesSpringJpaPluginTests {
 
 		assertThat(converterType.getPackage().getName())
 				.isEqualTo(SampleAggregate.class.getPackage().getName());
-		assertThat(AssociationAttributeConverter.class).isAssignableFrom(converterType);
+		assertThat(JpaAssociationAttributeConverter.class).isAssignableFrom(converterType);
 
-		ResolvableType boundGenerics = ResolvableType.forClass(converterType).as(AssociationAttributeConverter.class);
+		ResolvableType boundGenerics = ResolvableType.forClass(converterType)
+				.as(JpaAssociationAttributeConverter.class);
 
 		assertThat(boundGenerics.getGeneric(0).getRawClass()).isEqualTo(SampleAggregate.class);
 		assertThat(boundGenerics.getGeneric(1).getRawClass()).isEqualTo(SampleAggregateIdentifier.class);

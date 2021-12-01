@@ -30,9 +30,9 @@ import org.junit.jupiter.api.Test;
  *
  * @author Oliver Drotbohm
  */
-class AssociationAttributeConverterTests {
+class JpaAssociationAttributeConverterTests {
 
-	AssociationAttributeConverter<?, SampleIdentifier, UUID> converter = new AssociationAttributeConverter<>(
+	JpaAssociationAttributeConverter<?, SampleIdentifier, UUID> converter = new JpaAssociationAttributeConverter<>(
 			SampleIdentifier.class);
 
 	UUID uuid = UUID.randomUUID();

@@ -17,17 +17,15 @@ package org.jmolecules.jpa;
 
 import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.asm.Advice.OnMethodExit;
-import net.bytebuddy.asm.Advice.OnMethodExit;
 import net.bytebuddy.asm.Advice.This;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-
-import javax.persistence.GeneratedValue;
 
 @Slf4j
 public class JMoleculesJpa {
@@ -75,7 +73,14 @@ public class JMoleculesJpa {
 	}
 
 	private static boolean isGeneratedValue(Field field) {
-		return field.getAnnotation(GeneratedValue.class) != null;
+
+		return Arrays.stream(field.getAnnotations())
+				.map(Annotation::annotationType)
+				.map(Class::getName)
+				.filter(it -> it.endsWith("GeneratedValue"))
+				.filter(it -> it.startsWith("javax.persistence") || it.startsWith("jakarta.persistence"))
+				.findAny()
+				.isPresent();
 	}
 
 	private static boolean hasAnnotation(Field field, String simpleName) {

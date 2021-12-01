@@ -16,6 +16,9 @@
 package org.jmolecules.bytebuddy;
 
 import net.bytebuddy.build.Plugin;
+import net.bytebuddy.build.Plugin.WithPreprocessor;
+import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.dynamic.ClassFileLocator;
 
 import java.io.IOException;
 
@@ -25,7 +28,18 @@ import java.io.IOException;
  *
  * @author Oliver Drotbohm
  */
-public abstract class JMoleculesPluginSupport implements Plugin {
+public abstract class JMoleculesPluginSupport implements WithPreprocessor {
+
+	protected ClassFileLocator locator;
+
+	/*
+	 * (non-Javadoc)
+	 * @see net.bytebuddy.build.Plugin.WithPreprocessor#onPreprocess(net.bytebuddy.description.type.TypeDescription, net.bytebuddy.dynamic.ClassFileLocator)
+	 */
+	@Override
+	public void onPreprocess(TypeDescription typeDescription, ClassFileLocator classFileLocator) {
+		this.locator = classFileLocator;
+	}
 
 	/*
 	 * (non-Javadoc)

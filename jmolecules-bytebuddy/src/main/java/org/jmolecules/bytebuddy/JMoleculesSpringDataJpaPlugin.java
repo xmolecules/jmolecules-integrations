@@ -15,13 +15,10 @@
  */
 package org.jmolecules.bytebuddy;
 
+import lombok.NoArgsConstructor;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.DynamicType.Builder;
-
-import javax.persistence.PostLoad;
-import javax.persistence.PrePersist;
-import javax.persistence.Transient;
 
 import org.jmolecules.ddd.types.AggregateRoot;
 import org.springframework.data.domain.Persistable;
@@ -31,15 +28,26 @@ import org.springframework.data.domain.Persistable;
  *
  * @author Oliver Drotbohm
  */
+@NoArgsConstructor
 public class JMoleculesSpringDataJpaPlugin extends JMoleculesPluginSupport {
 
 	private static final PluginLogger logger = new PluginLogger("Spring Data JPA");
-	private final PersistableOptions options;
+	private PersistableOptions options;
 
-	public JMoleculesSpringDataJpaPlugin() {
+	public JMoleculesSpringDataJpaPlugin(Jpa jpa) {
+		this.options = getOptions(jpa);
+	}
 
-		this.options = PersistableOptions.of(Transient.class)
-				.withCallbackAnnotations(PrePersist.class, PostLoad.class);
+	/*
+	 * (non-Javadoc)
+	 * @see org.jmolecules.bytebuddy.JMoleculesPluginSupport#onPreprocess(net.bytebuddy.description.type.TypeDescription, net.bytebuddy.dynamic.ClassFileLocator)
+	 */
+	@Override
+	public void onPreprocess(TypeDescription typeDescription, ClassFileLocator classFileLocator) {
+
+		Jpa jpa = Jpa.getJavaPersistence(ClassWorld.of(classFileLocator)).get();
+
+		this.options = getOptions(jpa);
 	}
 
 	/*
@@ -61,5 +69,11 @@ public class JMoleculesSpringDataJpaPlugin extends JMoleculesPluginSupport {
 		return JMoleculesType.of(logger, builder)
 				.implementPersistable(options)
 				.conclude();
+	}
+
+	private static PersistableOptions getOptions(Jpa jpa) {
+
+		return PersistableOptions.of(jpa.getAnnotation("Transient"))
+				.withCallbackAnnotations(jpa.getAnnotation("PrePersist"), jpa.getAnnotation("PostLoad"));
 	}
 }

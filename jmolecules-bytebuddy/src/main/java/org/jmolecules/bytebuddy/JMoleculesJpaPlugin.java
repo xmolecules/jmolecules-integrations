@@ -18,6 +18,8 @@ package org.jmolecules.bytebuddy;
 import static net.bytebuddy.matcher.ElementMatchers.*;
 import static org.jmolecules.bytebuddy.JMoleculesElementMatchers.*;
 
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.annotation.AnnotationSource;
@@ -36,16 +38,35 @@ import java.lang.annotation.Annotation;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import javax.persistence.*;
-
 import org.jmolecules.jpa.JMoleculesJpa;
 
+@NoArgsConstructor
+@AllArgsConstructor
 public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 
 	private static final PluginLogger logger = new PluginLogger("JPA");
-
 	static final String NULLABILITY_METHOD_NAME = "__verifyNullability";
 
+	private Jpa jpa;
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.jmolecules.bytebuddy.JMoleculesPluginSupport#onPreprocess(net.bytebuddy.description.type.TypeDescription, net.bytebuddy.dynamic.ClassFileLocator)
+	 */
+	@Override
+	public void onPreprocess(TypeDescription typeDescription, ClassFileLocator classFileLocator) {
+
+		if (jpa != null) {
+			return;
+		}
+
+		this.jpa = Jpa.getJavaPersistence(ClassWorld.of(classFileLocator)).get();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see net.bytebuddy.matcher.ElementMatcher#matches(java.lang.Object)
+	 */
 	@Override
 	public boolean matches(TypeDescription target) {
 
@@ -78,12 +99,12 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 				.conclude();
 	}
 
-	private static <T extends AnnotationSource> ElementMatcher.Junction<T> hasJpaRelationShipAnnotation() {
+	private <T extends AnnotationSource> ElementMatcher.Junction<T> hasJpaRelationShipAnnotation() {
 
-		return isAnnotatedWith(OneToOne.class)
-				.or(isAnnotatedWith(OneToMany.class))
-				.or(isAnnotatedWith(ManyToOne.class))
-				.or(isAnnotatedWith(ManyToMany.class));
+		return isAnnotatedWith(jpa.getAnnotation("OneToOne"))
+				.or(isAnnotatedWith(jpa.getAnnotation("OneToMany")))
+				.or(isAnnotatedWith(jpa.getAnnotation("ManyToOne")))
+				.or(isAnnotatedWith(jpa.getAnnotation("ManyToMany")));
 	}
 
 	private JMoleculesType handleIdentifier(JMoleculesType type) {
@@ -93,40 +114,45 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 	private JMoleculesType handleAssociation(JMoleculesType type) {
 
 		return type.addDefaultConstructorIfMissing()
-				.annotateTypeIfMissing(Embeddable.class);
+				.annotateTypeIfMissing(jpa.getAnnotation("Embeddable"));
 	}
 
 	private JMoleculesType handleEntity(JMoleculesType type) {
 
 		Function<TypeDescription, Class<? extends Annotation>> selector = it -> !type.isAggregateRoot()
-				&& type.isAbstract() ? MappedSuperclass.class : javax.persistence.Entity.class;
+				&& type.isAbstract() ? jpa.getAnnotation("MappedSuperclass") : jpa.getAnnotation("Entity");
 
 		return type.addDefaultConstructorIfMissing()
-				.annotateIdentifierWith(EmbeddedId.class, Id.class)
-				.annotateTypeIfMissing(selector, javax.persistence.Entity.class, MappedSuperclass.class)
+				.annotateIdentifierWith(jpa.getAnnotation("EmbeddedId"), jpa.getAnnotation("Id"))
+				.annotateTypeIfMissing(selector, jpa.getAnnotation("Entity"), jpa.getAnnotation("MappedSuperclass"))
 				.map(this::declareNullVerificationMethod);
 	}
 
 	private Builder<?> handleAggregateRoot(Builder<?> builder) {
 
 		// Default entity references to OneToOne mapping
-		AnnotationDescription oneToOneDescription = createCascadingAnnotation(OneToOne.class);
+		AnnotationDescription oneToOneDescription = createCascadingAnnotation(jpa.getAnnotation("OneToOne"));
 
 		builder = builder.field(PluginUtils.defaultMapping(logger, fieldType(isEntity())
 				.and(not(hasJpaRelationShipAnnotation())), oneToOneDescription))
 				.annotateField(oneToOneDescription);
 
 		// Default collection entity references to @OneToMany mapping
-		AnnotationDescription oneToManyDescription = createCascadingAnnotation(OneToMany.class);
+		AnnotationDescription oneToManyDescription = createCascadingAnnotation(jpa.getAnnotation("OneToMany"));
 
 		return builder.field(PluginUtils.defaultMapping(logger, genericFieldType(isCollectionOfEntity())
 				.and(not(hasJpaRelationShipAnnotation())), oneToManyDescription))
 				.annotateField(oneToManyDescription);
 	}
 
-	private static AnnotationDescription createCascadingAnnotation(Class<? extends Annotation> type) {
+	@SuppressWarnings("unchecked")
+	private <T extends Enum<?>> AnnotationDescription createCascadingAnnotation(Class<? extends Annotation> type) {
+
+		Class<T> cascadeType = (Class<T>) jpa.getAnnotation("CascadeType");
+		T value = (T) jpa.getCascadeTypeAll();
+
 		return AnnotationDescription.Builder.ofType(type)
-				.defineEnumerationArray("cascade", CascadeType.class, CascadeType.ALL)
+				.defineEnumerationArray("cascade", cascadeType, value)
 				.build();
 	}
 
@@ -163,12 +189,13 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 			return MethodDelegation.to(JMoleculesJpa.class);
 		};
 
-		return new LifecycleMethods(builder, PrePersist.class, PostLoad.class).apply(advice, implementation);
+		return new LifecycleMethods(builder, jpa.getAnnotation("PrePersist"), jpa.getAnnotation("PostLoad"))
+				.apply(advice, implementation);
 	}
 
 	private JMoleculesType handleValueObject(JMoleculesType type) {
 
 		return type.addDefaultConstructorIfMissing()
-				.annotateTypeIfMissing(Embeddable.class);
+				.annotateTypeIfMissing(jpa.getAnnotation("Embeddable"));
 	}
 }

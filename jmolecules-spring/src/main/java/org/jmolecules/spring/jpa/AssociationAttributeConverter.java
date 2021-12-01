@@ -37,15 +37,14 @@ import org.springframework.util.Assert;
  * @see PrimitivesToAssociationConverter
  * @see AssociationToPrimitivesConverter
  */
-public class AssociationAttributeConverter<T extends AggregateRoot<T, ID>, ID extends Identifier, S>
-		implements AttributeConverter<Association<T, ID>, S> {
+abstract class AssociationAttributeConverter<T extends AggregateRoot<T, ID>, ID extends Identifier, S> {
 
 	private static ConversionService CONVERSION_SERVICE = DefaultConversionService.getSharedInstance();
-	private static TypeDescriptor OBJECT_TYPE_DESCRIPTOR = TypeDescriptor.valueOf(Object.class);
+	protected static TypeDescriptor OBJECT_TYPE_DESCRIPTOR = TypeDescriptor.valueOf(Object.class);
 
-	private final PrimitivesToAssociationConverter<?> toAssociation;
-	private final AssociationToPrimitivesConverter<?> toPrimitive;
-	private final TypeDescriptor idTypeDescriptor;
+	protected final PrimitivesToAssociationConverter<?> toAssociation;
+	protected final AssociationToPrimitivesConverter<?> toPrimitive;
+	protected final TypeDescriptor idTypeDescriptor;
 
 	/**
 	 * Creates a new {@link AssociationAttributeConverter} for the given {@link Identifier} type.
@@ -64,26 +63,5 @@ public class AssociationAttributeConverter<T extends AggregateRoot<T, ID>, ID ex
 		ResolvableType associationType = ResolvableType.forClassWithGenerics(Association.class, Object.class, itType);
 
 		this.idTypeDescriptor = new TypeDescriptor(associationType, null, null);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see javax.persistence.AttributeConverter#convertToDatabaseColumn(java.lang.Object)
-	 */
-	@Override
-	@SuppressWarnings("unchecked")
-	public S convertToDatabaseColumn(Association<T, ID> attribute) {
-		return (S) toPrimitive.convert(attribute, TypeDescriptor.forObject(attribute), OBJECT_TYPE_DESCRIPTOR);
-
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see javax.persistence.AttributeConverter#convertToEntityAttribute(java.lang.Object)
-	 */
-	@Override
-	@SuppressWarnings("unchecked")
-	public Association<T, ID> convertToEntityAttribute(S dbData) {
-		return (Association<T, ID>) toAssociation.convert(dbData, TypeDescriptor.forObject(dbData), idTypeDescriptor);
 	}
 }
