@@ -72,7 +72,7 @@ class JMoleculesSpringJacksonAutoConfiguration {
 		return new AssociationResolvingJacksonModule(conversionService);
 	}
 
-	private static class AssociationResolvingJacksonModule extends SimpleModule {
+	static class AssociationResolvingJacksonModule extends SimpleModule {
 
 		private static final long serialVersionUID = 919622286584067203L;
 
