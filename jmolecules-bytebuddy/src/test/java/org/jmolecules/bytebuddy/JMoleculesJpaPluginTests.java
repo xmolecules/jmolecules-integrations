@@ -27,12 +27,14 @@ import javax.persistence.CascadeType;
 import javax.persistence.Embeddable;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.ReflectionUtils;
 
 /**
@@ -57,18 +59,14 @@ class JMoleculesJpaPluginTests {
 				.hasSize(1);
 
 		// Defaults OneToOne annotation
-		assertThat(SampleAggregate.class.getDeclaredField("entity").getAnnotation(OneToOne.class))
-				.isNotNull()
-				.satisfies(it -> assertThat(it.cascade()).containsExactly(CascadeType.ALL));
+		assertRelationshipDefaults(SampleAggregate.class.getDeclaredField("entity").getAnnotation(OneToOne.class));
 
 		// Defaults collection of entities to @OneToMany(cascade = CascadeType.ALL)
-		assertThat(SampleAggregate.class.getDeclaredField("listOfEntity").getAnnotation(OneToMany.class))
-				.isNotNull()
-				.satisfies(it -> assertThat(it.cascade()).containsExactly(CascadeType.ALL));
+		assertRelationshipDefaults(SampleAggregate.class.getDeclaredField("listOfEntity").getAnnotation(OneToMany.class));
 	}
 
 	@Test
-	void defaultsForEntity() {
+	void defaultsForEntity() throws Exception {
 
 		// Defaults @Entity
 		assertThat(SampleEntity.class.getDeclaredAnnotations())
@@ -77,6 +75,12 @@ class JMoleculesJpaPluginTests {
 
 		// Adds default constructor
 		assertThat(SampleEntity.class.getDeclaredConstructors()).isNotNull();
+
+		// Defaults OneToOne annotation
+		assertRelationshipDefaults(SampleEntity.class.getDeclaredField("nestedEntity").getAnnotation(OneToOne.class));
+
+		// Defaults collection of entities to @OneToMany(cascade = CascadeType.ALL)
+		assertRelationshipDefaults(SampleEntity.class.getDeclaredField("nestedEntities").getAnnotation(OneToMany.class));
 	}
 
 	@Test
@@ -143,5 +147,14 @@ class JMoleculesJpaPluginTests {
 				.map(Annotation::annotationType);
 
 		assertThat(annotationTypes).contains(expected);
+	}
+
+	private static void assertRelationshipDefaults(Annotation annotation) {
+
+		assertThat(annotation)
+				.isNotNull()
+				.satisfies(it -> assertThat(AnnotationUtils.getValue(it, "fetch")).isEqualTo(FetchType.EAGER))
+				.satisfies(
+						it -> assertThat((CascadeType[]) AnnotationUtils.getValue(it, "cascade")).containsExactly(CascadeType.ALL));
 	}
 }

@@ -53,12 +53,26 @@ class Jpa {
 	 *
 	 * @return will never be {@literal null}.
 	 */
-	Object getCascadeTypeAll() {
+	@SuppressWarnings("unchecked")
+	<T> T getCascadeTypeAll() {
 
-		Class<? extends Annotation> annotation = getAnnotation("CascadeType");
+		Class<? extends Annotation> annotation = loadClass("CascadeType");
 		Constants constants = new Constants(annotation);
 
-		return constants.asObject("ALL");
+		return (T) constants.asObject("ALL");
+	}
+
+	/**
+	 * Returns the FetchType.EAGER value for the JPA flavor in use.
+	 *
+	 * @param <T>
+	 * @return
+	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	<T> T getFetchTypeEager() {
+
+		Class fetchTypeType = loadClass("FetchType");
+		return (T) Enum.valueOf(fetchTypeType, "EAGER");
 	}
 
 	/**
@@ -67,8 +81,14 @@ class Jpa {
 	 * @param name must not be {@literal null} or empty.
 	 * @return
 	 */
-	Class<? extends Annotation> getAnnotation(String name) {
-		return loadClass(name);
+	@SuppressWarnings("unchecked")
+	<T extends Annotation> Class<T> getAnnotation(String name) {
+		return (Class<T>) loadClass(name);
+	}
+
+	@SuppressWarnings("unchecked")
+	<T> Class<T> getType(String name) {
+		return (Class<T>) loadClass(name);
 	}
 
 	/**

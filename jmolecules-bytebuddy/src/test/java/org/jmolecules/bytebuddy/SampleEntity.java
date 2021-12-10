@@ -17,6 +17,8 @@ package org.jmolecules.bytebuddy;
 
 import lombok.Getter;
 
+import java.util.List;
+
 import org.jmolecules.ddd.types.Entity;
 
 /**
@@ -27,4 +29,6 @@ public class SampleEntity implements Entity<SampleAggregate, Long> {
 
 	private Long id;
 
+	private SampleEntity nestedEntity;
+	private List<SampleEntity> nestedEntities;
 }

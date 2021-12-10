@@ -91,7 +91,6 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 	public Builder<?> apply(Builder<?> builder, TypeDescription type, ClassFileLocator classFileLocator) {
 
 		return JMoleculesType.of(logger, builder)
-				.mapBuilder(JMoleculesType::isAggregateRoot, this::handleAggregateRoot)
 				.map(JMoleculesType::isEntity, this::handleEntity)
 				.map(JMoleculesType::isAssociation, this::handleAssociation)
 				.map(JMoleculesType::isIdentifier, this::handleIdentifier)
@@ -125,20 +124,21 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 		return type.addDefaultConstructorIfMissing()
 				.annotateIdentifierWith(jpa.getAnnotation("EmbeddedId"), jpa.getAnnotation("Id"))
 				.annotateTypeIfMissing(selector, jpa.getAnnotation("Entity"), jpa.getAnnotation("MappedSuperclass"))
-				.map(this::declareNullVerificationMethod);
+				.map(this::declareNullVerificationMethod)
+				.map(this::defaultToEntityAssociations);
 	}
 
-	private Builder<?> handleAggregateRoot(Builder<?> builder) {
+	private Builder<?> defaultToEntityAssociations(Builder<?> builder, PluginLogger logger) {
 
 		// Default entity references to OneToOne mapping
-		AnnotationDescription oneToOneDescription = createCascadingAnnotation(jpa.getAnnotation("OneToOne"));
+		AnnotationDescription oneToOneDescription = createRelationshipAnnotation(jpa.getAnnotation("OneToOne"));
 
 		builder = builder.field(PluginUtils.defaultMapping(logger, fieldType(isEntity())
 				.and(not(hasJpaRelationShipAnnotation())), oneToOneDescription))
 				.annotateField(oneToOneDescription);
 
 		// Default collection entity references to @OneToMany mapping
-		AnnotationDescription oneToManyDescription = createCascadingAnnotation(jpa.getAnnotation("OneToMany"));
+		AnnotationDescription oneToManyDescription = createRelationshipAnnotation(jpa.getAnnotation("OneToMany"));
 
 		return builder.field(PluginUtils.defaultMapping(logger, genericFieldType(isCollectionOfEntity())
 				.and(not(hasJpaRelationShipAnnotation())), oneToManyDescription))
@@ -146,12 +146,14 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T extends Enum<?>> AnnotationDescription createCascadingAnnotation(Class<? extends Annotation> type) {
+	private <T extends Enum<T>> AnnotationDescription createRelationshipAnnotation(Class<? extends Annotation> type) {
 
-		Class<T> cascadeType = (Class<T>) jpa.getAnnotation("CascadeType");
-		T value = (T) jpa.getCascadeTypeAll();
+		Class<T> cascadeType = jpa.getType("CascadeType");
+		T value = jpa.getCascadeTypeAll();
+		T fetchType = jpa.getFetchTypeEager();
 
 		return AnnotationDescription.Builder.ofType(type)
+				.define("fetch", fetchType)
 				.defineEnumerationArray("cascade", cascadeType, value)
 				.build();
 	}
