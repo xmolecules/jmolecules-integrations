@@ -40,6 +40,8 @@ import com.tngtech.archunit.lang.EvaluationResult;
 @AnalyzeClasses(packages = "org.jmolecules.archunit")
 class JMoleculesDddRulesUnitTest {
 
+	SampleAggregate reference;
+
 	@ArchTest
 	void detectsViolations(JavaClasses classes) {
 

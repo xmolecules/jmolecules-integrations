@@ -27,7 +27,9 @@ import org.jmolecules.ddd.annotation.Identity;
 import org.jmolecules.ddd.types.AggregateRoot;
 import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Entity;
+import org.jmolecules.ddd.types.Identifiable;
 import org.jmolecules.ddd.types.Identifier;
+import org.jmolecules.ddd.types.ValueObject;
 import org.springframework.core.ResolvableType;
 
 import com.tngtech.archunit.base.DescribedPredicate;
@@ -54,6 +56,24 @@ import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
  * @see http://scabl.blogspot.com/2015/04/aeddd-9.html
  */
 public class JMoleculesDddRules {
+
+	private static DescribedPredicate<CanBeAnnotated> IS_ANNOTATED_IDENTIFIABLE = annotatedWith(
+			org.jmolecules.ddd.annotation.AggregateRoot.class)
+					.or(annotatedWith(org.jmolecules.ddd.annotation.Entity.class));
+
+	private static DescribedPredicate<CanBeAnnotated> IS_ANNOTATED_VALUE_OBJECT = annotatedWith(
+			org.jmolecules.ddd.annotation.ValueObject.class);
+
+	private static DescribedPredicate<JavaClass> IS_IMPLEMENTING_IDENTIFIABLE = JavaClass.Predicates
+			.implement(Identifiable.class);
+
+	private static DescribedPredicate<JavaClass> IS_IMPLEMENTING_VALUE_OBJECT = JavaClass.Predicates
+			.implement(ValueObject.class);
+
+	private static DescribedPredicate<JavaClass> IS_DOMAIN_TYPE = IS_IMPLEMENTING_IDENTIFIABLE
+			.or(IS_IMPLEMENTING_VALUE_OBJECT)
+			.or(IS_ANNOTATED_IDENTIFIABLE)
+			.or(IS_ANNOTATED_VALUE_OBJECT);
 
 	/**
 	 * An {@link ArchRule} that's composed of all other rules declared in this class.
@@ -91,7 +111,8 @@ public class JMoleculesDddRules {
 	public static ArchRule entitiesShouldBeDeclaredForUseInSameAggregate() {
 
 		return ArchRuleDefinition.fields() //
-				.that(areAssignableTo(Entity.class).and(not(areAssignableTo(AggregateRoot.class)))) //
+				.that(new AreDeclaredWithinADomainType())
+				.and(areAssignableTo(Entity.class).and(not(areAssignableTo(AggregateRoot.class)))) //
 				.should(beDeclaredToBeUsedWithDeclaringAggregate()); //
 	}
 
@@ -114,9 +135,12 @@ public class JMoleculesDddRules {
 	 */
 	public static ArchRule aggregateReferencesShouldBeViaIdOrAssociation() {
 
+		DescribedPredicate<JavaField> referenceAnAggregateRoot = areAssignableTo(AggregateRoot.class)
+				.or(hasFieldTypeAnnotatedWith(org.jmolecules.ddd.annotation.AggregateRoot.class));
+
 		return ArchRuleDefinition.fields() //
-				.that(areAssignableTo(AggregateRoot.class))
-				.or(hasFieldTypeAnnotatedWith(org.jmolecules.ddd.annotation.AggregateRoot.class)) //
+				.that(new AreDeclaredWithinADomainType()) //
+				.and(referenceAnAggregateRoot) //
 				.should(new ShouldUseIdReferenceOrAssociation());
 	}
 
@@ -128,12 +152,8 @@ public class JMoleculesDddRules {
 	 */
 	public static ArchRule annotatedEntitiesAndAggregatesNeedToHaveAnIdentifier() {
 
-		DescribedPredicate<CanBeAnnotated> areIdentifiable = annotatedWith(
-				org.jmolecules.ddd.annotation.AggregateRoot.class)
-						.or(annotatedWith(org.jmolecules.ddd.annotation.Entity.class));
-
 		return ArchRuleDefinition.classes()
-				.that(areIdentifiable)
+				.that(IS_ANNOTATED_IDENTIFIABLE)
 				.and().areNotAnnotations()
 				.should(new DeclaresAnnotatedField(Identity.class));
 	}
@@ -298,6 +318,22 @@ public class JMoleculesDddRules {
 
 				events.add(SimpleConditionEvent.violated(input, message));
 			}
+		}
+	}
+
+	private static class AreDeclaredWithinADomainType extends DescribedPredicate<JavaField> {
+
+		public AreDeclaredWithinADomainType() {
+			super("are declared within a jMolecules domain type", new Object[0]);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see com.tngtech.archunit.base.Predicate#apply(java.lang.Object)
+		 */
+		@Override
+		public boolean apply(JavaField input) {
+			return IS_DOMAIN_TYPE.apply(input.getOwner());
 		}
 	}
 }
