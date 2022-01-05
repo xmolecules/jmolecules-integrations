@@ -23,6 +23,7 @@ import lombok.NoArgsConstructor;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.annotation.AnnotationSource;
+import net.bytebuddy.description.field.FieldDescription;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.description.type.TypeDescription.Generic;
@@ -37,7 +38,10 @@ import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.jmolecules.jpa.JMoleculesJpa;
 
 @NoArgsConstructor
@@ -74,7 +78,13 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 			return false;
 		}
 
-		if (!target.getInterfaces().filter(nameStartsWith("org.jmolecules")).isEmpty()) {
+		boolean implementsJMoleculesInterface = !target.getInterfaces().filter(nameStartsWith("org.jmolecules")).isEmpty();
+
+		boolean hasJMoleculesAnnotation = Stream
+				.concat(target.getDeclaredAnnotations().stream(), target.getInheritedAnnotations().stream())
+				.anyMatch(it -> it.getAnnotationType().getName().startsWith("org.jmolecules"));
+
+		if (implementsJMoleculesInterface || hasJMoleculesAnnotation) {
 			return true;
 		}
 
@@ -121,39 +131,63 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 		Function<TypeDescription, Class<? extends Annotation>> selector = it -> !type.isAggregateRoot()
 				&& type.isAbstract() ? jpa.getAnnotation("MappedSuperclass") : jpa.getAnnotation("Entity");
 
-		return type.addDefaultConstructorIfMissing()
-				.annotateIdentifierWith(jpa.getAnnotation("EmbeddedId"), jpa.getAnnotation("Id"))
+		Class<Annotation> embeddedId = jpa.getAnnotation("EmbeddedId");
+		Class<Annotation> id = jpa.getAnnotation("Id");
+
+		JMoleculesType result = type.addDefaultConstructorIfMissing()
+				.annotateTypedIdentifierWith(embeddedId, id)
+				.annotateAnnotatedIdentifierWith(id, embeddedId)
 				.annotateTypeIfMissing(selector, jpa.getAnnotation("Entity"), jpa.getAnnotation("MappedSuperclass"))
-				.map(this::declareNullVerificationMethod)
-				.map(this::defaultToEntityAssociations);
+				.map(this::declareNullVerificationMethod);
+
+		return defaultToEntityAssociations(result);
 	}
 
-	private Builder<?> defaultToEntityAssociations(Builder<?> builder, PluginLogger logger) {
+	private JMoleculesType defaultToEntityAssociations(JMoleculesType type) {
 
-		// Default entity references to OneToOne mapping
-		AnnotationDescription oneToOneDescription = createRelationshipAnnotation(jpa.getAnnotation("OneToOne"));
+		Junction<FieldDescription> isCollectionOfEntities = genericFieldType(isCollectionOfEntity());
+		Junction<FieldDescription> isUndefaultedEntity = fieldType(isEntity()).and(not(hasJpaRelationShipAnnotation()));
+		Junction<FieldDescription> isUndefaultCollectionOfEntities = isCollectionOfEntities
+				.and(not(hasJpaRelationShipAnnotation()));
 
-		builder = builder.field(PluginUtils.defaultMapping(logger, fieldType(isEntity())
-				.and(not(hasJpaRelationShipAnnotation())), oneToOneDescription))
-				.annotateField(oneToOneDescription);
+		boolean mapEager = !type.hasMoreThanOneField(isCollectionOfEntities);
 
-		// Default collection entity references to @OneToMany mapping
-		AnnotationDescription oneToManyDescription = createRelationshipAnnotation(jpa.getAnnotation("OneToMany"));
+		AnnotationDescription oneToOneDescription = createRelationshipAnnotation(jpa.getAnnotation("OneToOne"), true);
+		AnnotationDescription oneToManyDescription = createRelationshipAnnotation(jpa.getAnnotation("OneToMany"), mapEager);
 
-		return builder.field(PluginUtils.defaultMapping(logger, genericFieldType(isCollectionOfEntity())
-				.and(not(hasJpaRelationShipAnnotation())), oneToManyDescription))
-				.annotateField(oneToManyDescription);
+		// Default @OneToOne
+		JMoleculesType result = type.annotateFieldWith(oneToOneDescription, isUndefaultedEntity)
+
+				// Default @OneToMany
+				.annotateFieldWith(oneToManyDescription, isUndefaultCollectionOfEntities);
+
+		// Add @Fetch for lazy, Hibernate-mapped @OneToManys
+		if (!mapEager && jpa.isHibernate()) {
+
+			Class<Fetch> fetchType = jpa.getType("org.hibernate.annotations.Fetch");
+			Class<FetchMode> fetchModeType = jpa.getType("org.hibernate.annotations.FetchMode");
+
+			AnnotationDescription fetchAnnotation = AnnotationDescription.Builder.ofType(fetchType)
+					.define("value", Enum.valueOf(fetchModeType, "SUBSELECT"))
+					.build();
+
+			result = result.annotateFieldWith(fetchAnnotation, isCollectionOfEntities);
+		}
+
+		return result;
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T extends Enum<T>> AnnotationDescription createRelationshipAnnotation(Class<? extends Annotation> type) {
+	private <T extends Enum<T>> AnnotationDescription createRelationshipAnnotation(Class<? extends Annotation> type,
+			boolean eager) {
 
 		Class<T> cascadeType = jpa.getType("CascadeType");
 		T value = jpa.getCascadeTypeAll();
-		T fetchType = jpa.getFetchTypeEager();
+		T fetchType = eager ? jpa.getFetchTypeEager() : jpa.getFetchTypeLazy();
 
 		return AnnotationDescription.Builder.ofType(type)
 				.define("fetch", fetchType)
+				.define("orphanRemoval", true)
 				.defineEnumerationArray("cascade", cascadeType, value)
 				.build();
 	}

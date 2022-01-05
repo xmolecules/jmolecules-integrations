@@ -24,6 +24,7 @@ import net.bytebuddy.asm.MemberAttributeExtension;
 import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.annotation.AnnotationList;
 import net.bytebuddy.description.annotation.AnnotationSource;
+import net.bytebuddy.description.field.FieldDescription;
 import net.bytebuddy.description.field.FieldDescription.InDefinedShape;
 import net.bytebuddy.description.method.MethodDescription.InGenericShape;
 import net.bytebuddy.description.modifier.Visibility;
@@ -46,6 +47,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.jmolecules.ddd.annotation.Identity;
 import org.jmolecules.ddd.types.AggregateRoot;
 import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Entity;
@@ -105,8 +107,12 @@ class JMoleculesType {
 		return !type.getDeclaredMethods().filter(matcher).isEmpty();
 	}
 
-	public boolean hasField(ElementMatcher<InDefinedShape> matcher) {
+	public boolean hasField(ElementMatcher<? super InDefinedShape> matcher) {
 		return !type.getDeclaredFields().filter(matcher).isEmpty();
+	}
+
+	public boolean hasMoreThanOneField(ElementMatcher<? super InDefinedShape> matcher) {
+		return type.getDeclaredFields().filter(matcher).size() > 1;
 	}
 
 	public boolean isAssignableTo(Class<?> candidate) {
@@ -193,19 +199,45 @@ class JMoleculesType {
 	public final JMoleculesType annotateIdentifierWith(Class<? extends Annotation> annotation,
 			Class<? extends Annotation>... filterAnnotations) {
 
-		AnnotationDescription idAnnotation = PluginUtils.getAnnotation(annotation);
-		Junction<AnnotationSource> alreadyAnnotated = ElementMatchers.isAnnotatedWith(annotation);
+		Junction<FieldDescription> isIdentifierField = fieldType(isSubTypeOf(Identifier.class))
+				.or(isAnnotatedWith(Identity.class));
+
+		return annotateFieldWith(annotation, isIdentifierField, filterAnnotations);
+	}
+
+	@SafeVarargs
+	public final JMoleculesType annotateTypedIdentifierWith(Class<? extends Annotation> annotation,
+			Class<? extends Annotation>... filterAnnotations) {
+		return annotateFieldWith(annotation, fieldType(isSubTypeOf(Identifier.class)), filterAnnotations);
+	}
+
+	@SafeVarargs
+	public final JMoleculesType annotateFieldWith(Class<? extends Annotation> annotation,
+			Junction<FieldDescription> selector, Class<? extends Annotation>... filterAnnotations) {
+		return annotateFieldWith(PluginUtils.getAnnotation(annotation), selector, filterAnnotations);
+	}
+
+	@SafeVarargs
+	public final JMoleculesType annotateFieldWith(AnnotationDescription annotation,
+			Junction<FieldDescription> selector, Class<? extends Annotation>... filterAnnotations) {
+
+		Junction<AnnotationSource> alreadyAnnotated = ElementMatchers.isAnnotatedWith(annotation.getAnnotationType());
 
 		for (Class<? extends Annotation> filterAnnotation : filterAnnotations) {
 			alreadyAnnotated = alreadyAnnotated.or(ElementMatchers.isAnnotatedWith(filterAnnotation));
 		}
 
 		AsmVisitorWrapper annotationSpec = new MemberAttributeExtension.ForField()
-				.annotate(idAnnotation)
-				.on(PluginUtils.defaultMapping(logger, fieldType(isSubTypeOf(Identifier.class)).and(not(alreadyAnnotated)),
-						idAnnotation));
+				.annotate(annotation)
+				.on(PluginUtils.defaultMapping(logger, selector.and(not(alreadyAnnotated)), annotation));
 
 		return JMoleculesType.of(logger, builder.visit(annotationSpec));
+	}
+
+	@SafeVarargs
+	public final JMoleculesType annotateAnnotatedIdentifierWith(Class<? extends Annotation> annotation,
+			Class<? extends Annotation>... filterAnnotations) {
+		return annotateFieldWith(annotation, isAnnotatedWith(Identity.class), filterAnnotations);
 	}
 
 	public JMoleculesType map(BiFunction<Builder<?>, PluginLogger, Builder<?>> mapper) {
@@ -333,14 +365,17 @@ class JMoleculesType {
 				.filter(it -> it.asErasure().represents(AggregateRoot.class))
 				.findFirst().orElse(null);
 
-		if (superType == null) {
-			return Optional.empty();
+		if (superType != null) {
+
+			Generic aggregateIdType = superType.asGenericType().getTypeArguments().get(1);
+
+			return type.getDeclaredFields().stream()
+					.filter(it -> it.getType().equals(aggregateIdType))
+					.findFirst();
 		}
 
-		Generic aggregateIdType = superType.asGenericType().getTypeArguments().get(1);
-
-		return type.getDeclaredFields().stream()
-				.filter(it -> it.getType().equals(aggregateIdType))
-				.findFirst();
+		return type.getDeclaredFields()
+				.filter(isAnnotatedWith(Identity.class))
+				.stream().findFirst();
 	}
 }

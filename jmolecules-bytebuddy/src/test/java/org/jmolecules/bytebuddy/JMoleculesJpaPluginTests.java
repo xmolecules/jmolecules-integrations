@@ -28,10 +28,13 @@ import javax.persistence.Embeddable;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -62,7 +65,13 @@ class JMoleculesJpaPluginTests {
 		assertRelationshipDefaults(SampleAggregate.class.getDeclaredField("entity").getAnnotation(OneToOne.class));
 
 		// Defaults collection of entities to @OneToMany(cascade = CascadeType.ALL)
-		assertRelationshipDefaults(SampleAggregate.class.getDeclaredField("listOfEntity").getAnnotation(OneToMany.class));
+		assertRelationshipDefaults(SampleAggregate.class.getDeclaredField("listOfEntity").getAnnotation(OneToMany.class),
+				false);
+
+		// Assert FetchMode configured for lazy to-many mapping.
+		assertThat(SampleAggregate.class.getDeclaredField("listOfEntity").getAnnotation(Fetch.class))
+				.extracting(Fetch::value)
+				.isEqualTo(FetchMode.SUBSELECT);
 	}
 
 	@Test
@@ -133,6 +142,19 @@ class JMoleculesJpaPluginTests {
 		assertThat(SampleValueObject.class.getDeclaredConstructors()).hasSize(2);
 	}
 
+	@Test // #92
+	void defaultsMappingsForAnnotatedModel() throws Exception {
+
+		assertThat(SampleAnnotatedEntity.class.getDeclaredField("id").getAnnotation(Id.class)).isNotNull();
+
+		Class<SampleAnnotatedAggregate> aggregate = SampleAnnotatedAggregate.class;
+
+		assertThat(aggregate.getDeclaredField("id").getAnnotation(Id.class)).isNotNull();
+
+		assertRelationshipDefaults(aggregate.getDeclaredField("entity").getAnnotation(OneToOne.class));
+		assertRelationshipDefaults(aggregate.getDeclaredField("entities").getAnnotation(OneToMany.class));
+	}
+
 	private static void assertDoesNotHaveAnnotation(Class<?> type, Class<? extends Annotation> expected) {
 
 		Stream<Class<?>> annotationTypes = Arrays.stream(type.getAnnotations())
@@ -150,10 +172,15 @@ class JMoleculesJpaPluginTests {
 	}
 
 	private static void assertRelationshipDefaults(Annotation annotation) {
+		assertRelationshipDefaults(annotation, true);
+	}
+
+	private static void assertRelationshipDefaults(Annotation annotation, boolean eager) {
 
 		assertThat(annotation)
 				.isNotNull()
-				.satisfies(it -> assertThat(AnnotationUtils.getValue(it, "fetch")).isEqualTo(FetchType.EAGER))
+				.satisfies(
+						it -> assertThat(AnnotationUtils.getValue(it, "fetch")).isEqualTo(eager ? FetchType.EAGER : FetchType.LAZY))
 				.satisfies(
 						it -> assertThat((CascadeType[]) AnnotationUtils.getValue(it, "cascade")).containsExactly(CascadeType.ALL));
 	}

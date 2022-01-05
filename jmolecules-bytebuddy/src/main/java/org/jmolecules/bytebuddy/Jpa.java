@@ -34,6 +34,7 @@ import org.springframework.util.ClassUtils;
 class Jpa {
 
 	private final String basePackage;
+	private final Provider provider;
 
 	/**
 	 * Returns the type to be used as base classed for {@code AttributeConverter} implementations for {@link Association}
@@ -76,6 +77,23 @@ class Jpa {
 	}
 
 	/**
+	 * Returns the FetchType.LAZY value for the JPA flavor in use.
+	 *
+	 * @param <T>
+	 * @return
+	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	<T> T getFetchTypeLazy() {
+
+		Class fetchTypeType = loadClass("FetchType");
+		return (T) Enum.valueOf(fetchTypeType, "LAZY");
+	}
+
+	boolean isHibernate() {
+		return Provider.HIBERNATE.equals(provider);
+	}
+
+	/**
 	 * Returns the annotation with the given name. If unqualified, the package of the JPA flavor in use will be prepended.
 	 *
 	 * @param name must not be {@literal null} or empty.
@@ -102,10 +120,14 @@ class Jpa {
 
 		Assert.notNull(world, "ClassWorld must not be null!");
 
+		Provider provider = world.isAvailable("org.hibernate.Hibernate")
+				? Provider.HIBERNATE
+				: Provider.GENERIC;
+
 		if (world.isAvailable("javax.persistence.Entity")) {
-			return Optional.of(new Jpa("javax.persistence"));
+			return Optional.of(new Jpa("javax.persistence", provider));
 		} else if (world.isAvailable("jakarta.persistence.Entity")) {
-			return Optional.of(new Jpa("jakarta.persistence"));
+			return Optional.of(new Jpa("jakarta.persistence", provider));
 		}
 
 		return Optional.empty();
@@ -119,5 +141,9 @@ class Jpa {
 		name = name.contains(".") ? name : basePackage.concat(".").concat(name);
 
 		return (Class<? extends Annotation>) ClassUtils.resolveClassName(name, Jpa.class.getClassLoader());
+	}
+
+	private enum Provider {
+		HIBERNATE, GENERIC;
 	}
 }

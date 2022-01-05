@@ -34,7 +34,7 @@ class JMoleculesSpringDataMongoDbPluginTests {
 				.filteredOn(it -> it.annotationType().equals(Document.class))
 				.hasSize(1);
 
-		// Defaults @EmbeddedId
+		// Defaults @Id
 		assertThat(SampleAggregate.class.getDeclaredField("id").getAnnotations())
 				.filteredOn(it -> it.annotationType().equals(Id.class))
 				.hasSize(1);
