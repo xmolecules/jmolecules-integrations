@@ -23,7 +23,7 @@
 		<archunit.version>0.22.0</archunit.version>
 		<bytebuddy.version>1.12.7</bytebuddy.version>
 		<jmolecules.version>1.4.0</jmolecules.version>
-		<spring-boot.version>2.5.6</spring-boot.version>
+		<spring-boot.version>2.5.8</spring-boot.version>
 	</properties>
 
 	<licenses>
@@ -232,6 +232,9 @@
 		<repository>
 			<id>spring-snapshots</id>
 			<url>https://repo.spring.io/snapshot</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
 		</repository>
 	</repositories>
 
