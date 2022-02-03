@@ -131,7 +131,7 @@ public class JMoleculesPlugin implements WithPreprocessor {
 
 		return jpa.filter(__ -> world.isAvailable("org.springframework.stereotype.Component"))
 				.filter(__ -> world.isAvailable("org.jmolecules.spring.jpa.AssociationAttributeConverter"))
-				.map(JMoleculesSpringJpaPlugin::new)
+				.map(it -> new JMoleculesSpringJpaPlugin(it, world))
 				.map(Stream::of)
 				.orElseGet(Stream::empty);
 	}

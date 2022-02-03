@@ -16,7 +16,6 @@
 package org.jmolecules.bytebuddy;
 
 import jakarta.persistence.AttributeConverter;
-import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.ByteBuddy;
@@ -37,6 +36,7 @@ import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.matcher.ElementMatchers;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -51,12 +51,30 @@ import org.jmolecules.ddd.types.Association;
  */
 @Slf4j
 @NoArgsConstructor
-@AllArgsConstructor
+
 public class JMoleculesSpringJpaPlugin extends JMoleculesPluginSupport {
 
 	private static PluginLogger logger = new PluginLogger("Spring JPA");
 
 	private Jpa jpa;
+	private Class<? extends Annotation> embeddableInstantiatorAnnotationType;
+
+	public JMoleculesSpringJpaPlugin(Jpa jpa, ClassWorld world) {
+		init(jpa, world);
+	}
+
+	private void init(Jpa jpa, ClassWorld world) {
+
+		if (this.jpa != null) {
+			return;
+		}
+
+		this.jpa = jpa;
+
+		if (world.isAvailable("org.hibernate.annotations.EmbeddableInstantiator")) {
+			this.embeddableInstantiatorAnnotationType = jpa.getType("org.hibernate.annotations.EmbeddableInstantiator");
+		}
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -64,8 +82,10 @@ public class JMoleculesSpringJpaPlugin extends JMoleculesPluginSupport {
 	 */
 	@Override
 	public boolean matches(TypeDescription target) {
+
 		return target.getDeclaredAnnotations().isAnnotationPresent(jpa.getAnnotation("Entity"))
-				|| target.isAssignableTo(org.jmolecules.ddd.types.Entity.class);
+				|| target.isAssignableTo(org.jmolecules.ddd.types.Entity.class)
+				|| target.isRecord();
 	}
 
 	/*
@@ -75,11 +95,8 @@ public class JMoleculesSpringJpaPlugin extends JMoleculesPluginSupport {
 	@Override
 	public void onPreprocess(TypeDescription typeDescription, ClassFileLocator classFileLocator) {
 
-		if (jpa != null) {
-			return;
-		}
-
-		this.jpa = Jpa.getJavaPersistence(ClassWorld.of(classFileLocator)).get();
+		ClassWorld world = ClassWorld.of(classFileLocator);
+		init(Jpa.getJavaPersistence(world).get(), world);
 	}
 
 	/*
@@ -90,28 +107,73 @@ public class JMoleculesSpringJpaPlugin extends JMoleculesPluginSupport {
 	public Builder<?> apply(Builder<?> builder, TypeDescription typeDescription, ClassFileLocator classFileLocator) {
 
 		return JMoleculesType.of(logger, builder)
-				.map((it, log) -> {
+				.map(this::addConvertAnnotationIfNeeded)
+				.map(JMoleculesType::isRecord, it -> it.annotateTypeIfMissing(jpa.getAnnotation("Embeddable")))
+				.map(this::applyRecordInstantiator)
+				.conclude();
+	}
 
-					List<InDefinedShape> associationFields = builder.toTypeDescription().getDeclaredFields().stream()
-							.filter(field -> field.getType().asErasure().represents(Association.class))
-							.collect(Collectors.toList());
+	private Builder<?> applyRecordInstantiator(Builder<?> builder, PluginLogger logger) {
 
-					for (InDefinedShape field : associationFields) {
+		TypeDescription description = builder.toTypeDescription();
 
-						if (field.getDeclaredAnnotations().isAnnotationPresent(jpa.getAnnotation("Convert"))) {
+		// No record or Hibernate 6 present
+		if (!description.isRecord() || embeddableInstantiatorAnnotationType == null) {
+			return builder;
+		}
 
-							log.info("jMolecules Spring JPA - {}.{} - Found existing converter registration.",
-									field.getDeclaringType().getSimpleName(), field.getName());
+		// Already annotated
+		if (description.getDeclaredAnnotations().isAnnotationPresent(embeddableInstantiatorAnnotationType)) {
 
-							continue;
-						}
+			logger.info("{} - Found explicit @EmbeddableInstantiator.",
+					PluginUtils.abbreviate(description));
 
-						it = createConvertAnnotation(field, it);
-					}
+			return builder;
+		}
 
-					return it;
+		logger.info("{} - Adding @EmbeddableInstantiator for record.", PluginUtils.abbreviate(description));
 
-				}).conclude();
+		// Parent type information
+		Class<?> instantiatorBaseType = jpa.getType("org.jmolecules.spring.hibernate.RecordInstantiator");
+		ForLoadedType supeType = new TypeDescription.ForLoadedType(instantiatorBaseType);
+		Constructor<?> constructor = getConstructor(instantiatorBaseType, Class.class);
+
+		// Dedicated instantiator class for this particular record type
+		Unloaded<?> instantiatorType = new ByteBuddy(ClassFileVersion.JAVA_V8)
+				.with(new ReferenceTypePackageNamingStrategy(description))
+				.subclass(supeType)
+				.defineConstructor(Visibility.PACKAGE_PRIVATE)
+				.intercept(MethodCall.invoke(constructor).onSuper().with(description))
+				.make();
+
+		builder = builder.require(instantiatorType);
+
+		// Add the annotation
+		return builder.annotateType(AnnotationDescription.Builder.ofType(embeddableInstantiatorAnnotationType)
+				.define("value", instantiatorType.getTypeDescription())
+				.build());
+	}
+
+	private Builder<?> addConvertAnnotationIfNeeded(Builder<?> builder, PluginLogger logger) {
+
+		List<InDefinedShape> associationFields = builder.toTypeDescription().getDeclaredFields().stream()
+				.filter(field -> field.getType().asErasure().represents(Association.class))
+				.collect(Collectors.toList());
+
+		for (InDefinedShape field : associationFields) {
+
+			if (field.getDeclaredAnnotations().isAnnotationPresent(jpa.getAnnotation("Convert"))) {
+
+				log.info("jMolecules Spring JPA - {}.{} - Found existing converter registration.",
+						field.getDeclaringType().getSimpleName(), field.getName());
+
+				continue;
+			}
+
+			builder = createConvertAnnotation(field, builder);
+		}
+
+		return builder;
 	}
 
 	/*
@@ -173,9 +235,13 @@ public class JMoleculesSpringJpaPlugin extends JMoleculesPluginSupport {
 	}
 
 	private Constructor<?> getConverterConstructor() {
+		return getConstructor(jpa.getAssociationAttributeConverterBaseType(), Class.class);
+	}
+
+	private static Constructor<?> getConstructor(Class<?> type, Class<?>... parameters) {
 
 		try {
-			return jpa.getAssociationAttributeConverterBaseType().getDeclaredConstructor(Class.class);
+			return type.getDeclaredConstructor(parameters);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}

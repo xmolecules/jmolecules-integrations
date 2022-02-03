@@ -154,6 +154,27 @@
 			</plugin>
 
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<version>3.0.0</version>
+				<executions>
+					<execution>
+						<id>enforce-versions</id>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<requireJavaVersion>
+									<version>15</version>
+								</requireJavaVersion>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.22.2</version>
 			</plugin>

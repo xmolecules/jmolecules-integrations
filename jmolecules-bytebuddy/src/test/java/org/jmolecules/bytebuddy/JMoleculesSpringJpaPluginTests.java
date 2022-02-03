@@ -20,7 +20,10 @@ import static org.assertj.core.api.Assertions.*;
 import java.lang.reflect.Field;
 
 import javax.persistence.Convert;
+import javax.persistence.Embeddable;
 
+import org.hibernate.annotations.EmbeddableInstantiator;
+import org.jmolecules.spring.hibernate.RecordInstantiator;
 import org.jmolecules.spring.jpa.JpaAssociationAttributeConverter;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.ResolvableType;
@@ -51,5 +54,15 @@ class JMoleculesSpringJpaPluginTests {
 		assertThat(boundGenerics.getGeneric(0).getRawClass()).isEqualTo(SampleAggregate.class);
 		assertThat(boundGenerics.getGeneric(1).getRawClass()).isEqualTo(SampleAggregateIdentifier.class);
 		assertThat(boundGenerics.getGeneric(2).getRawClass()).isEqualTo(String.class);
+	}
+
+	@Test // #98
+	void registersEmbeddableInstantiatorForRecord() {
+
+		assertThat(SampleRecord.class).hasAnnotations(Embeddable.class, EmbeddableInstantiator.class);
+
+		EmbeddableInstantiator annotation = SampleRecord.class.getAnnotation(EmbeddableInstantiator.class);
+
+		assertThat(RecordInstantiator.class).isAssignableFrom(annotation.value());
 	}
 }

@@ -378,4 +378,8 @@ class JMoleculesType {
 				.filter(isAnnotatedWith(Identity.class))
 				.stream().findFirst();
 	}
+
+	public boolean isRecord() {
+		return builder.toTypeDescription().isRecord();
+	}
 }
