@@ -209,8 +209,8 @@ public class JMoleculesArchitectureRules {
 			}
 
 			return javaPackage.getParent()
-					.transform(this::hasAnnotationOnPackageOrParent)
-					.or(false);
+					.map(this::hasAnnotationOnPackageOrParent)
+					.orElse(false);
 		}
 	}
 }
