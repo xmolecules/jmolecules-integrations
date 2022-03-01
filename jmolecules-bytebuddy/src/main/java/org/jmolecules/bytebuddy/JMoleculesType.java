@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.jmolecules.bytebuddy.PluginLogger.Log;
 import org.jmolecules.ddd.annotation.Identity;
 import org.jmolecules.ddd.types.AggregateRoot;
 import org.jmolecules.ddd.types.Association;
@@ -64,18 +65,18 @@ import org.springframework.util.Assert;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 class JMoleculesType {
 
-	private final PluginLogger logger;
+	private final Log logger;
 	private final Builder<?> builder;
 	private final TypeDescription type;
 
 	/**
-	 * Creates a new {@link JMoleculesType} for the given {@link PluginLogger} and {@link Builder}.
+	 * Creates a new {@link JMoleculesType} for the given {@link ModuleLogger} and {@link Builder}.
 	 *
 	 * @param logger must not be {@literal null}.
 	 * @param builder must not be {@literal null}.
 	 * @return
 	 */
-	public static JMoleculesType of(PluginLogger logger, Builder<?> builder) {
+	public static JMoleculesType of(Log logger, Builder<?> builder) {
 
 		Assert.notNull(logger, "PluginLogger must not be null!");
 		Assert.notNull(builder, "Builder must not be null!");
@@ -94,7 +95,7 @@ class JMoleculesType {
 
 		return Arrays.stream(types).anyMatch(it -> {
 
-			return it.isAnnotation() && hasAnnotation((Class<? extends Annotation>) it)
+			return (it.isAnnotation() && hasAnnotation((Class<? extends Annotation>) it))
 					|| isAssignableTo(it);
 		});
 	}
@@ -143,10 +144,6 @@ class JMoleculesType {
 		return hasOrImplements(ValueObject.class, org.jmolecules.ddd.annotation.ValueObject.class);
 	}
 
-	public String getAbbreviatedName() {
-		return PluginUtils.abbreviate(type);
-	}
-
 	public TypeDescription getTypeDescription() {
 		return type;
 	}
@@ -172,8 +169,7 @@ class JMoleculesType {
 				.map(PluginUtils::abbreviate)
 				.collect(Collectors.joining(", "));
 
-		logger.info("{} - Implementing {}.", getAbbreviatedName(),
-				PluginUtils.abbreviate(interfaze).concat("<").concat(types).concat(">"));
+		logger.info("Implementing {}.", PluginUtils.abbreviate(interfaze).concat("<").concat(types).concat(">"));
 
 		return mapBuilder(builder -> builder.implement(build));
 	}
@@ -240,7 +236,7 @@ class JMoleculesType {
 		return annotateFieldWith(annotation, isAnnotatedWith(Identity.class), filterAnnotations);
 	}
 
-	public JMoleculesType map(BiFunction<Builder<?>, PluginLogger, Builder<?>> mapper) {
+	public JMoleculesType map(BiFunction<Builder<?>, Log, Builder<?>> mapper) {
 		return JMoleculesType.of(logger, mapper.apply(builder, logger));
 	}
 
@@ -270,8 +266,6 @@ class JMoleculesType {
 
 		return map((builder, logger) -> {
 
-			String typeName = PluginUtils.abbreviate(type);
-
 			boolean hasDefaultConstructor = !type.getDeclaredMethods()
 					.filter(it -> it.isConstructor())
 					.filter(it -> it.getParameters().size() == 0)
@@ -279,7 +273,7 @@ class JMoleculesType {
 
 			if (hasDefaultConstructor) {
 
-				logger.info("{} - Default constructor already present.", typeName);
+				logger.info("Default constructor already present.");
 
 				return builder;
 			}
@@ -294,13 +288,12 @@ class JMoleculesType {
 
 			if (superClassConstructor == null) {
 				logger.info(
-						"{} - No default constructor found on superclass {}. Skipping default constructor creation.",
-						typeName, superClassName);
+						"No default constructor found on superclass {}. Skipping default constructor creation.", superClassName);
 
 				return builder;
 			}
 
-			logger.info("{} - Adding default constructor.", typeName);
+			logger.info("Adding default constructor.");
 
 			return builder.defineConstructor(Visibility.PUBLIC)
 					.intercept(MethodCall.invoke(superClassConstructor));
@@ -326,12 +319,11 @@ class JMoleculesType {
 		AnnotationList existing = type.getDeclaredAnnotations();
 		Class<? extends Annotation> annotation = producer.apply(type);
 
-		String typeName = PluginUtils.abbreviate(type);
 		String annotationName = PluginUtils.abbreviate(annotation);
 
 		if (existing.isAnnotationPresent(annotation)) {
 
-			logger.info("{} - Not adding @{} because type is already annotated with it.", typeName, annotationName);
+			logger.info("Not adding @{} because type is already annotated with it.", annotationName);
 
 			return this;
 		}
@@ -341,8 +333,8 @@ class JMoleculesType {
 			boolean found = existing.isAnnotationPresent(it);
 
 			if (found) {
-				logger.info("{} - Not adding @{} because type is already annotated with @{}.",
-						typeName, annotationName, PluginUtils.abbreviate(it));
+				logger.info("Not adding @{} because type is already annotated with @{}.", annotationName,
+						PluginUtils.abbreviate(it));
 			}
 
 			return found;
@@ -352,7 +344,7 @@ class JMoleculesType {
 			return this;
 		}
 
-		logger.info("{} - Adding @{}.", typeName, annotationName);
+		logger.info("Adding @{}.", annotationName);
 
 		return JMoleculesType.of(logger, builder.annotateType(PluginUtils.getAnnotation(annotation)));
 	}

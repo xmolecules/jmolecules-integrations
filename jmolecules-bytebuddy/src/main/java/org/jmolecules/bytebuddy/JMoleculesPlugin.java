@@ -17,12 +17,10 @@ package org.jmolecules.bytebuddy;
 
 import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.build.Plugin;
-import net.bytebuddy.build.Plugin.WithPreprocessor;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.DynamicType.Builder;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +32,7 @@ import java.util.stream.Stream;
  * @author Oliver Drotbohm
  */
 @Slf4j
-public class JMoleculesPlugin implements WithPreprocessor {
+public class JMoleculesPlugin extends JMoleculesPluginSupport {
 
 	private Map<TypeDescription, List<? extends Plugin>> delegates = new HashMap<>();
 
@@ -43,6 +41,7 @@ public class JMoleculesPlugin implements WithPreprocessor {
 	 * @see net.bytebuddy.build.Plugin.WithPreprocessor#onPreprocess(net.bytebuddy.description.type.TypeDescription, net.bytebuddy.dynamic.ClassFileLocator)
 	 */
 	@Override
+	@SuppressWarnings("unchecked")
 	public void onPreprocess(TypeDescription typeDescription, ClassFileLocator classFileLocator) {
 
 		delegates.computeIfAbsent(typeDescription, it -> {
@@ -73,7 +72,7 @@ public class JMoleculesPlugin implements WithPreprocessor {
 
 		List<? extends Plugin> plugins = delegates.get(target);
 
-		return plugins != null && !plugins.isEmpty();
+		return (plugins != null) && !plugins.isEmpty();
 	}
 
 	/*
@@ -88,13 +87,6 @@ public class JMoleculesPlugin implements WithPreprocessor {
 				.reduce(builder, (it, plugin) -> (Builder) plugin.apply(it, typeDescription, classFileLocator),
 						(left, right) -> right);
 	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see java.io.Closeable#close()
-	 */
-	@Override
-	public void close() throws IOException {}
 
 	private static Stream<? extends Plugin> jpaPlugin(ClassWorld world, Optional<Jpa> jpa) {
 

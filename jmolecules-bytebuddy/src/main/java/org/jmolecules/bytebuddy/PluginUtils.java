@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package org.jmolecules.bytebuddy;
 
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
-import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.build.Plugin;
 import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.annotation.AnnotationList;
@@ -39,6 +38,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.jmolecules.bytebuddy.PluginLogger.Log;
 import org.jmolecules.ddd.types.Identifier;
 import org.springframework.util.ClassUtils;
 
@@ -47,7 +47,6 @@ import org.springframework.util.ClassUtils;
  *
  * @author Oliver Drotbohm
  */
-@Slf4j
 class PluginUtils {
 
 	/**
@@ -84,22 +83,22 @@ class PluginUtils {
 	 * @param mappings the annotation or type mappings.
 	 * @return
 	 */
-	static Builder<?> mapAnnotationOrInterfaces(String prefix, Builder<?> builder, TypeDescription type,
-			Map<Class<?>, Class<? extends Annotation>> mappings) {
+	static Builder<?> mapAnnotationOrInterfaces(Builder<?> builder, TypeDescription type,
+			Map<Class<?>, Class<? extends Annotation>> mappings, Log log) {
 
 		for (Entry<Class<?>, Class<? extends Annotation>> entry : mappings.entrySet()) {
 
 			Class<?> source = entry.getKey();
 
 			if (source.isAnnotation() ? isAnnotatedWith(type, source) : type.isAssignableTo(source)) {
-				builder = addAnnotationIfMissing(prefix, entry.getValue(), builder, type);
+				builder = addAnnotationIfMissing(entry.getValue(), builder, type, log);
 			}
 		}
 
 		return builder;
 	}
 
-	static ElementMatcher<FieldDescription> defaultMapping(PluginLogger logger, Junction<FieldDescription> source,
+	static ElementMatcher<FieldDescription> defaultMapping(Log logger, Junction<FieldDescription> source,
 			AnnotationDescription annotation) {
 
 		return it -> {
@@ -107,10 +106,7 @@ class PluginUtils {
 			boolean matches = source.matches(it);
 
 			if (matches) {
-
-				String ownerName = abbreviate(it.getDeclaringType());
-
-				logger.info("{} - Defaulting {}.{} to {} mapping.", ownerName, ownerName, it.getName(), abbreviate(annotation));
+				logger.info("Defaulting {} mapping to {}.", it.getName(), abbreviate(annotation));
 			}
 
 			return matches;
@@ -118,7 +114,7 @@ class PluginUtils {
 	}
 
 	@SafeVarargs
-	static Builder<?> annotateIdentifierWith(PluginLogger logger, Builder<?> builder, Class<? extends Annotation> type,
+	static Builder<?> annotateIdentifierWith(Log logger, Builder<?> builder, Class<? extends Annotation> type,
 			Class<? extends Annotation>... filterAnnotations) {
 
 		AnnotationDescription idAnnotation = getAnnotation(type);
@@ -154,22 +150,28 @@ class PluginUtils {
 				.concat(annotationString.substring(openParenthesisIndex));
 	}
 
-	@SafeVarargs
-	static Builder<?> addAnnotationIfMissing(String prefix, Class<? extends Annotation> annotation, Builder<?> builder,
-			TypeDescription type, Class<? extends Annotation>... exclusions) {
-		return addAnnotationIfMissing(prefix, __ -> annotation, builder, type, exclusions);
+	static String abbreviate(String fullyQualifiedTypeName) {
+
+		String abbreviatedPackage = Arrays.stream(ClassUtils.getPackageName(fullyQualifiedTypeName).split("\\."))
+				.map(it -> it.substring(0, 1))
+				.collect(Collectors.joining("."));
+
+		return abbreviatedPackage.concat(".").concat(ClassUtils.getShortName(fullyQualifiedTypeName));
 	}
 
 	@SafeVarargs
-	static Builder<?> addAnnotationIfMissing(String prefix,
-			Function<TypeDescription, Class<? extends Annotation>> producer,
-			Builder<?> builder,
-			TypeDescription type, Class<? extends Annotation>... exclusions) {
+	static Builder<?> addAnnotationIfMissing(Class<? extends Annotation> annotation, Builder<?> builder,
+			TypeDescription type, Log log, Class<? extends Annotation>... exclusions) {
+		return addAnnotationIfMissing(__ -> annotation, builder, type, log, exclusions);
+	}
+
+	@SafeVarargs
+	static Builder<?> addAnnotationIfMissing(Function<TypeDescription, Class<? extends Annotation>> producer,
+			Builder<?> builder, TypeDescription type, Log log, Class<? extends Annotation>... exclusions) {
 
 		AnnotationList existing = type.getDeclaredAnnotations();
 		Class<? extends Annotation> annotation = producer.apply(type);
 
-		String typeName = PluginUtils.abbreviate(type);
 		String annotationName = PluginUtils.abbreviate(annotation);
 
 		boolean existingFound = Stream.of(exclusions).anyMatch(it -> {
@@ -177,8 +179,8 @@ class PluginUtils {
 			boolean found = existing.isAnnotationPresent(it);
 
 			if (found) {
-				log.info("jMolecules {} - {} - Not adding @{} because type is already annotated with @{}.",
-						prefix, typeName, annotationName, PluginUtils.abbreviate(it));
+				log.info("Not adding @{} because type is already annotated with @{}.", annotationName,
+						PluginUtils.abbreviate(it));
 			}
 
 			return found;
@@ -188,7 +190,7 @@ class PluginUtils {
 			return builder;
 		}
 
-		log.info("jMolecules {} - {} - Adding @{}.", prefix, typeName, annotationName);
+		log.info("Adding @{}.", annotationName);
 
 		return builder.annotateType(getAnnotation(annotation));
 	}
@@ -224,25 +226,15 @@ class PluginUtils {
 		};
 	}
 
-	private static String abbreviate(String fullyQualifiedTypeName) {
-
-		String abbreviatedPackage = Arrays.stream(ClassUtils.getPackageName(fullyQualifiedTypeName).split("\\."))
-				.map(it -> it.substring(0, 1))
-				.collect(Collectors.joining("."));
-
-		return abbreviatedPackage.concat(".").concat(ClassUtils.getShortName(fullyQualifiedTypeName));
-	}
-
-	private static Builder<?> addAnnotationIfMissing(String prefix, Class<? extends Annotation> annotation,
-			Builder<?> builder,
-			TypeDescription type) {
+	private static Builder<?> addAnnotationIfMissing(Class<? extends Annotation> annotation,
+			Builder<?> builder, TypeDescription type, Log log) {
 
 		if (isAnnotatedWith(type, annotation)) {
+			log.info("Not adding @{}, already present.", PluginUtils.abbreviate(annotation));
 			return builder;
 		}
 
-		log.info("{} - {} - Adding @{}.", prefix, PluginUtils.abbreviate(type),
-				PluginUtils.abbreviate(annotation));
+		log.info("Adding @{}.", PluginUtils.abbreviate(annotation));
 
 		return builder.annotateType(getAnnotation(annotation));
 	}

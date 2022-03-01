@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 the original author or authors.
+ * Copyright 2020-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,8 @@ package org.jmolecules.bytebuddy;
 
 import static org.jmolecules.bytebuddy.PluginUtils.*;
 
-import lombok.extern.slf4j.Slf4j;
-import net.bytebuddy.build.Plugin;
 import net.bytebuddy.description.annotation.AnnotationList;
 import net.bytebuddy.description.method.MethodDescription;
-import net.bytebuddy.description.type.TypeDefinition;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.DynamicType.Builder;
@@ -36,16 +33,15 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.stream.Collectors;
 
+import org.jmolecules.bytebuddy.PluginLogger.Log;
 import org.jmolecules.ddd.annotation.Repository;
 import org.jmolecules.ddd.annotation.Service;
 import org.jmolecules.event.annotation.DomainEventHandler;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-@Slf4j
-public class JMoleculesSpringPlugin implements Plugin {
+public class JMoleculesSpringPlugin extends JMoleculesPluginSupport {
 
 	private static final Map<Class<?>, Class<? extends Annotation>> MAPPINGS;
 	private static final Set<Class<?>> TRIGGERS;
@@ -111,19 +107,20 @@ public class JMoleculesSpringPlugin implements Plugin {
 	@Override
 	public Builder<?> apply(Builder<?> builder, TypeDescription type, ClassFileLocator classFileLocator) {
 
-		builder = mapAnnotationOrInterfaces("jMolecules Spring", builder, type, MAPPINGS);
+		Log log = PluginLogger.INSTANCE.getLog(type, "Spring");
+		Builder<?> result = mapAnnotationOrInterfaces(builder, type, MAPPINGS, log);
 
 		for (Entry<Class<? extends Annotation>, Class<? extends Annotation>> entry : METHOD_ANNOTATIONS.entrySet()) {
 
 			Class<? extends Annotation> target = entry.getValue();
 
-			builder = builder
-					.method(hasAnnotatedMethod(type, entry.getKey(), target))
+			result = result
+					.method(hasAnnotatedMethod(type, entry.getKey(), target, log))
 					.intercept(SuperMethodCall.INSTANCE)
 					.annotateMethod(getAnnotation(target));
 		}
 
-		return builder;
+		return result;
 	}
 
 	/*
@@ -134,7 +131,7 @@ public class JMoleculesSpringPlugin implements Plugin {
 	public void close() throws IOException {}
 
 	private static ElementMatcher<? super MethodDescription> hasAnnotatedMethod(TypeDescription type,
-			Class<? extends Annotation> source, Class<? extends Annotation> target) {
+			Class<? extends Annotation> source, Class<? extends Annotation> target, Log log) {
 
 		return method -> {
 
@@ -147,41 +144,20 @@ public class JMoleculesSpringPlugin implements Plugin {
 			}
 
 			AnnotationList annotations = method.getDeclaredAnnotations();
-			String signature = toLog(method);
 
 			if (annotations.isAnnotationPresent(target)) {
-				log.debug("jMolecules Spring - {} - Already annotated with @{}.", signature,
-						PluginUtils.abbreviate(target));
+				// log.info("Already annotated with @{}.", PluginUtils.abbreviate(target));
 				return false;
 			}
 
 			if (!annotations.isAnnotationPresent(source)) {
-				log.debug("jMolecules Spring - {} - Annotation {} not found.", signature,
-						PluginUtils.abbreviate(source));
+				// log.info("Annotation {} not found.", PluginUtils.abbreviate(source));
 				return false;
 			}
 
-			log.info("jMolecules Spring - {} - Adding @{}.", signature, PluginUtils.abbreviate(target));
+			log.info("Adding @{}.", PluginUtils.abbreviate(target));
 
 			return true;
 		};
-	}
-
-	private static String toLog(MethodDescription method) {
-
-		TypeDefinition type = method.getDeclaringType();
-		String parameterTypes = method.getParameters()
-				.asTypeList()
-				.asErasures()
-				.stream()
-				.map(TypeDescription::getSimpleName)
-				.collect(Collectors.joining(", "));
-
-		return PluginUtils.abbreviate(type)
-				.concat(".")
-				.concat(method.getName())
-				.concat("(")
-				.concat(parameterTypes)
-				.concat(")");
 	}
 }

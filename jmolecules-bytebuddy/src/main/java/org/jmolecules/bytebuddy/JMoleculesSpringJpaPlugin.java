@@ -41,6 +41,7 @@ import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.jmolecules.bytebuddy.PluginLogger.Log;
 import org.jmolecules.ddd.types.Association;
 
 /**
@@ -52,8 +53,6 @@ import org.jmolecules.ddd.types.Association;
 @Slf4j
 @NoArgsConstructor
 public class JMoleculesSpringJpaPlugin extends JMoleculesPluginSupport {
-
-	private static PluginLogger logger = new PluginLogger("Spring JPA");
 
 	private Jpa jpa;
 	private Class<? extends Annotation> embeddableInstantiatorAnnotationType;
@@ -105,32 +104,33 @@ public class JMoleculesSpringJpaPlugin extends JMoleculesPluginSupport {
 	@Override
 	public Builder<?> apply(Builder<?> builder, TypeDescription typeDescription, ClassFileLocator classFileLocator) {
 
-		return JMoleculesType.of(logger, builder)
+		Log log = PluginLogger.INSTANCE.getLog(typeDescription, "Spring JPA");
+
+		return JMoleculesType.of(log, builder)
 				.map(this::addConvertAnnotationIfNeeded)
 				.map(JMoleculesType::isRecord, it -> it.annotateTypeIfMissing(jpa.getAnnotation("Embeddable")))
 				.map(this::applyRecordInstantiator)
 				.conclude();
 	}
 
-	private Builder<?> applyRecordInstantiator(Builder<?> builder, PluginLogger logger) {
+	private Builder<?> applyRecordInstantiator(Builder<?> builder, Log logger) {
 
 		TypeDescription description = builder.toTypeDescription();
 
 		// No record or Hibernate 6 present
-		if (!description.isRecord() || embeddableInstantiatorAnnotationType == null) {
+		if (!description.isRecord() || (embeddableInstantiatorAnnotationType == null)) {
 			return builder;
 		}
 
 		// Already annotated
 		if (description.getDeclaredAnnotations().isAnnotationPresent(embeddableInstantiatorAnnotationType)) {
 
-			logger.info("{} - Found explicit @EmbeddableInstantiator.",
-					PluginUtils.abbreviate(description));
+			logger.info("Found explicit @EmbeddableInstantiator.");
 
 			return builder;
 		}
 
-		logger.info("{} - Adding @EmbeddableInstantiator for record.", PluginUtils.abbreviate(description));
+		logger.info("Adding @EmbeddableInstantiator for record.");
 
 		// Parent type information
 		Class<?> instantiatorBaseType = jpa.getType("org.jmolecules.spring.hibernate.RecordInstantiator");
@@ -153,7 +153,7 @@ public class JMoleculesSpringJpaPlugin extends JMoleculesPluginSupport {
 				.build());
 	}
 
-	private Builder<?> addConvertAnnotationIfNeeded(Builder<?> builder, PluginLogger logger) {
+	private Builder<?> addConvertAnnotationIfNeeded(Builder<?> builder, Log logger) {
 
 		List<InDefinedShape> associationFields = builder.toTypeDescription().getDeclaredFields().stream()
 				.filter(field -> field.getType().asErasure().represents(Association.class))
@@ -163,13 +163,12 @@ public class JMoleculesSpringJpaPlugin extends JMoleculesPluginSupport {
 
 			if (field.getDeclaredAnnotations().isAnnotationPresent(jpa.getAnnotation("Convert"))) {
 
-				log.info("{}.{} - Found existing converter registration.",
-						field.getDeclaringType().getSimpleName(), field.getName());
+				logger.info("Found existing converter registration for field {}.", field.getName());
 
 				continue;
 			}
 
-			builder = createConvertAnnotation(field, builder);
+			builder = createConvertAnnotation(field, builder, logger);
 		}
 
 		return builder;
@@ -182,7 +181,7 @@ public class JMoleculesSpringJpaPlugin extends JMoleculesPluginSupport {
 	@Override
 	public void close() throws IOException {}
 
-	private Builder<?> createConvertAnnotation(InDefinedShape field, Builder<?> builder) {
+	private Builder<?> createConvertAnnotation(InDefinedShape field, Builder<?> builder, Log log) {
 
 		TypeList.Generic generic = field.getType().asGenericType().getTypeArguments();
 		Generic aggregateType = generic.get(0);
@@ -191,9 +190,7 @@ public class JMoleculesSpringJpaPlugin extends JMoleculesPluginSupport {
 
 		if (idPrimitiveType == null) {
 
-			log.info("{}.{} - Unable to detect id primitive in {}.",
-					PluginUtils.abbreviate(field.getDeclaringType()), field.getName(),
-					PluginUtils.abbreviate(idType));
+			log.info("{} - Unable to detect id primitive in {}.", field.getName(), PluginUtils.abbreviate(idType));
 
 			return builder;
 		}
@@ -212,8 +209,7 @@ public class JMoleculesSpringJpaPlugin extends JMoleculesPluginSupport {
 
 		builder = builder.require(converterType);
 
-		log.info("{}.{} - Adding @j.p.Convert(converter={}).",
-				PluginUtils.abbreviate(field.getDeclaringType()), field.getName(),
+		log.info("{} - Adding @j.p.Convert(converter={}).", field.getName(),
 				PluginUtils.abbreviate(converterType.getTypeDescription()));
 
 		return builder.field(ElementMatchers.is(field))
@@ -256,7 +252,7 @@ public class JMoleculesSpringJpaPlugin extends JMoleculesPluginSupport {
 
 		ReferenceTypePackageNamingStrategy(TypeDescription contextualType) {
 
-			super("jMolecules", new BaseNameResolver() {
+			super("jMolecules", new Suffixing.BaseNameResolver() {
 
 				/*
 				 * (non-Javadoc)

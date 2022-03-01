@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,21 +30,19 @@ import java.io.IOException;
  */
 public abstract class JMoleculesPluginSupport implements WithPreprocessor {
 
-	protected ClassFileLocator locator;
-
 	/*
 	 * (non-Javadoc)
 	 * @see net.bytebuddy.build.Plugin.WithPreprocessor#onPreprocess(net.bytebuddy.description.type.TypeDescription, net.bytebuddy.dynamic.ClassFileLocator)
 	 */
 	@Override
-	public void onPreprocess(TypeDescription typeDescription, ClassFileLocator classFileLocator) {
-		this.locator = classFileLocator;
-	}
+	public void onPreprocess(TypeDescription typeDescription, ClassFileLocator classFileLocator) {}
 
 	/*
 	 * (non-Javadoc)
 	 * @see java.io.Closeable#close()
 	 */
 	@Override
-	public void close() throws IOException {}
+	public void close() throws IOException {
+		PluginLogger.INSTANCE.flush();
+	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.DynamicType.Builder;
 
+import org.jmolecules.bytebuddy.PluginLogger.Log;
 import org.jmolecules.ddd.types.AggregateRoot;
 import org.springframework.data.domain.Persistable;
 
@@ -31,7 +32,6 @@ import org.springframework.data.domain.Persistable;
 @NoArgsConstructor
 public class JMoleculesSpringDataJpaPlugin extends JMoleculesPluginSupport {
 
-	private static final PluginLogger logger = new PluginLogger("Spring Data JPA");
 	private PersistableOptions options;
 
 	public JMoleculesSpringDataJpaPlugin(Jpa jpa) {
@@ -66,7 +66,9 @@ public class JMoleculesSpringDataJpaPlugin extends JMoleculesPluginSupport {
 	@Override
 	public Builder<?> apply(Builder<?> builder, TypeDescription typeDescription, ClassFileLocator classFileLocator) {
 
-		return JMoleculesType.of(logger, builder)
+		Log log = PluginLogger.INSTANCE.getLog(typeDescription, "Spring Data JPA");
+
+		return JMoleculesType.of(log, builder)
 				.implementPersistable(options)
 				.conclude();
 	}

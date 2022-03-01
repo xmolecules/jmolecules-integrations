@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.DynamicType.Builder;
 
+import org.jmolecules.bytebuddy.PluginLogger.Log;
 import org.jmolecules.ddd.types.AggregateRoot;
 import org.jmolecules.spring.jdbc.NotNewCallback;
 import org.springframework.data.annotation.Id;
@@ -33,12 +34,10 @@ import org.springframework.data.relational.core.mapping.Table;
  */
 public class JMoleculesSpringDataJdbcPlugin extends JMoleculesPluginSupport {
 
-	private final PluginLogger logger;
 	private final PersistableOptions options;
 
 	public JMoleculesSpringDataJdbcPlugin() {
 
-		this.logger = new PluginLogger("Spring Data JDBC");
 		this.options = PersistableOptions.of(Transient.class)
 				.withCallbackInterface(NotNewCallback.class);
 	}
@@ -59,7 +58,8 @@ public class JMoleculesSpringDataJdbcPlugin extends JMoleculesPluginSupport {
 	@Override
 	public Builder<?> apply(Builder<?> builder, TypeDescription typeDescription, ClassFileLocator classFileLocator) {
 
-		JMoleculesType type = JMoleculesType.of(logger, builder);
+		Log log = PluginLogger.INSTANCE.getLog(typeDescription, "Spring Data JDBC");
+		JMoleculesType type = JMoleculesType.of(log, builder);
 
 		return type.annotateIdentifierWith(Id.class)
 				.annotateTypeIfMissing(Table.class)

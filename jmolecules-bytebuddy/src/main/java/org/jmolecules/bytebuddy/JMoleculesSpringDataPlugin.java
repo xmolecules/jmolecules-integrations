@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@ package org.jmolecules.bytebuddy;
 
 import static org.jmolecules.bytebuddy.PluginUtils.*;
 
-import lombok.extern.slf4j.Slf4j;
-import net.bytebuddy.build.Plugin;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.description.type.TypeDescription.ForLoadedType;
 import net.bytebuddy.description.type.TypeDescription.Generic;
@@ -31,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jmolecules.bytebuddy.PluginLogger.Log;
 import org.jmolecules.ddd.annotation.Repository;
 import org.springframework.data.repository.RepositoryDefinition;
 
@@ -41,8 +40,7 @@ import org.springframework.data.repository.RepositoryDefinition;
  *
  * @author Oliver Drotbohm
  */
-@Slf4j
-public class JMoleculesSpringDataPlugin implements Plugin {
+public class JMoleculesSpringDataPlugin extends JMoleculesPluginSupport {
 
 	private static final Class<?> SPRING_DATA_REPOSITORY = org.springframework.data.repository.Repository.class;
 	private static final Class<?> JMOLECULES_REPOSITORY = org.jmolecules.ddd.types.Repository.class;
@@ -79,11 +77,15 @@ public class JMoleculesSpringDataPlugin implements Plugin {
 	@Override
 	public Builder<?> apply(Builder<?> builder, TypeDescription typeDescription, ClassFileLocator classFileLocator) {
 
+		Log log = PluginLogger.INSTANCE.getLog(typeDescription, "Spring Data");
+
+		Builder<?> result = builder;
+
 		if (!typeDescription.isAssignableTo(SPRING_DATA_REPOSITORY)) {
-			builder = translateRepositoryInterfaces(builder, typeDescription, typeDescription.asGenericType());
+			result = translateRepositoryInterfaces(result, typeDescription, typeDescription.asGenericType(), log);
 		}
 
-		return mapAnnotationOrInterfaces("jMolecules Spring Data", builder, typeDescription, TYPES);
+		return mapAnnotationOrInterfaces(result, typeDescription, TYPES, log);
 	}
 
 	/*
@@ -93,7 +95,8 @@ public class JMoleculesSpringDataPlugin implements Plugin {
 	@Override
 	public void close() throws IOException {}
 
-	private static Builder<?> translateRepositoryInterfaces(Builder<?> builder, TypeDescription original, Generic type) {
+	private static Builder<?> translateRepositoryInterfaces(Builder<?> builder, TypeDescription original, Generic type,
+			Log log) {
 
 		if (type.asErasure().represents(JMOLECULES_REPOSITORY)) {
 
@@ -105,17 +108,15 @@ public class JMoleculesSpringDataPlugin implements Plugin {
 				ForLoadedType loadedType = new TypeDescription.ForLoadedType(SPRING_DATA_REPOSITORY);
 				Generic repositoryType = Generic.Builder.parameterizedType(loadedType, aggregateType, idType).build();
 
-				log.info("jMolecules Spring Data - {} - Implement {}<{}, {}>.", original.getSimpleName(),
-						repositoryType.asErasure().getName(), aggregateType.asErasure().getSimpleName(),
-						idType.asErasure().getSimpleName());
+				log.info("Implement {}<{}, {}>.",
+						PluginUtils.abbreviate(repositoryType.asErasure()), PluginUtils.abbreviate(aggregateType.asErasure()),
+						PluginUtils.abbreviate(idType.asErasure()));
 
 				return builder.implement(repositoryType);
 
 			} catch (Exception o_O) {
 
-				log.info(
-						"jMolecules Spring Data - {} - No generics declared. Cannot translate into Spring Data repository!",
-						original.getSimpleName());
+				log.info("No generics declared. Cannot translate into Spring Data repository!");
 
 				return builder;
 			}
@@ -123,7 +124,7 @@ public class JMoleculesSpringDataPlugin implements Plugin {
 
 		if (type.isInterface()) {
 			for (Generic parent : type.getInterfaces()) {
-				builder = translateRepositoryInterfaces(builder, original, parent);
+				builder = translateRepositoryInterfaces(builder, original, parent, log);
 			}
 		}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.DynamicType.Builder;
 
+import org.jmolecules.bytebuddy.PluginLogger.Log;
 import org.jmolecules.ddd.types.AggregateRoot;
 import org.jmolecules.spring.mongodb.NotNewCallback;
 import org.springframework.data.annotation.Id;
@@ -32,8 +33,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
  * @author Oliver Drotbohm
  */
 public class JMoleculesSpringDataMongoDbPlugin extends JMoleculesPluginSupport {
-
-	private static final PluginLogger logger = new PluginLogger("Spring Data MongoDB");
 
 	private final PersistableOptions options;
 
@@ -59,7 +58,9 @@ public class JMoleculesSpringDataMongoDbPlugin extends JMoleculesPluginSupport {
 	@Override
 	public Builder<?> apply(Builder<?> builder, TypeDescription typeDescription, ClassFileLocator classFileLocator) {
 
-		return JMoleculesType.of(logger, builder)
+		Log log = PluginLogger.INSTANCE.getLog(typeDescription, "Spring Data MongoDB");
+
+		return JMoleculesType.of(log, builder)
 				.annotateIdentifierWith(Id.class)
 				.annotateTypeIfMissing(Document.class)
 				.implementPersistable(options)

@@ -42,13 +42,13 @@ import java.util.stream.Stream;
 
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.jmolecules.bytebuddy.PluginLogger.Log;
 import org.jmolecules.jpa.JMoleculesJpa;
 
 @NoArgsConstructor
 @AllArgsConstructor
 public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 
-	private static final PluginLogger logger = new PluginLogger("JPA");
 	static final String NULLABILITY_METHOD_NAME = "__verifyNullability";
 
 	private Jpa jpa;
@@ -90,7 +90,7 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 
 		Generic superType = target.getSuperClass();
 
-		return superType == null || superType.represents(Object.class) ? false : matches(superType.asErasure());
+		return (superType == null) || superType.represents(Object.class) ? false : matches(superType.asErasure());
 	}
 
 	/*
@@ -100,7 +100,9 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 	@Override
 	public Builder<?> apply(Builder<?> builder, TypeDescription type, ClassFileLocator classFileLocator) {
 
-		return JMoleculesType.of(logger, builder)
+		Log log = PluginLogger.INSTANCE.getLog(type, "JPA");
+
+		return JMoleculesType.of(log, builder)
 				.map(JMoleculesType::isEntity, this::handleEntity)
 				.map(JMoleculesType::isAssociation, this::handleAssociation)
 				.map(JMoleculesType::isIdentifier, this::handleIdentifier)
@@ -209,18 +211,17 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 		return AnnotationDescription.Builder.ofType(jpa.getType("JoinColumn")).build();
 	}
 
-	private Builder<?> declareNullVerificationMethod(Builder<?> builder, PluginLogger logger) {
+	private Builder<?> declareNullVerificationMethod(Builder<?> builder, Log logger) {
 
 		TypeDescription type = builder.toTypeDescription();
-		String typeName = PluginUtils.abbreviate(type);
 
 		if (type.isAbstract()) {
-			logger.info("{} - Not adding nullability verification to abstract type.", typeName);
+			logger.info("Not adding nullability verification to abstract type.");
 			return builder;
 		}
 
 		if (type.getDeclaredMethods().filter(it -> it.getName().equals(NULLABILITY_METHOD_NAME)).size() > 0) {
-			logger.info("{} - Nullability verification already added.", typeName);
+			logger.info("Nullability verification already added.");
 			return builder;
 		}
 
@@ -230,14 +231,14 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 
 		Supplier<Advice> advice = () -> {
 
-			logger.info("{} - Adding nullability verification to existing callback methods.", typeName);
+			logger.info("Adding nullability verification to existing callback methods.");
 
 			return Advice.to(JMoleculesJpa.class);
 		};
 
 		Supplier<Implementation> implementation = () -> {
 
-			logger.info("{} - Adding nullability verification using new callback methods.", typeName);
+			logger.info("Adding nullability verification using new callback methods.");
 
 			return MethodDelegation.to(JMoleculesJpa.class);
 		};
