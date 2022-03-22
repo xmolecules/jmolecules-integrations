@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,6 @@ import org.jmolecules.ddd.types.Association;
  */
 @Slf4j
 @NoArgsConstructor
-
 public class JMoleculesSpringJpaPlugin extends JMoleculesPluginSupport {
 
 	private static PluginLogger logger = new PluginLogger("Spring JPA");
@@ -164,7 +163,7 @@ public class JMoleculesSpringJpaPlugin extends JMoleculesPluginSupport {
 
 			if (field.getDeclaredAnnotations().isAnnotationPresent(jpa.getAnnotation("Convert"))) {
 
-				log.info("jMolecules Spring JPA - {}.{} - Found existing converter registration.",
+				log.info("{}.{} - Found existing converter registration.",
 						field.getDeclaringType().getSimpleName(), field.getName());
 
 				continue;
@@ -192,7 +191,7 @@ public class JMoleculesSpringJpaPlugin extends JMoleculesPluginSupport {
 
 		if (idPrimitiveType == null) {
 
-			log.info("jMolecules Spring JPA - {}.{} - Unable to detect id primitive in {}.",
+			log.info("{}.{} - Unable to detect id primitive in {}.",
 					PluginUtils.abbreviate(field.getDeclaringType()), field.getName(),
 					PluginUtils.abbreviate(idType));
 
@@ -213,7 +212,7 @@ public class JMoleculesSpringJpaPlugin extends JMoleculesPluginSupport {
 
 		builder = builder.require(converterType);
 
-		log.info("jMolecules Spring JPA - {}.{} - Adding @j.p.Convert(converter={}).",
+		log.info("{}.{} - Adding @j.p.Convert(converter={}).",
 				PluginUtils.abbreviate(field.getDeclaringType()), field.getName(),
 				PluginUtils.abbreviate(converterType.getTypeDescription()));
 
