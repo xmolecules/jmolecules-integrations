@@ -16,6 +16,7 @@
 package org.jmolecules.bytebuddy;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.lang.annotation.Annotation;
 import java.util.Optional;
@@ -30,8 +31,11 @@ import org.springframework.util.ClassUtils;
  *
  * @author Oliver Drotbohm
  */
+@Slf4j
 @RequiredArgsConstructor
 class Jpa {
+
+	private static Optional<Jpa> INSTANCE;
 
 	private final String basePackage;
 	private final Provider provider;
@@ -120,13 +124,27 @@ class Jpa {
 
 		Assert.notNull(world, "ClassWorld must not be null!");
 
+		if (INSTANCE == null) {
+			INSTANCE = createJavaPersistence(world);
+		}
+
+		return INSTANCE;
+	}
+
+	private static Optional<Jpa> createJavaPersistence(ClassWorld world) {
+
 		Provider provider = world.isAvailable("org.hibernate.Hibernate")
 				? Provider.HIBERNATE
 				: Provider.GENERIC;
 
 		if (world.isAvailable("javax.persistence.Entity")) {
+
+			log.info("jMolecules - Detected legacy JPA…");
 			return Optional.of(new Jpa("javax.persistence", provider));
+
 		} else if (world.isAvailable("jakarta.persistence.Entity")) {
+
+			log.info("jMolecules - Detected Jakarta Persistence…");
 			return Optional.of(new Jpa("jakarta.persistence", provider));
 		}
 
