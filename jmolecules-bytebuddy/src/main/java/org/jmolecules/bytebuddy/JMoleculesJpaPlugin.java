@@ -149,6 +149,8 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 		Junction<FieldDescription> isUndefaultedEntity = fieldType(isEntity()).and(not(hasJpaRelationShipAnnotation()));
 		Junction<FieldDescription> isUndefaultCollectionOfEntities = isCollectionOfEntities
 				.and(not(hasJpaRelationShipAnnotation()));
+		Junction<FieldDescription> collectionOfEntitiesWithoutJoinColumn = isCollectionOfEntities
+				.and(not(isAnnotatedWith(jpa.getAnnotation("JoinColumn"))));
 
 		boolean mapEager = !type.hasMoreThanOneField(isCollectionOfEntities);
 
@@ -159,7 +161,8 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 		JMoleculesType result = type.annotateFieldWith(oneToOneDescription, isUndefaultedEntity)
 
 				// Default @OneToMany
-				.annotateFieldWith(oneToManyDescription, isUndefaultCollectionOfEntities);
+				.annotateFieldWith(oneToManyDescription, isUndefaultCollectionOfEntities)
+				.annotateFieldWith(getJoinColumnAnnotation(), collectionOfEntitiesWithoutJoinColumn);
 
 		// Add @Fetch for lazy, Hibernate-mapped @OneToManys
 		if (!mapEager && jpa.isHibernate()) {
@@ -190,6 +193,10 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 				.define("orphanRemoval", true)
 				.defineEnumerationArray("cascade", cascadeType, value)
 				.build();
+	}
+
+	private AnnotationDescription getJoinColumnAnnotation() {
+		return AnnotationDescription.Builder.ofType(jpa.getType("JoinColumn")).build();
 	}
 
 	private Builder<?> declareNullVerificationMethod(Builder<?> builder, PluginLogger logger) {

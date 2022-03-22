@@ -23,15 +23,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Embeddable;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
+import javax.persistence.*;
 
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -65,11 +57,13 @@ class JMoleculesJpaPluginTests {
 		assertRelationshipDefaults(SampleAggregate.class.getDeclaredField("entity").getAnnotation(OneToOne.class));
 
 		// Defaults collection of entities to @OneToMany(cascade = CascadeType.ALL)
-		assertRelationshipDefaults(SampleAggregate.class.getDeclaredField("listOfEntity").getAnnotation(OneToMany.class),
-				false);
+		var listOfEntity = SampleAggregate.class.getDeclaredField("listOfEntity");
+
+		assertRelationshipDefaults(listOfEntity.getAnnotation(OneToMany.class), false);
+		assertThat(listOfEntity.getAnnotation(JoinColumn.class)).isNotNull();
 
 		// Assert FetchMode configured for lazy to-many mapping.
-		assertThat(SampleAggregate.class.getDeclaredField("listOfEntity").getAnnotation(Fetch.class))
+		assertThat(listOfEntity.getAnnotation(Fetch.class))
 				.extracting(Fetch::value)
 				.isEqualTo(FetchMode.SUBSELECT);
 	}
