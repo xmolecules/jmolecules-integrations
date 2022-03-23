@@ -19,7 +19,6 @@ import lombok.Getter;
 
 import java.util.Collection;
 
-import javax.persistence.JoinColumn;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 
@@ -38,7 +37,7 @@ public class SampleAggregate implements AggregateRoot<SampleAggregate, SampleAgg
 	private Collection<SampleEntity> listOfEntity;
 
 	private @ManyToOne SampleEntity annotatedEntity;
-	private @ManyToMany @JoinColumn Collection<SampleEntity> annotatedListOfEntity;
+	private @ManyToMany Collection<SampleEntity> annotatedListOfEntity;
 
 	private Association<SampleAggregate, SampleAggregateIdentifier> association;
 

@@ -145,24 +145,34 @@ public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
 
 	private JMoleculesType defaultToEntityAssociations(JMoleculesType type) {
 
+		Junction<FieldDescription> doesNotHaveAtJoinColumn = not(isAnnotatedWith(jpa.getAnnotation("JoinColumn")));
+		Junction<FieldDescription> doesNotHaveRelationShipAnnotation = not(hasJpaRelationShipAnnotation());
+
 		Junction<FieldDescription> isCollectionOfEntities = genericFieldType(isCollectionOfEntity());
-		Junction<FieldDescription> isUndefaultedEntity = fieldType(isEntity()).and(not(hasJpaRelationShipAnnotation()));
+		Junction<FieldDescription> isEntity = fieldType(isEntity());
+
+		Junction<FieldDescription> isUndefaultedEntity = isEntity.and(doesNotHaveRelationShipAnnotation);
 		Junction<FieldDescription> isUndefaultCollectionOfEntities = isCollectionOfEntities
-				.and(not(hasJpaRelationShipAnnotation()));
-		Junction<FieldDescription> collectionOfEntitiesWithoutJoinColumn = isCollectionOfEntities
-				.and(not(isAnnotatedWith(jpa.getAnnotation("JoinColumn"))));
+				.and(doesNotHaveRelationShipAnnotation);
 
 		boolean mapEager = !type.hasMoreThanOneField(isCollectionOfEntities);
 
 		AnnotationDescription oneToOneDescription = createRelationshipAnnotation(jpa.getAnnotation("OneToOne"), true);
 		AnnotationDescription oneToManyDescription = createRelationshipAnnotation(jpa.getAnnotation("OneToMany"), mapEager);
 
+		AnnotationDescription joinColumnAnnotation = getJoinColumnAnnotation();
+
 		// Default @OneToOne
 		JMoleculesType result = type.annotateFieldWith(oneToOneDescription, isUndefaultedEntity)
 
+				// Default @JoinColumn if no relationship annotation and no @JoinColumn found
+				.annotateFieldWith(joinColumnAnnotation, isUndefaultedEntity.and(doesNotHaveAtJoinColumn))
+
 				// Default @OneToMany
 				.annotateFieldWith(oneToManyDescription, isUndefaultCollectionOfEntities)
-				.annotateFieldWith(getJoinColumnAnnotation(), collectionOfEntitiesWithoutJoinColumn);
+
+				// Default @JoinColumn if no relationship annotation and no @JoinColumn found
+				.annotateFieldWith(joinColumnAnnotation, isUndefaultCollectionOfEntities.and(doesNotHaveAtJoinColumn));
 
 		// Add @Fetch for lazy, Hibernate-mapped @OneToManys
 		if (!mapEager && jpa.isHibernate()) {

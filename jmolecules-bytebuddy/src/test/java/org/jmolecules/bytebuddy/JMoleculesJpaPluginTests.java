@@ -122,11 +122,15 @@ class JMoleculesJpaPluginTests {
 	@Test // #15
 	void doesNotAnnotateAlreadyAnnotatedRelationship() throws Exception {
 
-		assertThat(SampleAggregate.class.getDeclaredField("annotatedListOfEntity")
-				.getAnnotation(OneToMany.class)).isNull();
+		var annotatedListOfEntity = SampleAggregate.class.getDeclaredField("annotatedListOfEntity");
 
-		assertThat(SampleAggregate.class.getDeclaredField("annotatedEntity")
-				.getAnnotation(OneToOne.class)).isNull();
+		assertThat(annotatedListOfEntity.getAnnotation(OneToMany.class)).isNull();
+		assertThat(annotatedListOfEntity.getAnnotation(JoinColumn.class)).isNull();
+
+		var annotatedEntity = SampleAggregate.class.getDeclaredField("annotatedEntity");
+
+		assertThat(annotatedEntity.getAnnotation(OneToOne.class)).isNull();
+		assertThat(annotatedEntity.getAnnotation(JoinColumn.class)).isNull();
 	}
 
 	@Test // #76
