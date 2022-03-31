@@ -23,7 +23,7 @@
 		<archunit.version>0.23.1</archunit.version>
 		<bytebuddy.version>1.12.7</bytebuddy.version>
 		<jmolecules.version>1.4.0</jmolecules.version>
-		<spring-boot.version>2.5.9</spring-boot.version>
+		<spring-boot.version>2.5.12</spring-boot.version>
 	</properties>
 
 	<licenses>
