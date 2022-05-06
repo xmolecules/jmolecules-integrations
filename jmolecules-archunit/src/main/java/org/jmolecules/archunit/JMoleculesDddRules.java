@@ -87,7 +87,8 @@ public class JMoleculesDddRules {
 		return CompositeArchRule //
 				.of(entitiesShouldBeDeclaredForUseInSameAggregate()) //
 				.and(aggregateReferencesShouldBeViaIdOrAssociation()) //
-				.and(annotatedEntitiesAndAggregatesNeedToHaveAnIdentifier());
+				.and(annotatedEntitiesAndAggregatesNeedToHaveAnIdentifier()) //
+				.allowEmptyShould(true);
 	}
 
 	/**
@@ -111,9 +112,10 @@ public class JMoleculesDddRules {
 	public static ArchRule entitiesShouldBeDeclaredForUseInSameAggregate() {
 
 		return ArchRuleDefinition.fields() //
-				.that(new AreDeclaredWithinADomainType())
+				.that(new AreDeclaredWithinADomainType()) //
 				.and(areAssignableTo(Entity.class).and(not(areAssignableTo(AggregateRoot.class)))) //
-				.should(beDeclaredToBeUsedWithDeclaringAggregate()); //
+				.should(beDeclaredToBeUsedWithDeclaringAggregate()) //
+				.allowEmptyShould(true); //
 	}
 
 	/**
@@ -141,7 +143,8 @@ public class JMoleculesDddRules {
 		return ArchRuleDefinition.fields() //
 				.that(new AreDeclaredWithinADomainType()) //
 				.and(referenceAnAggregateRoot) //
-				.should(new ShouldUseIdReferenceOrAssociation());
+				.should(new ShouldUseIdReferenceOrAssociation())
+				.allowEmptyShould(true);
 	}
 
 	/**
@@ -152,10 +155,11 @@ public class JMoleculesDddRules {
 	 */
 	public static ArchRule annotatedEntitiesAndAggregatesNeedToHaveAnIdentifier() {
 
-		return ArchRuleDefinition.classes()
-				.that(IS_ANNOTATED_IDENTIFIABLE)
-				.and().areNotAnnotations()
-				.should(new DeclaresAnnotatedField(Identity.class));
+		return ArchRuleDefinition.classes() //
+				.that(IS_ANNOTATED_IDENTIFIABLE) //
+				.and().areNotAnnotations() //
+				.should(new DeclaresAnnotatedField(Identity.class)) //
+				.allowEmptyShould(true);
 	}
 
 	private static IsDeclaredToUseTheSameAggregate beDeclaredToBeUsedWithDeclaringAggregate() {
