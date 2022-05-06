@@ -21,8 +21,10 @@ import net.bytebuddy.description.type.TypeDescription.Generic;
 import net.bytebuddy.matcher.ElementMatcher;
 
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 import org.jmolecules.ddd.types.Entity;
 
@@ -69,7 +71,24 @@ class JMoleculesElementMatchers {
 
 		return found.asTypeList() //
 				.stream() //
-				.filter(it -> !it.getPackage().getName().startsWith("java")) //
+				.filter(doesNotResideInAnyPackageStartingWith("java", "kotlin")) //
 				.anyMatch(it -> hasAnnotation(it, annotation));
+	}
+
+	/**
+	 * Returns a {@link Predicate} that passes for all {@link TypeDescription}s not living in packages that start with the
+	 * given prefixes.
+	 *
+	 * @param prefixes the prefixes to skip
+	 * @return will never be {@literal null}.
+	 */
+	private static Predicate<TypeDescription> doesNotResideInAnyPackageStartingWith(String... prefixes) {
+
+		return description -> {
+
+			String packageName = description.getPackage().getName();
+
+			return Arrays.stream(prefixes).noneMatch(packageName::startsWith);
+		};
 	}
 }
