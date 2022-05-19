@@ -1,0 +1,2 @@
+org.jmolecules.spring.config.JMoleculesSpringJacksonAutoConfiguration
+org.jmolecules.spring.config.JMoleculesWebAutoConfiguration
