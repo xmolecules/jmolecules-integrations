@@ -67,6 +67,10 @@ enum PluginLogger {
 
 		try {
 
+			if (!logs.isEmpty()) {
+				log.info("");
+			}
+
 			logs.forEach((description, moduleLogs) -> {
 
 				if (moduleLogs.isEmpty()) {
@@ -75,7 +79,7 @@ enum PluginLogger {
 
 				Collections.sort(moduleLogs, Comparator.comparing(LogEntry::getModule).thenComparing(LogEntry::getMessage));
 
-				log.info(description);
+				log.info("□- " + description);
 
 				for (int i = 0; i < moduleLogs.size(); i++) {
 
