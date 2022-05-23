@@ -16,7 +16,18 @@
 package org.jmolecules.archunit;
 
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 
+import org.jmolecules.architecture.hexagonal.Adapter;
+import org.jmolecules.architecture.hexagonal.Application;
+import org.jmolecules.architecture.hexagonal.Port;
+import org.jmolecules.architecture.hexagonal.PrimaryAdapter;
+import org.jmolecules.architecture.hexagonal.PrimaryPort;
+import org.jmolecules.architecture.hexagonal.SecondaryAdapter;
+import org.jmolecules.architecture.hexagonal.SecondaryPort;
 import org.jmolecules.architecture.layered.ApplicationLayer;
 import org.jmolecules.architecture.layered.DomainLayer;
 import org.jmolecules.architecture.layered.InfrastructureLayer;
@@ -56,6 +67,16 @@ public class JMoleculesArchitectureRules {
 	private static final String ONION_SIMPLE_DOMAIN = "Domain";
 	private static final String ONION_SIMPLE_APPLICATION = "Application";
 	private static final String ONION_SIMPLE_INFRASTRUCTURE = "Infrastructure";
+
+	private static final String HEXAGONAL_APPLICATION = "Application";
+	private static final String HEXAGONAL_PORT = "Port";
+	private static final String HEXAGONAL_PORT_UNQUALIFIED = "Port (unqualified)";
+	private static final String HEXAGONAL_PRIMARY_PORT = "Primary port";
+	private static final String HEXAGONAL_SECONDARY_PORT = "Secondary port";
+	private static final String HEXAGONAL_ADAPTER = "Adapter";
+	private static final String HEXAGONAL_ADAPTER_UNQUALIFIED = "Adapter (unqualified)";
+	private static final String HEXAGONAL_PRIMARY_ADAPTER = "Primary adapter";
+	private static final String HEXAGONAL_SECONDARY_ADAPTER = "Secondary adapter";
 
 	/**
 	 * ArchUnit {@link LayeredArchitecture} defined by considering JMolecules layer annotations allowing access of
@@ -144,6 +165,36 @@ public class JMoleculesArchitectureRules {
 						ONION_CLASSICAL_APPLICATION, ONION_CLASSICAL_INFRASTRUCTURE);
 	}
 
+	public static ArchRule ensureHexagonal() {
+
+		return hexagonalArchitecture()
+
+				.whereLayer(HEXAGONAL_PRIMARY_PORT)
+				.mayOnlyBeAccessedByLayers(APPLICATION, HEXAGONAL_PORT_UNQUALIFIED, HEXAGONAL_ADAPTER_UNQUALIFIED,
+						HEXAGONAL_PRIMARY_ADAPTER)
+
+				.whereLayer(HEXAGONAL_SECONDARY_PORT)
+				.mayOnlyBeAccessedByLayers(APPLICATION, HEXAGONAL_PORT_UNQUALIFIED, HEXAGONAL_ADAPTER_UNQUALIFIED,
+						HEXAGONAL_SECONDARY_ADAPTER)
+
+				.whereLayer(HEXAGONAL_PORT)
+				.mayOnlyBeAccessedByLayers(APPLICATION, HEXAGONAL_ADAPTER)
+
+				.whereLayer(HEXAGONAL_ADAPTER_UNQUALIFIED)
+				.mayOnlyBeAccessedByLayers(HEXAGONAL_PRIMARY_ADAPTER, HEXAGONAL_SECONDARY_ADAPTER)
+
+				.whereLayer(HEXAGONAL_PRIMARY_ADAPTER)
+				.mayOnlyBeAccessedByLayers(HEXAGONAL_ADAPTER_UNQUALIFIED)
+
+				.whereLayer(HEXAGONAL_SECONDARY_ADAPTER)
+				.mayOnlyBeAccessedByLayers(HEXAGONAL_ADAPTER_UNQUALIFIED)
+
+				.whereLayer(APPLICATION)
+				.mayNotBeAccessedByAnyLayer()
+
+		;
+	}
+
 	private static LayeredArchitecture layeredArchitecture() {
 
 		return Architectures.layeredArchitecture()
@@ -173,20 +224,52 @@ public class JMoleculesArchitectureRules {
 				.layer(ONION_SIMPLE_DOMAIN).definedBy(layerType(DomainRing.class));
 	}
 
-	private static DescribedPredicate<JavaClass> layerType(Class<? extends Annotation> annotation) {
+	private static LayeredArchitecture hexagonalArchitecture() {
+
+		return Architectures.layeredArchitecture()
+				.withOptionalLayers(true)
+				.layer(HEXAGONAL_APPLICATION).definedBy(layerType(Application.class))
+				.layer(HEXAGONAL_PORT).definedBy(layerType(Port.class))
+				.layer(HEXAGONAL_PORT_UNQUALIFIED)
+				.definedBy(layerType(Port.class).withExclusions(PrimaryPort.class, SecondaryPort.class))
+				.layer(HEXAGONAL_PRIMARY_PORT).definedBy(layerType(PrimaryPort.class))
+				.layer(HEXAGONAL_SECONDARY_PORT).definedBy(layerType(SecondaryPort.class))
+				.layer(HEXAGONAL_ADAPTER).definedBy(layerType(Adapter.class))
+				.layer(HEXAGONAL_ADAPTER_UNQUALIFIED)
+				.definedBy(layerType(Adapter.class).withExclusions(PrimaryAdapter.class, SecondaryAdapter.class))
+				.layer(HEXAGONAL_PRIMARY_ADAPTER).definedBy(layerType(PrimaryAdapter.class))
+				.layer(HEXAGONAL_SECONDARY_ADAPTER).definedBy(layerType(SecondaryAdapter.class));
+	}
+
+	private static IsLayerType layerType(Class<? extends Annotation> annotation) {
 		return new IsLayerType(annotation);
 	}
 
 	private static class IsLayerType extends DescribedPredicate<JavaClass> {
 
 		private final Class<? extends Annotation> annotation;
+		private final Collection<Class<? extends Annotation>> exclusions;
 
 		public IsLayerType(Class<? extends Annotation> annotation) {
+			this(annotation, Collections.emptySet());
+		}
 
-			super("(meta-) annotated with %s or residing in package (meta-)annotated with %s", //
+		public IsLayerType(Class<? extends Annotation> annotation, Collection<Class<? extends Annotation>> exclusions) {
+
+			super("(meta-)annotated with %s or residing in package (meta-)annotated with %s", //
 					annotation.getTypeName(), annotation.getTypeName());
 
 			this.annotation = annotation;
+			this.exclusions = exclusions;
+		}
+
+		@SafeVarargs
+		public final IsLayerType withExclusions(Class<? extends Annotation>... exclusions) {
+
+			Collection<Class<? extends Annotation>> newExclusions = new HashSet<>(this.exclusions);
+			newExclusions.addAll(Arrays.asList(exclusions));
+
+			return new IsLayerType(annotation, newExclusions);
 		}
 
 		/*
@@ -194,17 +277,30 @@ public class JMoleculesArchitectureRules {
 		 * @see com.tngtech.archunit.base.Predicate#apply(java.lang.Object)
 		 */
 		@Override
-		public boolean apply(JavaClass input) {
+		public boolean apply(JavaClass type) {
 
-			return input.isAnnotatedWith(annotation)
-					|| input.isMetaAnnotatedWith(annotation)
-					|| hasAnnotationOnPackageOrParent(input.getPackage());
+			if (exclusions.stream().anyMatch(it -> hasDirectOrMetaAnnotation(type, it))) {
+				return false;
+			}
+
+			return hasDirectOrMetaAnnotation(type, annotation)
+					|| hasAnnotationOnPackageOrParent(type.getPackage());
+		}
+
+		private boolean hasDirectOrMetaAnnotation(JavaClass type, Class<? extends Annotation> annotation) {
+			return type.isAnnotatedWith(annotation) || type.isMetaAnnotatedWith(annotation);
 		}
 
 		private boolean hasAnnotationOnPackageOrParent(JavaPackage javaPackage) {
 
-			if (javaPackage.isAnnotatedWith(annotation)
-					|| javaPackage.isMetaAnnotatedWith(annotation)) {
+			boolean excluded = exclusions.stream()
+					.anyMatch(it -> javaPackage.isAnnotatedWith(it) || javaPackage.isMetaAnnotatedWith(it));
+
+			if (excluded) {
+				return false;
+			}
+
+			if (javaPackage.isAnnotatedWith(annotation) || javaPackage.isMetaAnnotatedWith(annotation)) {
 				return true;
 			}
 
