@@ -76,6 +76,8 @@ class JMoleculesDddRulesUnitTest {
 		AnnotatedAggregate invalidAnnotatedAggregate;
 
 		Association<OtherAggregate, SampleIdentifier> association;
+
+		AnnotatedEntity validAnnotatedEntity;
 	}
 
 	static abstract class SampleEntity implements Entity<SampleAggregate, SampleIdentifier> {}
@@ -86,4 +88,9 @@ class JMoleculesDddRulesUnitTest {
 
 	@org.jmolecules.ddd.annotation.AggregateRoot
 	static class AnnotatedAggregate {}
+
+	@org.jmolecules.ddd.annotation.Entity
+	interface AnnotatedEntity {
+		@Identity Long getId();
+	}
 }
