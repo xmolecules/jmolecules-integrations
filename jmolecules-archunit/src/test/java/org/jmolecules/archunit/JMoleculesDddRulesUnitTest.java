@@ -36,6 +36,7 @@ import com.tngtech.archunit.lang.EvaluationResult;
  * Unit tests for DDD rules.
  *
  * @author Oliver Drotbohm
+ * @author Torsten Juergeleit
  */
 @AnalyzeClasses(packages = "org.jmolecules.archunit")
 class JMoleculesDddRulesUnitTest {
@@ -91,6 +92,7 @@ class JMoleculesDddRulesUnitTest {
 
 	@org.jmolecules.ddd.annotation.Entity
 	interface AnnotatedEntity {
-		@Identity Long getId();
+		@Identity
+		Long getId();
 	}
 }

@@ -53,6 +53,7 @@ import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
  * <a href="http://scabl.blogspot.com/2015/04/aeddd-9.html">here</a>.
  *
  * @author Oliver Drotbohm
+ * @author Torsten Juergeleit
  * @see http://scabl.blogspot.com/2015/04/aeddd-9.html
  */
 public class JMoleculesDddRules {
