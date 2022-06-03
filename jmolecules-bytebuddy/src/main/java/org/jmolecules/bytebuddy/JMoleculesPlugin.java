@@ -50,6 +50,8 @@ public class JMoleculesPlugin extends JMoleculesPluginSupport {
 			Optional<Jpa> jpa = Jpa.getJavaPersistence(world);
 
 			return Stream.of(
+					axonPlugin(world),
+					axonSpringPlugin(world),
 					jpaPlugin(world, jpa),
 					springPlugin(world),
 					springJpaPlugin(world, jpa),
@@ -149,4 +151,20 @@ public class JMoleculesPlugin extends JMoleculesPluginSupport {
 				? Stream.of(new JMoleculesSpringDataMongoDbPlugin())
 				: Stream.empty();
 	}
+
+	private static Stream<Plugin> axonPlugin(ClassWorld world) {
+		if (!world.isAvailable("org.axonframework.commandhandling.CommandHandler")) {
+			return Stream.empty();
+		}
+
+		return Stream.of(new JMoleculesAxonPlugin());
+	}
+	private static Stream<Plugin> axonSpringPlugin(ClassWorld world) {
+		if (!world.isAvailable("org.axonframework.spring.stereotype.Aggregate")) {
+			return Stream.empty();
+		}
+
+		return Stream.of(new JMoleculesAxonSpringPlugin());
+	}
+
 }
