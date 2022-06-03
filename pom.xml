@@ -189,7 +189,7 @@
 						<configuration>
 							<rules>
 								<requireJavaVersion>
-									<version>17</version>
+									<version>[15,)</version>
 								</requireJavaVersion>
 							</rules>
 						</configuration>
