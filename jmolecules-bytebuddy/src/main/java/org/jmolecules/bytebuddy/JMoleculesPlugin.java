@@ -31,8 +31,7 @@ import java.util.stream.Stream;
 /**
  * @author Oliver Drotbohm
  */
-@Slf4j
-public class JMoleculesPlugin extends JMoleculesPluginSupport {
+@Slf4j public class JMoleculesPlugin extends JMoleculesPluginSupport {
 
 	private Map<TypeDescription, List<? extends Plugin>> delegates = new HashMap<>();
 
@@ -40,28 +39,18 @@ public class JMoleculesPlugin extends JMoleculesPluginSupport {
 	 * (non-Javadoc)
 	 * @see net.bytebuddy.build.Plugin.WithPreprocessor#onPreprocess(net.bytebuddy.description.type.TypeDescription, net.bytebuddy.dynamic.ClassFileLocator)
 	 */
-	@Override
-	@SuppressWarnings("unchecked")
-	public void onPreprocess(TypeDescription typeDescription, ClassFileLocator classFileLocator) {
+	@Override @SuppressWarnings("unchecked") public void onPreprocess(TypeDescription typeDescription,
+			ClassFileLocator classFileLocator) {
 
 		delegates.computeIfAbsent(typeDescription, it -> {
 
 			ClassWorld world = ClassWorld.of(classFileLocator);
 			Optional<Jpa> jpa = Jpa.getJavaPersistence(world);
 
-			return Stream.of(
-					axonPlugin(world),
-					axonSpringPlugin(world),
-					jpaPlugin(world, jpa),
-					springPlugin(world),
-					springJpaPlugin(world, jpa),
-					springDataPlugin(world),
-					springDataJdbcPlugin(world),
-					springDataJpaPlugin(world, jpa),
-					springDataMongDbPlugin(world))
-					.flatMap(plugins -> (Stream<Plugin>) plugins)
-					.filter(plugin -> plugin.matches(typeDescription))
-					.collect(Collectors.toList());
+			return Stream.of(axonPlugin(world), axonSpringPlugin(world), jpaPlugin(world, jpa), springPlugin(world),
+							springJpaPlugin(world, jpa), springDataPlugin(world), springDataJdbcPlugin(world),
+							springDataJpaPlugin(world, jpa), springDataMongDbPlugin(world)).flatMap(plugins -> (Stream<Plugin>) plugins)
+					.filter(plugin -> plugin.matches(typeDescription)).collect(Collectors.toList());
 		});
 	}
 
@@ -69,8 +58,7 @@ public class JMoleculesPlugin extends JMoleculesPluginSupport {
 	 * (non-Javadoc)
 	 * @see net.bytebuddy.matcher.ElementMatcher#matches(java.lang.Object)
 	 */
-	@Override
-	public boolean matches(TypeDescription target) {
+	@Override public boolean matches(TypeDescription target) {
 
 		List<? extends Plugin> plugins = delegates.get(target);
 
@@ -81,13 +69,11 @@ public class JMoleculesPlugin extends JMoleculesPluginSupport {
 	 * (non-Javadoc)
 	 * @see net.bytebuddy.build.Plugin#apply(net.bytebuddy.dynamic.DynamicType.Builder, net.bytebuddy.description.type.TypeDescription, net.bytebuddy.dynamic.ClassFileLocator)
 	 */
-	@Override
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public Builder<?> apply(Builder<?> builder, TypeDescription typeDescription, ClassFileLocator classFileLocator) {
+	@Override @SuppressWarnings({ "unchecked", "rawtypes" }) public Builder<?> apply(Builder<?> builder,
+			TypeDescription typeDescription, ClassFileLocator classFileLocator) {
 
-		return delegates.get(typeDescription).stream()
-				.reduce(builder, (it, plugin) -> (Builder) plugin.apply(it, typeDescription, classFileLocator),
-						(left, right) -> right);
+		return delegates.get(typeDescription).stream().reduce(builder,
+				(it, plugin) -> (Builder) plugin.apply(it, typeDescription, classFileLocator), (left, right) -> right);
 	}
 
 	private static Stream<? extends Plugin> jpaPlugin(ClassWorld world, Optional<Jpa> jpa) {
@@ -102,54 +88,45 @@ public class JMoleculesPlugin extends JMoleculesPluginSupport {
 
 			return true;
 
-		}).map(it -> new JMoleculesJpaPlugin(it))
-				.map(Stream::of)
-				.orElseGet(Stream::empty);
+		}).map(it -> new JMoleculesJpaPlugin(it)).map(Stream::of).orElseGet(Stream::empty);
 	}
 
 	private static Stream<Plugin> springPlugin(ClassWorld world) {
 
-		return world.isAvailable("org.springframework.stereotype.Component")
-				? Stream.of(new JMoleculesSpringPlugin())
-				: Stream.empty();
+		return world.isAvailable("org.springframework.stereotype.Component") ?
+				Stream.of(new JMoleculesSpringPlugin()) :
+				Stream.empty();
 	}
 
 	private static Stream<Plugin> springDataPlugin(ClassWorld world) {
 
-		return world.isAvailable("org.springframework.data.repository.Repository")
-				? Stream.of(new JMoleculesSpringDataPlugin())
-				: Stream.empty();
+		return world.isAvailable("org.springframework.data.repository.Repository") ? Stream.of(
+				new JMoleculesSpringDataPlugin()) : Stream.empty();
 	}
 
 	private static Stream<? extends Plugin> springJpaPlugin(ClassWorld world, Optional<Jpa> jpa) {
 
-		return jpa.filter(__ -> world.isAvailable("org.springframework.stereotype.Component"))
-				.filter(__ -> world.isAvailable("org.jmolecules.spring.jpa.AssociationAttributeConverter"))
-				.map(it -> new JMoleculesSpringJpaPlugin(it, world))
-				.map(Stream::of)
-				.orElseGet(Stream::empty);
+		return jpa.filter(__ -> world.isAvailable("org.springframework.stereotype.Component")).filter(
+				__ -> world.isAvailable("org.jmolecules.spring.jpa.AssociationAttributeConverter")).map(
+				it -> new JMoleculesSpringJpaPlugin(it, world)).map(Stream::of).orElseGet(Stream::empty);
 	}
 
 	private static Stream<Plugin> springDataJdbcPlugin(ClassWorld world) {
 
-		return world.isAvailable("org.springframework.data.jdbc.core.mapping.AggregateReference")
-				? Stream.of(new JMoleculesSpringDataJdbcPlugin())
-				: Stream.empty();
+		return world.isAvailable("org.springframework.data.jdbc.core.mapping.AggregateReference") ? Stream.of(
+				new JMoleculesSpringDataJdbcPlugin()) : Stream.empty();
 	}
 
 	private static Stream<? extends Plugin> springDataJpaPlugin(ClassWorld world, Optional<Jpa> jpa) {
 
-		return jpa.filter(__ -> world.isAvailable("org.springframework.data.jpa.repository.JpaRepository"))
-				.map(JMoleculesSpringDataJpaPlugin::new)
-				.map(Stream::of)
-				.orElseGet(Stream::empty);
+		return jpa.filter(__ -> world.isAvailable("org.springframework.data.jpa.repository.JpaRepository")).map(
+				JMoleculesSpringDataJpaPlugin::new).map(Stream::of).orElseGet(Stream::empty);
 	}
 
 	private static Stream<Plugin> springDataMongDbPlugin(ClassWorld world) {
 
-		return world.isAvailable("org.springframework.data.mongodb.core.mapping.Document")
-				? Stream.of(new JMoleculesSpringDataMongoDbPlugin())
-				: Stream.empty();
+		return world.isAvailable("org.springframework.data.mongodb.core.mapping.Document") ? Stream.of(
+				new JMoleculesSpringDataMongoDbPlugin()) : Stream.empty();
 	}
 
 	private static Stream<Plugin> axonPlugin(ClassWorld world) {
@@ -159,6 +136,7 @@ public class JMoleculesPlugin extends JMoleculesPluginSupport {
 
 		return Stream.of(new JMoleculesAxonPlugin());
 	}
+
 	private static Stream<Plugin> axonSpringPlugin(ClassWorld world) {
 		if (!world.isAvailable("org.axonframework.spring.stereotype.Aggregate")) {
 			return Stream.empty();

@@ -30,15 +30,13 @@ import java.lang.annotation.Target;
  * @see <a href="https://scabl.blogspot.com/2015/04/aeddd-9.html>John Sullivan - Advancing Enterprise DDD - Reinstating
  * the Aggregate</a>
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE})
-@Documented
-public @interface Association {
+@Retention(RetentionPolicy.RUNTIME) @Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE })
+@Documented public @interface Association {
 
-    /**
-     * Defines the aggregate type.
-     *
-     * @return class defining the identifiable type of the aggregate.
-     */
-    Class<?> identifiableType() default void.class;
+	/**
+	 * Defines the aggregate type.
+	 *
+	 * @return class defining the identifiable type of the aggregate.
+	 */
+	Class<?> identifiableType() default void.class;
 }
