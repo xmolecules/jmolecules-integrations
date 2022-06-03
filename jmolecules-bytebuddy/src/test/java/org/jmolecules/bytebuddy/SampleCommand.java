@@ -1,2 +1,8 @@
-package org.jmolecules.bytebuddy;public class SampleCommand {
+package org.jmolecules.bytebuddy;
+
+import org.jmolecules.architecture.cqrs.annotation.Command;
+
+@Command
+public class SampleCommand {
+
 }

@@ -1,4 +1,4 @@
-package org.jmolecules.bytebuddy;
+package org.jmolecules.example.axonframework;
 
 import org.axonframework.queryhandling.QueryHandler;
 import org.jmolecules.architecture.cqrs.annotation.QueryModel;

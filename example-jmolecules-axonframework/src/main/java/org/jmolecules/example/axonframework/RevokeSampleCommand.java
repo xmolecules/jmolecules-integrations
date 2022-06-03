@@ -1,4 +1,4 @@
-package org.jmolecules.bytebuddy;
+package org.jmolecules.example.axonframework;
 
 import org.jmolecules.architecture.cqrs.annotation.Command;
 import org.jmolecules.ddd.annotation.Association;

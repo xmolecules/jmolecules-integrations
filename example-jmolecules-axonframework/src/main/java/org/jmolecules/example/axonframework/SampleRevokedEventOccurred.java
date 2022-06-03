@@ -1,4 +1,4 @@
-package org.jmolecules.bytebuddy;
+package org.jmolecules.example.axonframework;
 
 import org.axonframework.serialization.Revision;
 import org.jmolecules.ddd.annotation.ValueObject;

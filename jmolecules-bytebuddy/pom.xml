@@ -13,7 +13,6 @@
 	<artifactId>jmolecules-bytebuddy</artifactId>
 
 	<dependencies>
-
 		<dependency>
 			<groupId>net.bytebuddy</groupId>
 			<artifactId>byte-buddy</artifactId>
@@ -30,6 +29,26 @@
 			<groupId>org.jmolecules</groupId>
 			<artifactId>jmolecules-events</artifactId>
 			<version>${jmolecules.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jmolecules</groupId>
+			<artifactId>jmolecules-cqrs-architecture</artifactId>
+			<version>${jmolecules.version}</version>
+		</dependency>
+
+		<!-- Axon Framework -->
+		<dependency>
+			<groupId>org.axonframework</groupId>
+			<artifactId>axon-modelling</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.axonframework</groupId>
+			<artifactId>axon-eventsourcing</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.axonframework</groupId>
+			<artifactId>axon-spring</artifactId>
 		</dependency>
 
 		<!-- Spring dependencies -->
@@ -91,7 +110,6 @@
 			<artifactId>hibernate-core</artifactId>
 			<version>6.0.0.CR1</version>
 		</dependency>
-
 	</dependencies>
 
 
@@ -137,6 +155,12 @@
 				</dependencies>
 				<configuration>
 					<transformations>
+						<transformation>
+							<plugin>org.jmolecules.bytebuddy.JMoleculesAxonPlugin</plugin>
+						</transformation>
+						<transformation>
+							<plugin>org.jmolecules.bytebuddy.JMoleculesAxonSpringPlugin</plugin>
+						</transformation>
 						<transformation>
 							<plugin>org.jmolecules.bytebuddy.JMoleculesJpaPlugin</plugin>
 						</transformation>

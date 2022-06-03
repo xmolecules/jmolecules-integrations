@@ -8,9 +8,9 @@
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
-	<name>jMolecules - Axon Framework Runtime Support</name>
+	<name>jMolecules - Examples - Axon Framework</name>
 	<description>Runtime Support for Axon Framework</description>
-	<artifactId>jmolecules-axonframework</artifactId>
+	<artifactId>example-jmolecules-axonframework</artifactId>
 
 	<properties>
 		<axon.version>4.5.12</axon.version>
@@ -41,6 +41,19 @@
 			<artifactId>jmolecules-cqrs-architecture</artifactId>
 			<version>${jmolecules.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.jmolecules</groupId>
+			<artifactId>jmolecules-events</artifactId>
+			<version>${jmolecules.version}</version>
+		</dependency>
+
+		<!-- FIXME: remove as soon as jMolecules 1.6 is released -->
+		<!-- It is reusing the @Association Annotation -->
+		<dependency>
+			<groupId>org.jmolecules.integrations</groupId>
+			<artifactId>jmolecules-bytebuddy</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 
 		<!-- Axon Framework -->
 		<dependency>
@@ -56,23 +69,6 @@
 			<artifactId>axon-spring</artifactId>
 		</dependency>
 
-		<dependency>
-			<groupId>net.bytebuddy</groupId>
-			<artifactId>byte-buddy</artifactId>
-			<optional>true</optional>
-		</dependency>
-
-		<!-- Testing -->
-		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.assertj</groupId>
-			<artifactId>assertj-core</artifactId>
-			<scope>test</scope>
-		</dependency>
 		<dependency>
 			<groupId>org.axonframework</groupId>
 			<artifactId>axon-test</artifactId>
@@ -90,5 +86,36 @@
 		</dependency>
 	</dependencies>
 
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>net.bytebuddy</groupId>
+				<artifactId>byte-buddy-maven-plugin</artifactId>
+				<version>${bytebuddy.version}</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>transform</goal>
+						</goals>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>${project.groupId}</groupId>
+						<artifactId>jmolecules-bytebuddy</artifactId>
+						<version>${project.version}</version>
+						<optional>true</optional>
+					</dependency>
+				</dependencies>
+				<configuration>
+					<transformations>
+						<transformation>
+							<plugin>org.jmolecules.bytebuddy.JMoleculesPlugin</plugin>
+						</transformation>
+					</transformations>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>

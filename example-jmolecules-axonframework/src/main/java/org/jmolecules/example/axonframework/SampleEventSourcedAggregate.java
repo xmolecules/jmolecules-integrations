@@ -1,4 +1,4 @@
-package org.jmolecules.bytebuddy;
+package org.jmolecules.example.axonframework;
 
 
 import org.axonframework.modelling.command.AggregateLifecycle;
