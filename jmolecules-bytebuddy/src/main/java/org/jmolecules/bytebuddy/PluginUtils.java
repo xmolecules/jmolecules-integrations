@@ -15,19 +15,22 @@
  */
 package org.jmolecules.bytebuddy;
 
-import static net.bytebuddy.matcher.ElementMatchers.*;
-
 import net.bytebuddy.build.Plugin;
 import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.annotation.AnnotationList;
 import net.bytebuddy.description.annotation.AnnotationSource;
 import net.bytebuddy.description.field.FieldDescription;
+import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDefinition;
 import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.DynamicType.Builder;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatcher.Junction;
 import net.bytebuddy.matcher.ElementMatchers;
+import org.jmolecules.bytebuddy.PluginLogger.Log;
+import org.jmolecules.ddd.types.Identifier;
+import org.springframework.util.ClassUtils;
 
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
@@ -38,204 +41,264 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.jmolecules.bytebuddy.PluginLogger.Log;
-import org.jmolecules.ddd.types.Identifier;
-import org.springframework.util.ClassUtils;
+import static net.bytebuddy.matcher.ElementMatchers.*;
 
 /**
  * Utility methods to be used from different {@link Plugin} implementations
  *
  * @author Oliver Drotbohm
+ * @author Simon Zambrovski
  */
 class PluginUtils {
 
-	/**
-	 * Returns whether the given {@link TypeDescription} is annotated with the given annotation.
-	 *
-	 * @param type must not be {@literal null}.
-	 * @param annotationType must not be {@literal null}.
-	 * @return
-	 */
-	static boolean isAnnotatedWith(TypeDescription type, Class<?> annotationType) {
+    /**
+     * Returns whether the given {@link TypeDescription} is annotated with the given annotation.
+     *
+     * @param type           must not be {@literal null}.
+     * @param annotationType must not be {@literal null}.
+     * @return
+     */
+    static boolean isAnnotatedWith(TypeDescription type, Class<?> annotationType) {
 
-		return type.getDeclaredAnnotations() //
-				.asTypeList() //
-				.stream() //
-				.anyMatch(it -> it.isAssignableTo(annotationType));
-	}
+        return type.getDeclaredAnnotations() //
+                   .asTypeList() //
+                   .stream() //
+                   .anyMatch(it -> it.isAssignableTo(annotationType));
+    }
 
-	/**
-	 * Returns an {@link AnnotationDescription} for an empty (i.e. no attributes defined) annotation of the given type.
-	 *
-	 * @param type must not be {@literal null}.
-	 * @return
-	 */
-	static AnnotationDescription getAnnotation(Class<? extends Annotation> type) {
-		return AnnotationDescription.Builder.ofType(type).build();
-	}
+    /**
+     * Returns an {@link AnnotationDescription} for an empty (i.e. no attributes defined) annotation of the given type.
+     *
+     * @param type must not be {@literal null}.
+     * @return
+     */
+    static AnnotationDescription getAnnotation(Class<? extends Annotation> type) {
+        return AnnotationDescription.Builder.ofType(type).build();
+    }
 
-	/**
-	 * Applies the given map of source type or annotation to annotation onto the given {@link Builder}.
-	 *
-	 * @param prefix the prefix to use for log output.
-	 * @param builder the current {@link Builder}.
-	 * @param type the currently described type.
-	 * @param mappings the annotation or type mappings.
-	 * @return
-	 */
-	static Builder<?> mapAnnotationOrInterfaces(Builder<?> builder, TypeDescription type,
-			Map<Class<?>, Class<? extends Annotation>> mappings, Log log) {
+    /**
+     * Applies the given map of source type or annotation to annotation onto the given {@link Builder}.
+     *
+     * @param builder  the current {@link Builder}.
+     * @param type     the currently described type.
+     * @param mappings the annotation or type mappings.
+     * @return type builder
+     */
+    static Builder<?> mapAnnotationOrInterfaces(Builder<?> builder, TypeDescription type,
+                                                Map<Class<?>, Class<? extends Annotation>> mappings, Log log) {
 
-		for (Entry<Class<?>, Class<? extends Annotation>> entry : mappings.entrySet()) {
+        for (Entry<Class<?>, Class<? extends Annotation>> entry : mappings.entrySet()) {
 
-			Class<?> source = entry.getKey();
+            Class<?> source = entry.getKey();
 
-			if (source.isAnnotation() ? isAnnotatedWith(type, source) : type.isAssignableTo(source)) {
-				builder = addAnnotationIfMissing(entry.getValue(), builder, type, log);
-			}
-		}
+            if (source.isAnnotation() ? isAnnotatedWith(type, source) : type.isAssignableTo(source)) {
+                builder = addAnnotationIfMissing(entry.getValue(), builder, type, log);
+            }
+        }
 
-		return builder;
-	}
+        return builder;
+    }
 
-	static ElementMatcher<FieldDescription> defaultMapping(Log logger, Junction<FieldDescription> source,
-			AnnotationDescription annotation) {
+    /**
+     * Applies the given map of source type or annotation to annotation onto the given {@link DynamicType.Builder}.
+     *
+     * @param prefix   the prefix to use for log output.
+     * @param builder  the current {@link DynamicType.Builder}.
+     * @param type     the currently described type.
+     * @param mappings the annotation or type mappings.
+     * @return type builder
+     */
+    static DynamicType.Builder<?> mapAnnotationOrInterfaces(String prefix, DynamicType.Builder<?> builder,
+                                                            TypeDescription type,
+                                                            Map<Class<?>, Class<? extends Annotation>> mappings,
+                                                            Log log) {
+        for (Map.Entry<Class<?>, Class<? extends Annotation>> entry : mappings.entrySet()) {
+            Class<?> source = entry.getKey();
+            if (source.isAnnotation() ? isAnnotatedWith(type, source) : type.isAssignableTo(source)) {
+                builder = addAnnotationIfMissing(entry.getValue(), builder, type, log);
+            }
+        }
+        return builder;
+    }
 
-		return it -> {
+    static ElementMatcher<FieldDescription> defaultMapping(Log logger, Junction<FieldDescription> source,
+                                                           AnnotationDescription annotation) {
 
-			boolean matches = source.matches(it);
+        return it -> {
 
-			if (matches) {
-				logger.info("Defaulting {} mapping to {}.", it.getName(), abbreviate(annotation));
-			}
+            boolean matches = source.matches(it);
 
-			return matches;
-		};
-	}
+            if (matches) {
+                logger.info("Defaulting {} mapping to {}.", it.getName(), abbreviate(annotation));
+            }
 
-	@SafeVarargs
-	static Builder<?> annotateIdentifierWith(Log logger, Builder<?> builder, Class<? extends Annotation> type,
-			Class<? extends Annotation>... filterAnnotations) {
+            return matches;
+        };
+    }
 
-		AnnotationDescription idAnnotation = getAnnotation(type);
-		Junction<AnnotationSource> alreadyAnnotated = ElementMatchers.isAnnotatedWith(type);
+    @SafeVarargs
+    static Builder<?> annotateIdentifierWith(Log logger, Builder<?> builder, Class<? extends Annotation> type,
+                                             Class<? extends Annotation>... filterAnnotations) {
 
-		for (Class<? extends Annotation> filterAnnotation : filterAnnotations) {
-			alreadyAnnotated = alreadyAnnotated.or(ElementMatchers.isAnnotatedWith(filterAnnotation));
-		}
+        AnnotationDescription idAnnotation = getAnnotation(type);
+        Junction<AnnotationSource> alreadyAnnotated = ElementMatchers.isAnnotatedWith(type);
 
-		return builder
-				.field(PluginUtils.defaultMapping(logger,
-						fieldType(isSubTypeOf(Identifier.class)).and(not(alreadyAnnotated)), idAnnotation))
-				.annotateField(idAnnotation);
-	}
+        for (Class<? extends Annotation> filterAnnotation : filterAnnotations) {
+            alreadyAnnotated = alreadyAnnotated.or(ElementMatchers.isAnnotatedWith(filterAnnotation));
+        }
 
-	static String abbreviate(Class<?> type) {
-		return abbreviate(type.getName());
-	}
+        return builder
+                .field(PluginUtils.defaultMapping(logger,
+                                                  fieldType(isSubTypeOf(Identifier.class)).and(not(alreadyAnnotated)),
+                                                  idAnnotation))
+                .annotateField(idAnnotation);
+    }
 
-	static String abbreviate(TypeDefinition type) {
-		return abbreviate(type.getTypeName());
-	}
+    static String abbreviate(Class<?> type) {
+        return abbreviate(type.getName());
+    }
 
-	static String abbreviate(AnnotationDescription annotation) {
+    static String abbreviate(TypeDefinition type) {
+        return abbreviate(type.getTypeName());
+    }
 
-		String annotationString = annotation.toString();
-		int openParenthesisIndex = annotationString.indexOf("(");
+    static String abbreviate(AnnotationDescription annotation) {
 
-		String annotationName = annotationString.substring(1, openParenthesisIndex);
+        String annotationString = annotation.toString();
+        int openParenthesisIndex = annotationString.indexOf("(");
 
-		return "@"
-				.concat(abbreviate(annotationName))
-				.concat(annotationString.substring(openParenthesisIndex));
-	}
+        String annotationName = annotationString.substring(1, openParenthesisIndex);
 
-	static String abbreviate(String fullyQualifiedTypeName) {
+        return "@"
+                .concat(abbreviate(annotationName))
+                .concat(annotationString.substring(openParenthesisIndex));
+    }
 
-		String abbreviatedPackage = Arrays.stream(ClassUtils.getPackageName(fullyQualifiedTypeName).split("\\."))
-				.map(it -> it.substring(0, 1))
-				.collect(Collectors.joining("."));
+    static String abbreviate(String fullyQualifiedTypeName) {
 
-		return abbreviatedPackage.concat(".").concat(ClassUtils.getShortName(fullyQualifiedTypeName));
-	}
+        String abbreviatedPackage = Arrays.stream(ClassUtils.getPackageName(fullyQualifiedTypeName).split("\\."))
+                                          .map(it -> it.substring(0, 1))
+                                          .collect(Collectors.joining("."));
 
-	@SafeVarargs
-	static Builder<?> addAnnotationIfMissing(Class<? extends Annotation> annotation, Builder<?> builder,
-			TypeDescription type, Log log, Class<? extends Annotation>... exclusions) {
-		return addAnnotationIfMissing(__ -> annotation, builder, type, log, exclusions);
-	}
+        return abbreviatedPackage.concat(".").concat(ClassUtils.getShortName(fullyQualifiedTypeName));
+    }
 
-	@SafeVarargs
-	static Builder<?> addAnnotationIfMissing(Function<TypeDescription, Class<? extends Annotation>> producer,
-			Builder<?> builder, TypeDescription type, Log log, Class<? extends Annotation>... exclusions) {
+    @SafeVarargs
+    static Builder<?> addAnnotationIfMissing(Class<? extends Annotation> annotation, Builder<?> builder,
+                                             TypeDescription type, Log log, Class<? extends Annotation>... exclusions) {
+        return addAnnotationIfMissing(__ -> annotation, builder, type, log, exclusions);
+    }
 
-		AnnotationList existing = type.getDeclaredAnnotations();
-		Class<? extends Annotation> annotation = producer.apply(type);
+    @SafeVarargs
+    static Builder<?> addAnnotationIfMissing(Function<TypeDescription, Class<? extends Annotation>> producer,
+                                             Builder<?> builder, TypeDescription type, Log log,
+                                             Class<? extends Annotation>... exclusions) {
 
-		String annotationName = PluginUtils.abbreviate(annotation);
+        AnnotationList existing = type.getDeclaredAnnotations();
+        Class<? extends Annotation> annotation = producer.apply(type);
 
-		boolean existingFound = Stream.of(exclusions).anyMatch(it -> {
+        String annotationName = PluginUtils.abbreviate(annotation);
 
-			boolean found = existing.isAnnotationPresent(it);
+        boolean existingFound = Stream.of(exclusions).anyMatch(it -> {
 
-			if (found) {
-				log.info("Not adding @{} because type is already annotated with @{}.", annotationName,
-						PluginUtils.abbreviate(it));
-			}
+            boolean found = existing.isAnnotationPresent(it);
 
-			return found;
-		});
+            if (found) {
+                log.info("Not adding @{} because type is already annotated with @{}.", annotationName,
+                         PluginUtils.abbreviate(it));
+            }
 
-		if (existingFound) {
-			return builder;
-		}
+            return found;
+        });
 
-		log.info("Adding @{}.", annotationName);
+        if (existingFound) {
+            return builder;
+        }
 
-		return builder.annotateType(getAnnotation(annotation));
-	}
+        log.info("Adding @{}.", annotationName);
+        return builder.annotateType(getAnnotation(annotation));
+    }
 
-	/**
-	 * Returns a {@link Supplier} memoizing the value provided by the given source {@link Supplier} to avoid multiple
-	 * lookups of the original value.
-	 *
-	 * @param <T> the actual value type
-	 * @param source must not be {@literal null}.
-	 * @return
-	 * @since 0.6
-	 */
-	static <T> Supplier<T> memoized(Supplier<T> source) {
+    /**
+     * Returns a {@link Supplier} memoizing the value provided by the given source {@link Supplier} to avoid multiple
+     * lookups of the original value.
+     *
+     * @param <T>    the actual value type
+     * @param source must not be {@literal null}.
+     * @return
+     * @since 0.6
+     */
+    static <T> Supplier<T> memoized(Supplier<T> source) {
 
-		return new Supplier<T>() {
+        return new Supplier<T>() {
 
-			private T instance;
+            private T instance;
 
-			/*
-			 * (non-Javadoc)
-			 * @see java.util.function.Supplier#get()
-			 */
-			@Override
-			public T get() {
+            /*
+             * (non-Javadoc)
+             * @see java.util.function.Supplier#get()
+             */
+            @Override
+            public T get() {
 
-				if (instance == null) {
-					instance = source.get();
-				}
+                if (instance == null) {
+                    instance = source.get();
+                }
 
-				return instance;
-			}
-		};
-	}
+                return instance;
+            }
+        };
+    }
 
-	private static Builder<?> addAnnotationIfMissing(Class<? extends Annotation> annotation,
-			Builder<?> builder, TypeDescription type, Log log) {
+    /**
+     * Adds annotation if missing.
+     *
+     * @param annotation annotation class.
+     * @param builder    type builder.
+     * @param type       type to work on.
+     * @param exclusions class exclusions to skip.
+     * @return type builder.
+     */
+    static Builder<?> addAnnotationIfMissing(Class<? extends Annotation> annotation,
+                                                     Builder<?> builder,
+                                                     TypeDescription type,
+                                                     Log log) {
 
-		if (isAnnotatedWith(type, annotation)) {
-			log.info("Not adding @{}, already present.", PluginUtils.abbreviate(annotation));
-			return builder;
-		}
+        if (isAnnotatedWith(type, annotation)) {
+            log.info("Not adding @{}, already present.", PluginUtils.abbreviate(annotation));
+            return builder;
+        }
 
-		log.info("Adding @{}.", PluginUtils.abbreviate(annotation));
+        log.info("Adding @{}.", PluginUtils.abbreviate(annotation));
 
-		return builder.annotateType(getAnnotation(annotation));
-	}
+        return builder.annotateType(getAnnotation(annotation));
+    }
+
+    /**
+     * Loggable method representation.
+     *
+     * @param method method to log about.
+     * @return output for the log.
+     */
+    static String toLog(MethodDescription method) {
+        TypeDefinition type = method.getDeclaringType();
+        String parameterTypes = method.getParameters()
+                                      .asTypeList()
+                                      .asErasures()
+                                      .stream()
+                                      .map(TypeDescription::getSimpleName)
+                                      .collect(Collectors.joining(", "));
+        return abbreviate(type).concat(".").concat(method.getName()).concat("(").concat(parameterTypes).concat(")");
+    }
+
+    /**
+     * Loggable field representation.
+     *
+     * @param field field to log about.
+     * @return output for the log.
+     */
+    static String toLog(FieldDescription field) {
+        TypeDefinition type = field.getDeclaringType();
+        return abbreviate(type).concat(".").concat(field.getName());
+    }
 }
