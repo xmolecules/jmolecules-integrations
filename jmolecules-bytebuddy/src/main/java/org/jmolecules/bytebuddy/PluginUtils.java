@@ -20,6 +20,7 @@ import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.annotation.AnnotationList;
 import net.bytebuddy.description.annotation.AnnotationSource;
 import net.bytebuddy.description.field.FieldDescription;
+import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDefinition;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType.Builder;
@@ -76,11 +77,10 @@ class PluginUtils {
 	/**
 	 * Applies the given map of source type or annotation to annotation onto the given {@link Builder}.
 	 *
-	 * @param prefix   the prefix to use for log output.
 	 * @param builder  the current {@link Builder}.
 	 * @param type     the currently described type.
 	 * @param mappings the annotation or type mappings.
-	 * @return
+	 * @return tyoe builder
 	 */
 	static Builder<?> mapAnnotationOrInterfaces(Builder<?> builder, TypeDescription type,
 			Map<Class<?>, Class<? extends Annotation>> mappings, Log log) {
@@ -229,5 +229,29 @@ class PluginUtils {
 		log.info("Adding @{}.", PluginUtils.abbreviate(annotation));
 
 		return builder.annotateType(getAnnotation(annotation));
+	}
+
+	/**
+	 * Loggable method representation.
+	 *
+	 * @param method method to log about.
+	 * @return output for the log.
+	 */
+	static String toLog(MethodDescription method) {
+		TypeDefinition type = method.getDeclaringType();
+		String parameterTypes = method.getParameters().asTypeList().asErasures().stream().map(
+				TypeDescription::getSimpleName).collect(Collectors.joining(", "));
+		return abbreviate(type).concat(".").concat(method.getName()).concat("(").concat(parameterTypes).concat(")");
+	}
+
+	/**
+	 * Loggable field representation.
+	 *
+	 * @param field field to log about.
+	 * @return output for the log.
+	 */
+	static String toLog(FieldDescription field) {
+		TypeDefinition type = field.getDeclaringType();
+		return abbreviate(type).concat(".").concat(field.getName());
 	}
 }

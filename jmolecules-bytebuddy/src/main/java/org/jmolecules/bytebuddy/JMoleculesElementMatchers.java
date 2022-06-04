@@ -16,6 +16,7 @@
 package org.jmolecules.bytebuddy;
 
 import net.bytebuddy.description.annotation.AnnotationList;
+import net.bytebuddy.description.field.FieldDescription;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.description.type.TypeDescription.Generic;
@@ -28,6 +29,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
+
+import static org.jmolecules.bytebuddy.PluginUtils.*;
 
 /**
  * @author Oliver Drotbohm
@@ -99,8 +102,41 @@ class JMoleculesElementMatchers {
 				return false;
 			}
 
-			log.info("Adding @{}.", PluginUtils.abbreviate(target));
+			log.info("Adding @{}.", abbreviate(target));
 
+			return true;
+		};
+	}
+
+	/**
+	 * Matcher checking, if the field is annotated.
+	 *
+	 * @param type   type to check for.
+	 * @param source source code.
+	 * @param target target representation.
+	 * @return element matcher.
+	 */
+	static ElementMatcher<? super FieldDescription> hasAnnotatedField(TypeDescription type,
+			Class<? extends Annotation> source, Class<? extends Annotation> target, PluginLogger.Log log) {
+		return field -> {
+			Objects.requireNonNull(type, "Type must not be null!");
+			if (!field.getDeclaringType().equals(type)) {
+				return false;
+			}
+			if (PACKAGE_PREFIX_TO_SKIP.stream().anyMatch(it -> field.getDeclaringType().getTypeName().startsWith(it))) {
+				return false;
+			}
+			AnnotationList annotations = field.getDeclaredAnnotations();
+			String signature = toLog(field);
+			if (annotations.isAnnotationPresent(target)) {
+				// log.info("{} - Already annotated with @{}.", signature, abbreviate(target));
+				return false;
+			}
+			if (!annotations.isAnnotationPresent(source)) {
+				// log.info("{} - Annotation {} not found.", signature, abbreviate(source));
+				return false;
+			}
+			log.info("{} - Adding @{}.", signature, abbreviate(target));
 			return true;
 		};
 	}
