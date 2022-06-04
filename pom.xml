@@ -77,7 +77,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>3.3.0</version>
+						<version>3.4.0</version>
 						<executions>
 							<execution>
 								<id>attach-javadocs</id>
@@ -135,6 +135,11 @@
 			<artifactId>assertj-core</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -146,7 +151,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.1</version>
+				<version>3.10.1</version>
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
@@ -166,7 +171,7 @@
 						<configuration>
 							<rules>
 								<requireJavaVersion>
-									<version>15</version>
+									<version>[15,)</version>
 								</requireJavaVersion>
 							</rules>
 						</configuration>
@@ -243,9 +248,9 @@
 	</build>
 
 	<scm>
-		<url>https://github.com/xmolecules/jmolecules</url>
-		<connection>scm:git:https://github.com/xmolecules/jmolecules</connection>
-		<developerConnection>scm:git:ssh://git@github.com/xmolecules/jmolecules.git</developerConnection>
+		<url>https://github.com/xmolecules/jmolecules-integrations</url>
+		<connection>scm:git:https://github.com/xmolecules/jmolecules-integrations</connection>
+		<developerConnection>scm:git:ssh://git@github.com/xmolecules/jmolecules-integrations.git</developerConnection>
 		<tag>0.10.0</tag>
 	</scm>
 
