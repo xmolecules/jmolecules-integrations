@@ -16,43 +16,37 @@
 package org.jmolecules.bytebuddy;
 
 import net.bytebuddy.description.annotation.AnnotationList;
+import net.bytebuddy.description.field.FieldDescription;
+import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.description.type.TypeDescription.Generic;
 import net.bytebuddy.matcher.ElementMatcher;
+import org.jmolecules.ddd.types.Entity;
 
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-import org.jmolecules.ddd.types.Entity;
+import static org.jmolecules.bytebuddy.PluginUtils.*;
 
 /**
  * @author Oliver Drotbohm
  */
 class JMoleculesElementMatchers {
 
+	static final List<String> PACKAGE_PREFIX_TO_SKIP = Arrays.asList("java.", "javax.", "kotlin.");
+
 	public static ElementMatcher<TypeDescription> isEntity() {
-
-		return it -> {
-
-			boolean match = it.isAssignableTo(Entity.class)
-					|| hasAnnotation(it, org.jmolecules.ddd.annotation.Entity.class);
-
-			return match;
-		};
+		return it -> it.isAssignableTo(Entity.class) || hasAnnotation(it, org.jmolecules.ddd.annotation.Entity.class);
 	}
 
 	public static ElementMatcher<? super Generic> isCollectionOfEntity() {
 
-		return it -> {
-
-			boolean match = it.asErasure().isAssignableTo(Collection.class)
-					&& isEntity().matches(it.asGenericType().getTypeArguments().get(0).asErasure());
-
-			return match;
-		};
+		return it -> it.asErasure().isAssignableTo(Collection.class) && isEntity().matches(
+				it.asGenericType().getTypeArguments().get(0).asErasure());
 	}
 
 	static boolean hasAnnotation(TypeDescription type, Class<? extends Annotation> annotation) {
@@ -71,8 +65,80 @@ class JMoleculesElementMatchers {
 
 		return found.asTypeList() //
 				.stream() //
-				.filter(doesNotResideInAnyPackageStartingWith("java", "kotlin")) //
+				.filter(doesNotResideInAnyPackageStartingWith(PACKAGE_PREFIX_TO_SKIP)) //
 				.anyMatch(it -> hasAnnotation(it, annotation));
+	}
+
+	/**
+	 * Matcher checking, if the method is annotated.
+	 *
+	 * @param type   type to check for.
+	 * @param source source code.
+	 * @param target target representation.
+	 * @return element matcher.
+	 */
+	static ElementMatcher<? super MethodDescription> hasAnnotatedMethod(TypeDescription type,
+			Class<? extends Annotation> source, Class<? extends Annotation> target, PluginLogger.Log log) {
+
+		return method -> {
+
+			if (!method.getDeclaringType().equals(type)) {
+				return false;
+			}
+
+			if (PACKAGE_PREFIX_TO_SKIP.stream().anyMatch(it -> method.getDeclaringType().getTypeName().startsWith(it))) {
+				return false;
+			}
+
+			AnnotationList annotations = method.getDeclaredAnnotations();
+
+			if (annotations.isAnnotationPresent(target)) {
+				// log.info("Already annotated with @{}.", PluginUtils.abbreviate(target));
+				return false;
+			}
+
+			if (!annotations.isAnnotationPresent(source)) {
+				// log.info("Annotation {} not found.", PluginUtils.abbreviate(source));
+				return false;
+			}
+
+			log.info("Adding @{}.", abbreviate(target));
+
+			return true;
+		};
+	}
+
+	/**
+	 * Matcher checking, if the field is annotated.
+	 *
+	 * @param type   type to check for.
+	 * @param source source code.
+	 * @param target target representation.
+	 * @return element matcher.
+	 */
+	static ElementMatcher<? super FieldDescription> hasAnnotatedField(TypeDescription type,
+			Class<? extends Annotation> source, Class<? extends Annotation> target, PluginLogger.Log log) {
+		return field -> {
+			Objects.requireNonNull(type, "Type must not be null!");
+			if (!field.getDeclaringType().equals(type)) {
+				return false;
+			}
+			if (PACKAGE_PREFIX_TO_SKIP.stream().anyMatch(it -> field.getDeclaringType().getTypeName().startsWith(it))) {
+				return false;
+			}
+			AnnotationList annotations = field.getDeclaredAnnotations();
+			String signature = toLog(field);
+			if (annotations.isAnnotationPresent(target)) {
+				// log.info("{} - Already annotated with @{}.", signature, abbreviate(target));
+				return false;
+			}
+			if (!annotations.isAnnotationPresent(source)) {
+				// log.info("{} - Annotation {} not found.", signature, abbreviate(source));
+				return false;
+			}
+			log.info("{} - Adding @{}.", signature, abbreviate(target));
+			return true;
+		};
 	}
 
 	/**
@@ -82,13 +148,19 @@ class JMoleculesElementMatchers {
 	 * @param prefixes the prefixes to skip
 	 * @return will never be {@literal null}.
 	 */
-	private static Predicate<TypeDescription> doesNotResideInAnyPackageStartingWith(String... prefixes) {
+	private static Predicate<TypeDescription> doesNotResideInAnyPackageStartingWith(List<String> prefixes) {
+		return description -> !residesInAnyPackageStartingWith(description, prefixes);
+	}
 
-		return description -> {
-
-			String packageName = description.getPackage().getName();
-
-			return Arrays.stream(prefixes).noneMatch(packageName::startsWith);
-		};
+	/**
+	 * Check that passes if given type is living in one of packages that start with the given prefixes.
+	 *
+	 * @param target   type description
+	 * @param prefixes the prefixes to skip
+	 * @return true if the type is inside a package starting with one of specified prefix.
+	 */
+	static boolean residesInAnyPackageStartingWith(TypeDescription target, List<String> prefixes) {
+		return target.getPackage() != null && prefixes.stream().anyMatch(
+				it -> target.getPackage().getName().startsWith(it));
 	}
 }
