@@ -16,7 +16,7 @@
 package org.jmolecules.spring.jdbc;
 
 import org.jmolecules.spring.data.MutablePersistable;
-import org.springframework.data.relational.core.mapping.event.AfterLoadCallback;
+import org.springframework.data.relational.core.mapping.event.AfterConvertCallback;
 import org.springframework.data.relational.core.mapping.event.AfterSaveCallback;
 
 /**
@@ -24,14 +24,15 @@ import org.springframework.data.relational.core.mapping.event.AfterSaveCallback;
  *
  * @author Oliver Drotbohm
  */
-public class NotNewCallback<T extends MutablePersistable<T, ?>> implements AfterLoadCallback<T>, AfterSaveCallback<T> {
+public class NotNewCallback<T extends MutablePersistable<T, ?>>
+		implements AfterConvertCallback<T>, AfterSaveCallback<T> {
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.springframework.data.relational.core.mapping.event.AfterLoadCallback#onAfterLoad(java.lang.Object)
+	 * @see org.springframework.data.relational.core.mapping.event.AfterConvertCallback#onAfterConvert(java.lang.Object)
 	 */
 	@Override
-	public T onAfterLoad(T aggregate) {
+	public T onAfterConvert(T aggregate) {
 
 		aggregate.__jMolecules__markNotNew();
 

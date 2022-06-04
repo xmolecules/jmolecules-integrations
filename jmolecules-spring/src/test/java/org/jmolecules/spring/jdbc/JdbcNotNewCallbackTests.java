@@ -32,7 +32,7 @@ class JdbcNotNewCallbackTests {
 
 		NotNewCallback<SamplePersistable> callback = new NotNewCallback<>();
 
-		assertThat(callback.onAfterLoad(new SamplePersistable()).isNew()).isFalse();
+		assertThat(callback.onAfterConvert(new SamplePersistable()).isNew()).isFalse();
 	}
 
 	@Test

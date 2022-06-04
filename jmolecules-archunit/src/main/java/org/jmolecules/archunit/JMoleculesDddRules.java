@@ -53,6 +53,7 @@ import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
  * <a href="http://scabl.blogspot.com/2015/04/aeddd-9.html">here</a>.
  *
  * @author Oliver Drotbohm
+ * @author Torsten Juergeleit
  * @see http://scabl.blogspot.com/2015/04/aeddd-9.html
  */
 public class JMoleculesDddRules {
@@ -158,7 +159,7 @@ public class JMoleculesDddRules {
 		return ArchRuleDefinition.classes() //
 				.that(IS_ANNOTATED_IDENTIFIABLE) //
 				.and().areNotAnnotations() //
-				.should(new DeclaresAnnotatedField(Identity.class)) //
+				.should(new DeclaresAnnotatedFieldOrMethod(Identity.class)) //
 				.allowEmptyShould(true);
 	}
 
@@ -294,13 +295,13 @@ public class JMoleculesDddRules {
 		}
 	}
 
-	private static class DeclaresAnnotatedField extends ArchCondition<JavaClass> {
+	private static class DeclaresAnnotatedFieldOrMethod extends ArchCondition<JavaClass> {
 
 		private final Class<? extends Annotation> annotation;
 
-		DeclaresAnnotatedField(Class<? extends Annotation> annotation) {
+		DeclaresAnnotatedFieldOrMethod(Class<? extends Annotation> annotation) {
 
-			super("declares field (meta-)annotated with %s", annotation.getName());
+			super("declares field or method  (meta-)annotated with %s", annotation.getName());
 
 			this.annotation = annotation;
 		}
@@ -314,10 +315,12 @@ public class JMoleculesDddRules {
 
 			boolean annotatedFieldDeclared = input.getAllFields().stream()
 					.anyMatch(it -> it.isAnnotatedWith(annotation) || it.isMetaAnnotatedWith(annotation));
+			boolean annotatedMethodDeclared = input.getAllMethods().stream()
+					.anyMatch(it -> it.isAnnotatedWith(annotation) || it.isMetaAnnotatedWith(annotation));
 
-			if (!annotatedFieldDeclared) {
+			if (!annotatedFieldDeclared && !annotatedMethodDeclared) {
 
-				String message = String.format("Type %s must declare a field annotated with %s!", //
+				String message = String.format("Type %s must declare a field or a method annotated with %s!", //
 						FormatableJavaClass.of(input).getAbbreviatedFullName(), annotation.getName());
 
 				events.add(SimpleConditionEvent.violated(input, message));
