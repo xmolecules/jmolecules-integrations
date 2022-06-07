@@ -1,10 +1,11 @@
 package org.jmolecules.bytebuddy;
 
+import static org.jmolecules.bytebuddy.JMoleculesElementMatchers.*;
+import static org.jmolecules.bytebuddy.PluginUtils.*;
+
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.DynamicType;
-import org.jmolecules.architecture.cqrs.annotation.QueryModel;
-import org.jmolecules.ddd.annotation.AggregateRoot;
 
 import java.lang.annotation.Annotation;
 import java.util.HashMap;
@@ -12,11 +13,15 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static org.jmolecules.bytebuddy.JMoleculesElementMatchers.*;
-import static org.jmolecules.bytebuddy.PluginUtils.*;
+import org.jmolecules.architecture.cqrs.annotation.QueryModel;
+import org.jmolecules.bytebuddy.PluginLogger.Log;
+import org.jmolecules.ddd.annotation.AggregateRoot;
 
 /**
  * Plugin enriching classes for usage of Axon Framework with Spring.
+ *
+ * @author Simon Zambrovski
+ * @author Oliver Drotbohm
  */
 public class JMoleculesAxonSpringPlugin extends JMoleculesPluginSupport {
 
@@ -28,6 +33,7 @@ public class JMoleculesAxonSpringPlugin extends JMoleculesPluginSupport {
 		// jMolecules -> Axon
 		MAPPINGS.put(AggregateRoot.class, org.axonframework.spring.stereotype.Aggregate.class);
 		MAPPINGS.put(QueryModel.class, org.springframework.stereotype.Component.class);
+
 		// Axon -> jMolecules
 		MAPPINGS.put(org.axonframework.spring.stereotype.Aggregate.class, AggregateRoot.class);
 
@@ -38,16 +44,30 @@ public class JMoleculesAxonSpringPlugin extends JMoleculesPluginSupport {
 		TRIGGERS.add(QueryModel.class);
 	}
 
-	@Override public DynamicType.Builder<?> apply(DynamicType.Builder<?> builder, TypeDescription type,
+	/*
+	 * (non-Javadoc)
+	 * @see net.bytebuddy.build.Plugin#apply(net.bytebuddy.dynamic.DynamicType.Builder, net.bytebuddy.description.type.TypeDescription, net.bytebuddy.dynamic.ClassFileLocator)
+	 */
+	@Override
+	public DynamicType.Builder<?> apply(DynamicType.Builder<?> builder, TypeDescription type,
 			ClassFileLocator classFileLocator) {
-		PluginLogger.Log log = PluginLogger.INSTANCE.getLog(type, "AxonSpring");
+
+		Log log = PluginLogger.INSTANCE.getLog(type, "Axon + Spring");
+
 		return mapAnnotationOrInterfaces(builder, type, MAPPINGS, log);
 	}
 
-	@Override public boolean matches(TypeDescription target) {
-		if (residesInAnyPackageStartingWith(target, PACKAGE_PREFIX_TO_SKIP)) {
+	/*
+	 * (non-Javadoc)
+	 * @see net.bytebuddy.matcher.ElementMatcher#matches(java.lang.Object)
+	 */
+	@Override
+	public boolean matches(TypeDescription target) {
+
+		if (residesInPlatformPackage(target)) {
 			return false;
 		}
+
 		return TRIGGERS.stream().anyMatch(
 				it -> it.isAnnotation() ? isAnnotatedWith(target, it) : target.isAssignableTo(it));
 	}

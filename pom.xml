@@ -23,7 +23,7 @@
 		<archunit.version>0.23.1</archunit.version>
 		<bytebuddy.version>1.12.8</bytebuddy.version>
 		<hibernate.version>6.0.2.Final</hibernate.version>
-		<jmolecules.version>1.4.0</jmolecules.version>
+		<jmolecules.version>1.6.0-SNAPSHOT</jmolecules.version>
 		<spring-boot.version>2.6.7</spring-boot.version>
 		<axon.version>4.5.12</axon.version>
 	</properties>
@@ -60,7 +60,6 @@
 			</activation>
 			<modules>
 				<module>jmolecules-bytebuddy-empty</module>
-				<module>example-jmolecules-axonframework</module>
 			</modules>
 		</profile>
 		<profile>

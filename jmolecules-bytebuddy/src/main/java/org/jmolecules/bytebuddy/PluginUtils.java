@@ -15,21 +15,19 @@
  */
 package org.jmolecules.bytebuddy;
 
+import static net.bytebuddy.matcher.ElementMatchers.*;
+
 import net.bytebuddy.build.Plugin;
 import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.annotation.AnnotationList;
 import net.bytebuddy.description.annotation.AnnotationSource;
 import net.bytebuddy.description.field.FieldDescription;
-import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDefinition;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType.Builder;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatcher.Junction;
 import net.bytebuddy.matcher.ElementMatchers;
-import org.jmolecules.bytebuddy.PluginLogger.Log;
-import org.jmolecules.ddd.types.Identifier;
-import org.springframework.util.ClassUtils;
 
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
@@ -40,7 +38,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static net.bytebuddy.matcher.ElementMatchers.*;
+import org.jmolecules.bytebuddy.PluginLogger.Log;
+import org.jmolecules.ddd.types.Identifier;
+import org.springframework.util.ClassUtils;
 
 /**
  * Utility methods to be used from different {@link Plugin} implementations
@@ -52,7 +52,7 @@ class PluginUtils {
 	/**
 	 * Returns whether the given {@link TypeDescription} is annotated with the given annotation.
 	 *
-	 * @param type           must not be {@literal null}.
+	 * @param type must not be {@literal null}.
 	 * @param annotationType must not be {@literal null}.
 	 * @return result of the check.
 	 */
@@ -77,8 +77,8 @@ class PluginUtils {
 	/**
 	 * Applies the given map of source type or annotation to annotation onto the given {@link Builder}.
 	 *
-	 * @param builder  the current {@link Builder}.
-	 * @param type     the currently described type.
+	 * @param builder the current {@link Builder}.
+	 * @param type the currently described type.
 	 * @param mappings the annotation or type mappings.
 	 * @return tyoe builder
 	 */
@@ -123,9 +123,10 @@ class PluginUtils {
 			alreadyAnnotated = alreadyAnnotated.or(ElementMatchers.isAnnotatedWith(filterAnnotation));
 		}
 
-		return builder.field(
-				PluginUtils.defaultMapping(logger, fieldType(isSubTypeOf(Identifier.class)).and(not(alreadyAnnotated)),
-						idAnnotation)).annotateField(idAnnotation);
+		return builder
+				.field(PluginUtils.defaultMapping(logger, fieldType(isSubTypeOf(Identifier.class)).and(not(alreadyAnnotated)),
+						idAnnotation))
+				.annotateField(idAnnotation);
 	}
 
 	static String abbreviate(Class<?> type) {
@@ -143,23 +144,29 @@ class PluginUtils {
 
 		String annotationName = annotationString.substring(1, openParenthesisIndex);
 
-		return "@".concat(abbreviate(annotationName)).concat(annotationString.substring(openParenthesisIndex));
+		return "@" //
+				.concat(abbreviate(annotationName)) //
+				.concat(annotationString.substring(openParenthesisIndex));
 	}
 
 	static String abbreviate(String fullyQualifiedTypeName) {
 
-		String abbreviatedPackage = Arrays.stream(ClassUtils.getPackageName(fullyQualifiedTypeName).split("\\.")).map(
-				it -> it.substring(0, 1)).collect(Collectors.joining("."));
+		String abbreviatedPackage = Arrays.stream(ClassUtils.getPackageName(fullyQualifiedTypeName) //
+				.split("\\.")) //
+				.map(it -> it.substring(0, 1)) //
+				.collect(Collectors.joining("."));
 
 		return abbreviatedPackage.concat(".").concat(ClassUtils.getShortName(fullyQualifiedTypeName));
 	}
 
-	@SafeVarargs static Builder<?> addAnnotationIfMissing(Class<? extends Annotation> annotation, Builder<?> builder,
+	@SafeVarargs
+	static Builder<?> addAnnotationIfMissing(Class<? extends Annotation> annotation, Builder<?> builder,
 			TypeDescription type, Log log, Class<? extends Annotation>... exclusions) {
 		return addAnnotationIfMissing(__ -> annotation, builder, type, log, exclusions);
 	}
 
-	@SafeVarargs static Builder<?> addAnnotationIfMissing(Function<TypeDescription, Class<? extends Annotation>> producer,
+	@SafeVarargs
+	static Builder<?> addAnnotationIfMissing(Function<TypeDescription, Class<? extends Annotation>> producer,
 			Builder<?> builder, TypeDescription type, Log log, Class<? extends Annotation>... exclusions) {
 
 		AnnotationList existing = type.getDeclaredAnnotations();
@@ -192,7 +199,7 @@ class PluginUtils {
 	 * Returns a {@link Supplier} memoizing the value provided by the given source {@link Supplier} to avoid multiple
 	 * lookups of the original value.
 	 *
-	 * @param <T>    the actual value type
+	 * @param <T> the actual value type
 	 * @param source must not be {@literal null}.
 	 * @return
 	 * @since 0.6
@@ -207,7 +214,8 @@ class PluginUtils {
 			 * (non-Javadoc)
 			 * @see java.util.function.Supplier#get()
 			 */
-			@Override public T get() {
+			@Override
+			public T get() {
 
 				if (instance == null) {
 					instance = source.get();
@@ -232,26 +240,15 @@ class PluginUtils {
 	}
 
 	/**
-	 * Loggable method representation.
-	 *
-	 * @param method method to log about.
-	 * @return output for the log.
-	 */
-	static String toLog(MethodDescription method) {
-		TypeDefinition type = method.getDeclaringType();
-		String parameterTypes = method.getParameters().asTypeList().asErasures().stream().map(
-				TypeDescription::getSimpleName).collect(Collectors.joining(", "));
-		return abbreviate(type).concat(".").concat(method.getName()).concat("(").concat(parameterTypes).concat(")");
-	}
-
-	/**
 	 * Loggable field representation.
 	 *
 	 * @param field field to log about.
 	 * @return output for the log.
 	 */
 	static String toLog(FieldDescription field) {
+
 		TypeDefinition type = field.getDeclaringType();
+
 		return abbreviate(type).concat(".").concat(field.getName());
 	}
 }
