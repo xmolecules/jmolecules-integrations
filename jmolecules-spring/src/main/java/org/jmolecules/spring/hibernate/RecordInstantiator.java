@@ -28,6 +28,7 @@ import java.util.stream.IntStream;
 
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.metamodel.spi.EmbeddableInstantiator;
+import org.hibernate.metamodel.spi.ValueAccess;
 import org.jmolecules.ddd.types.Identifier;
 import org.springframework.beans.BeanUtils;
 import org.springframework.util.Assert;
@@ -90,12 +91,12 @@ public class RecordInstantiator implements EmbeddableInstantiator {
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.hibernate.metamodel.spi.EmbeddableInstantiator#instantiate(java.util.function.Supplier, org.hibernate.engine.spi.SessionFactoryImplementor)
+	 * @see org.hibernate.metamodel.spi.EmbeddableInstantiator#instantiate(org.hibernate.metamodel.spi.ValueAccess, org.hibernate.engine.spi.SessionFactoryImplementor)
 	 */
 	@Override
-	public Object instantiate(Supplier<Object[]> valuesAccess, SessionFactoryImplementor sessionFactory) {
+	public Object instantiate(ValueAccess access, SessionFactoryImplementor factory) {
 
-		Object[] sources = valuesAccess.get();
+		Object[] sources = access.getValues();
 
 		return BeanUtils.instantiateClass(constructor, indexes.stream().map(it -> sources[it]).toArray());
 	}

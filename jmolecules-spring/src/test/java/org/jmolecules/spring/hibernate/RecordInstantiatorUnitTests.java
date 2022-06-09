@@ -16,9 +16,9 @@
 package org.jmolecules.spring.hibernate;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-import java.util.function.Supplier;
-
+import org.hibernate.metamodel.spi.ValueAccess;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -28,13 +28,15 @@ import org.junit.jupiter.api.Test;
  */
 class RecordInstantiatorUnitTests {
 
-	@Test // #98
+	@Test // #98, #125
 	void instantiatesRecord() {
 
 		RecordInstantiator instantiator = new RecordInstantiator(Person.class);
-		Supplier<Object[]> sources = () -> new Object[] { "Dave", "Matthews" };
 
-		assertThat(instantiator.instantiate(sources, null))
+		ValueAccess access = mock(ValueAccess.class);
+		doReturn(new Object[] { "Dave", "Matthews" }).when(access).getValues();
+
+		assertThat(instantiator.instantiate(access, null))
 				.isEqualTo(new Person("Matthews", "Dave"));
 	}
 
