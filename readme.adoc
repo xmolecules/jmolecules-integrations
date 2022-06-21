@@ -19,5 +19,10 @@ This repository contains a variety of integrations of jMolecules abstractions in
 
 === Release instructions
 
-* `mvn release:prepare -DscmReleaseCommitComment="$ticketId - Release version $version." -DscmDevelopmentCommitComment="$ticketId - Prepare next development iteration."`
+* `mvn release:prepare \
+    -DreleaseVersion="$version" \
+    -DdevelopmentVersion="$versionNext" \
+    -DscmReleaseCommitComment="$ticketId - Release version $version." \
+    -DscmDevelopmentCommitComment="$ticketId - Prepare next development iteration." \
+    -Dtag="$version"`
 * `mvn release:perform`
