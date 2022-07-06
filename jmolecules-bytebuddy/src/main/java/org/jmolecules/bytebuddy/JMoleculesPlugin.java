@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 @Slf4j
 public class JMoleculesPlugin extends JMoleculesPluginSupport {
 
+	private final Map<ClassFileLocator, List<Plugin>> globalPlugins = new HashMap<>();
 	private final Map<TypeDescription, List<? extends Plugin>> delegates = new HashMap<>();
 
 	/*
@@ -46,9 +47,9 @@ public class JMoleculesPlugin extends JMoleculesPluginSupport {
 	public void onPreprocess(TypeDescription typeDescription,
 			ClassFileLocator classFileLocator) {
 
-		delegates.computeIfAbsent(typeDescription, it -> {
+		List<Plugin> plugins = globalPlugins.computeIfAbsent(classFileLocator, locator -> {
 
-			ClassWorld world = ClassWorld.of(classFileLocator);
+			ClassWorld world = ClassWorld.of(locator);
 			Optional<Jpa> jpa = Jpa.getJavaPersistence(world);
 
 			return Stream.of(
@@ -63,8 +64,14 @@ public class JMoleculesPlugin extends JMoleculesPluginSupport {
 					springDataJpaPlugin(world, jpa), //
 					springDataMongDbPlugin(world)) //
 
-					.flatMap(plugins -> (Stream<Plugin>) plugins) //
-					.filter(plugin -> plugin.matches(typeDescription)) //
+					.flatMap(it -> (Stream<Plugin>) it)
+					.collect(Collectors.toList());
+		});
+
+		delegates.computeIfAbsent(typeDescription, it -> {
+
+			return plugins.stream()
+					.filter(plugin -> plugin.matches(it))
 					.collect(Collectors.toList());
 		});
 	}
