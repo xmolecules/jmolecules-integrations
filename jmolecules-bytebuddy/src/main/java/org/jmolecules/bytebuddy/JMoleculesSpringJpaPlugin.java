@@ -17,7 +17,6 @@ package org.jmolecules.bytebuddy;
 
 import jakarta.persistence.AttributeConverter;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.ClassFileVersion;
 import net.bytebuddy.NamingStrategy.SuffixingRandom;
@@ -50,7 +49,6 @@ import org.jmolecules.ddd.types.Association;
  *
  * @author Oliver Drotbohm
  */
-@Slf4j
 @NoArgsConstructor
 public class JMoleculesSpringJpaPlugin extends JMoleculesPluginSupport {
 
