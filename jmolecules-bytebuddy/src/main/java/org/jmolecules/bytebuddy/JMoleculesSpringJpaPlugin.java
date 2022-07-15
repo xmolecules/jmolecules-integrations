@@ -20,6 +20,7 @@ import lombok.NoArgsConstructor;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.ClassFileVersion;
 import net.bytebuddy.NamingStrategy.SuffixingRandom;
+import net.bytebuddy.build.Plugin.WithPreprocessor;
 import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.field.FieldDescription.InDefinedShape;
 import net.bytebuddy.description.field.FieldDescription.InGenericShape;
@@ -50,7 +51,7 @@ import org.jmolecules.ddd.types.Association;
  * @author Oliver Drotbohm
  */
 @NoArgsConstructor
-public class JMoleculesSpringJpaPlugin extends JMoleculesPluginSupport {
+public class JMoleculesSpringJpaPlugin implements LoggingPlugin, WithPreprocessor {
 
 	private Jpa jpa;
 	private Class<? extends Annotation> embeddableInstantiatorAnnotationType;

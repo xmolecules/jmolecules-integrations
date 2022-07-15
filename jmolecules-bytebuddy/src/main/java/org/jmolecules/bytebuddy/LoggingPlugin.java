@@ -16,33 +16,22 @@
 package org.jmolecules.bytebuddy;
 
 import net.bytebuddy.build.Plugin;
-import net.bytebuddy.build.Plugin.WithPreprocessor;
-import net.bytebuddy.description.type.TypeDescription;
-import net.bytebuddy.dynamic.ClassFileLocator;
 
 import java.io.IOException;
 
 /**
- * Simple base class for {@link Plugin} implementations to not have to override the {@link #close()} method all the
- * time.
+ * Simple extension of {@link Plugin} to flush the PluginLogger on {@link #close()}.
  *
  * @author Oliver Drotbohm
  */
-public abstract class JMoleculesPluginSupport implements WithPreprocessor {
-
-	/*
-	 * (non-Javadoc)
-	 * @see net.bytebuddy.build.Plugin.WithPreprocessor#onPreprocess(net.bytebuddy.description.type.TypeDescription, net.bytebuddy.dynamic.ClassFileLocator)
-	 */
-	@Override
-	public void onPreprocess(TypeDescription typeDescription, ClassFileLocator classFileLocator) {}
+public interface LoggingPlugin extends Plugin {
 
 	/*
 	 * (non-Javadoc)
 	 * @see java.io.Closeable#close()
 	 */
 	@Override
-	public void close() throws IOException {
+	public default void close() throws IOException {
 		PluginLogger.INSTANCE.flush();
 	}
 }

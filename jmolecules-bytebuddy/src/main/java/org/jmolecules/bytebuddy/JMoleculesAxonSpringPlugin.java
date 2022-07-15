@@ -23,7 +23,7 @@ import org.jmolecules.ddd.annotation.AggregateRoot;
  * @author Simon Zambrovski
  * @author Oliver Drotbohm
  */
-public class JMoleculesAxonSpringPlugin extends JMoleculesPluginSupport {
+public class JMoleculesAxonSpringPlugin implements LoggingPlugin {
 
 	private static final Map<Class<?>, Class<? extends Annotation>> MAPPINGS = new HashMap<>();
 	private static final Set<Class<?>> TRIGGERS = new HashSet<>();

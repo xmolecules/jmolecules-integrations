@@ -19,12 +19,11 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.description.type.TypeDescription;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.springframework.util.Assert;
 
@@ -38,9 +37,7 @@ enum PluginLogger {
 
 	INSTANCE;
 
-	private static boolean flushed = false;
-
-	private final Map<String, List<LogEntry>> logs = new TreeMap<>();
+	private Map<String, Set<LogEntry>> logs = new TreeMap<>();
 
 	/**
 	 * Obtains the {@link Log} for the given {@link TypeDescription} and module name.
@@ -54,16 +51,12 @@ enum PluginLogger {
 		Assert.notNull(description, "TypeDescription must not be null!");
 		Assert.hasText(name, "Module name must not be null or empty!");
 
-		List<LogEntry> moduleLogs = logs.computeIfAbsent(description.getName(), it -> new ArrayList<>());
+		Set<LogEntry> moduleLogs = logs.computeIfAbsent(description.getName(), it -> new TreeSet<>());
 
 		return (message, parameters) -> moduleLogs.add(new LogEntry(name, message, parameters));
 	}
 
 	public void flush() {
-
-		if (flushed) {
-			return;
-		}
 
 		try {
 
@@ -77,26 +70,25 @@ enum PluginLogger {
 					return;
 				}
 
-				Collections.sort(moduleLogs, Comparator.comparing(LogEntry::getModule).thenComparing(LogEntry::getMessage));
-
 				log.info("□- " + description);
+				int i = 0;
 
-				for (int i = 0; i < moduleLogs.size(); i++) {
+				for (LogEntry logEntry : moduleLogs) {
 
-					LogEntry logEntry = moduleLogs.get(i);
 					String module = logEntry.getModule();
-
 					String prefix = (i + 1) == moduleLogs.size() ? "└─ " : "├─ ";
 
 					log.info(String.format("%s%s - %s", prefix, module, logEntry.getMessage()),
 							logEntry.getParameters());
+
+					i++;
 				}
 
 				log.info("");
 			});
 
 		} finally {
-			flushed = true;
+			logs = new TreeMap<>();
 		}
 	}
 
@@ -105,9 +97,24 @@ enum PluginLogger {
 	}
 
 	@Value
-	private static class LogEntry {
+	private static class LogEntry implements Comparable<LogEntry> {
+
 		String module;
 		String message;
 		Object[] parameters;
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Comparable#compareTo(java.lang.Object)
+		 */
+		@Override
+		public int compareTo(LogEntry o) {
+
+			Comparator<LogEntry> comparator = Comparator
+					.comparing(LogEntry::getModule)
+					.thenComparing(LogEntry::getMessage);
+
+			return comparator.compare(this, o);
+		}
 	}
 }

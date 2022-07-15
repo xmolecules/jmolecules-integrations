@@ -105,7 +105,7 @@ class JMoleculesElementMatchers {
 				return false;
 			}
 
-			log.info("Adding @{}.", abbreviate(target));
+			log.info("Adding @{} to {}.", abbreviate(target), abbreviate(method));
 
 			return true;
 		};
@@ -145,7 +145,7 @@ class JMoleculesElementMatchers {
 				return false;
 			}
 
-			log.info("{} - Adding @{}.", signature, abbreviate(target));
+			log.info("Adding @{} to {}.", abbreviate(target), signature);
 
 			return true;
 		};

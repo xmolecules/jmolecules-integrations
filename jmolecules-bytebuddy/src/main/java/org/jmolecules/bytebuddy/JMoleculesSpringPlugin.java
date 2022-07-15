@@ -39,7 +39,7 @@ import org.jmolecules.event.annotation.DomainEventHandler;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-public class JMoleculesSpringPlugin extends JMoleculesPluginSupport {
+public class JMoleculesSpringPlugin implements LoggingPlugin {
 
 	private static final Map<Class<?>, Class<? extends Annotation>> MAPPINGS;
 	private static final Set<Class<?>> TRIGGERS;

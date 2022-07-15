@@ -22,6 +22,8 @@ import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.annotation.AnnotationList;
 import net.bytebuddy.description.annotation.AnnotationSource;
 import net.bytebuddy.description.field.FieldDescription;
+import net.bytebuddy.description.method.MethodDescription;
+import net.bytebuddy.description.method.ParameterList;
 import net.bytebuddy.description.type.TypeDefinition;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType.Builder;
@@ -135,6 +137,18 @@ class PluginUtils {
 
 	static String abbreviate(TypeDefinition type) {
 		return abbreviate(type.getTypeName());
+	}
+
+	static String abbreviate(MethodDescription method) {
+
+		ParameterList<?> parameters = method.getParameters();
+
+		return abbreviate(method.getDeclaringType())
+				.concat(".")
+				.concat(method.getName())
+				.concat("(")
+				.concat(parameters.isEmpty() ? "" : "…")
+				.concat(")");
 	}
 
 	static String abbreviate(AnnotationDescription annotation) {

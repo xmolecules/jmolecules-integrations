@@ -32,7 +32,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
  *
  * @author Oliver Drotbohm
  */
-public class JMoleculesSpringDataMongoDbPlugin extends JMoleculesPluginSupport {
+public class JMoleculesSpringDataMongoDbPlugin implements LoggingPlugin {
 
 	private final PersistableOptions options;
 

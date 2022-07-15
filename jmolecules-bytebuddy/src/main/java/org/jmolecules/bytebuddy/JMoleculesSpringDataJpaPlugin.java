@@ -16,6 +16,7 @@
 package org.jmolecules.bytebuddy;
 
 import lombok.NoArgsConstructor;
+import net.bytebuddy.build.Plugin.WithPreprocessor;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.DynamicType.Builder;
@@ -30,7 +31,7 @@ import org.springframework.data.domain.Persistable;
  * @author Oliver Drotbohm
  */
 @NoArgsConstructor
-public class JMoleculesSpringDataJpaPlugin extends JMoleculesPluginSupport {
+public class JMoleculesSpringDataJpaPlugin implements LoggingPlugin, WithPreprocessor {
 
 	private PersistableOptions options;
 

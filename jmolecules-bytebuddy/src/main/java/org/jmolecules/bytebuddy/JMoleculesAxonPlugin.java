@@ -31,6 +31,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.modelling.command.AggregateIdentifier;
 import org.jmolecules.architecture.cqrs.annotation.Command;
 import org.jmolecules.architecture.cqrs.annotation.CommandHandler;
 import org.jmolecules.architecture.cqrs.annotation.QueryModel;
@@ -45,7 +46,7 @@ import org.jmolecules.event.annotation.DomainEventHandler;
  * @author Simon Zambrovski
  * @author Oliver Drotbohm
  */
-public class JMoleculesAxonPlugin extends JMoleculesPluginSupport {
+public class JMoleculesAxonPlugin implements LoggingPlugin {
 
 	private static final Map<Class<?>, Class<? extends Annotation>> MAPPINGS = new HashMap<>();
 	private static final Set<Class<?>> TRIGGERS = new HashSet<>();
@@ -86,7 +87,6 @@ public class JMoleculesAxonPlugin extends JMoleculesPluginSupport {
 		TYPE_METHOD_ANNOTATIONS.put(AggregateRoot.class, aggregateMethods);
 
 		// jMolecules -> Axon
-		FIELD_ANNOTATIONS.put(Identity.class, org.axonframework.modelling.command.AggregateIdentifier.class);
 		FIELD_ANNOTATIONS.put(Association.class, org.axonframework.modelling.command.TargetAggregateIdentifier.class);
 
 		// Axon -> jMolecules
@@ -110,15 +110,18 @@ public class JMoleculesAxonPlugin extends JMoleculesPluginSupport {
 
 			Class<? extends Annotation> target = entry.getValue();
 
-			builder = builder.method(hasAnnotatedMethod(type, entry.getKey(), target, log))
-					.intercept(SuperMethodCall.INSTANCE).annotateMethod(getAnnotation(target));
+			builder = builder
+					.method(hasAnnotatedMethod(type, entry.getKey(), target, log))
+					.intercept(SuperMethodCall.INSTANCE)
+					.annotateMethod(getAnnotation(target));
 		}
 
 		for (Map.Entry<Class<? extends Annotation>, Class<? extends Annotation>> entry : FIELD_ANNOTATIONS.entrySet()) {
 
 			Class<? extends Annotation> target = entry.getValue();
 
-			builder = builder.field(hasAnnotatedField(type, entry.getKey(), target, log))
+			builder = builder
+					.field(hasAnnotatedField(type, entry.getKey(), target, log))
 					.annotateField(getAnnotation(target));
 		}
 
@@ -126,17 +129,22 @@ public class JMoleculesAxonPlugin extends JMoleculesPluginSupport {
 				.entrySet()) {
 
 			if (isAnnotatedWith(type, typeEntry.getKey())) {
+
 				for (Entry<Class<? extends Annotation>, Class<? extends Annotation>> entry : typeEntry.getValue().entrySet()) {
 
 					Class<? extends Annotation> target = entry.getValue();
 
-					builder = builder.method(hasAnnotatedMethod(type, entry.getKey(), target, log))
-							.intercept(SuperMethodCall.INSTANCE).annotateMethod(getAnnotation(target));
+					builder = builder
+							.method(hasAnnotatedMethod(type, entry.getKey(), target, log))
+							.intercept(SuperMethodCall.INSTANCE)
+							.annotateMethod(getAnnotation(target));
 				}
 			}
 		}
 
-		return builder;
+		return JMoleculesType.of(log, builder)
+				.annotateIdentifierWith(AggregateIdentifier.class)
+				.conclude();
 	}
 
 	/*

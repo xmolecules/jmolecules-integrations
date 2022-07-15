@@ -21,6 +21,7 @@ import static org.jmolecules.bytebuddy.JMoleculesElementMatchers.*;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import net.bytebuddy.asm.Advice;
+import net.bytebuddy.build.Plugin.WithPreprocessor;
 import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.annotation.AnnotationSource;
 import net.bytebuddy.description.field.FieldDescription;
@@ -47,7 +48,7 @@ import org.jmolecules.jpa.JMoleculesJpa;
 
 @NoArgsConstructor
 @AllArgsConstructor
-public class JMoleculesJpaPlugin extends JMoleculesPluginSupport {
+public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 
 	static final String NULLABILITY_METHOD_NAME = "__verifyNullability";
 

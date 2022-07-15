@@ -32,7 +32,7 @@ import org.springframework.data.relational.core.mapping.Table;
  *
  * @author Oliver Drotbohm
  */
-public class JMoleculesSpringDataJdbcPlugin extends JMoleculesPluginSupport {
+public class JMoleculesSpringDataJdbcPlugin implements LoggingPlugin {
 
 	private final PersistableOptions options;
 

@@ -40,7 +40,7 @@ import org.springframework.data.repository.RepositoryDefinition;
  *
  * @author Oliver Drotbohm
  */
-public class JMoleculesSpringDataPlugin extends JMoleculesPluginSupport {
+public class JMoleculesSpringDataPlugin implements LoggingPlugin {
 
 	private static final Class<?> SPRING_DATA_REPOSITORY = org.springframework.data.repository.Repository.class;
 	private static final Class<?> JMOLECULES_REPOSITORY = org.jmolecules.ddd.types.Repository.class;
