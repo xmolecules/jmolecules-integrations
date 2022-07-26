@@ -23,7 +23,6 @@ import java.util.Optional;
 
 import org.jmolecules.ddd.types.Association;
 import org.springframework.core.Constants;
-import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
 /**
@@ -122,7 +121,9 @@ class Jpa {
 	 */
 	public static Optional<Jpa> getJavaPersistence(ClassWorld world) {
 
-		Assert.notNull(world, "ClassWorld must not be null!");
+		if (world == null) {
+			throw new IllegalArgumentException("ClassWorld must not be null!");
+		}
 
 		if (INSTANCE == null) {
 			INSTANCE = createJavaPersistence(world);
@@ -154,7 +155,9 @@ class Jpa {
 	@SuppressWarnings("unchecked")
 	private Class<? extends Annotation> loadClass(String name) {
 
-		Assert.hasText(name, "Type must not be null or empty!");
+		if (name == null || name.trim().length() == 0) {
+			throw new IllegalArgumentException("Type must not be null or empty!");
+		}
 
 		name = name.contains(".") ? name : basePackage.concat(".").concat(name);
 

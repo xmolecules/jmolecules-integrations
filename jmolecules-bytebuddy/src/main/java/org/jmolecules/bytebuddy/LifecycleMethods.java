@@ -33,8 +33,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import org.springframework.util.Assert;
-
 /**
  * Abstraction over the lifecycle methods with the configured annotations.
  *
@@ -54,8 +52,13 @@ class LifecycleMethods {
 	@SafeVarargs
 	LifecycleMethods(Builder<?> builder, Class<? extends Annotation>... annotation) {
 
-		Assert.notNull(builder, "Builder must not be null!");
-		Assert.notNull(annotation, "Lifecycle methods must not be null!");
+		if (builder == null) {
+			throw new IllegalArgumentException("Builder must not be null!");
+		}
+
+		if (annotation == null) {
+			throw new IllegalArgumentException("Lifecycle methods must not be null!");
+		}
 
 		this.builder = builder;
 		this.methods = detectCallbackMethods(builder.toTypeDescription(), annotation);

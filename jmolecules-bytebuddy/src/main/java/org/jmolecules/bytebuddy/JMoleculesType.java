@@ -54,7 +54,6 @@ import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Entity;
 import org.jmolecules.ddd.types.Identifier;
 import org.jmolecules.ddd.types.ValueObject;
-import org.springframework.util.Assert;
 
 /**
  * A wrapper around a {@link Builder} to allow issuing bytecode manipulations working with JMolecules abstractions like
@@ -78,8 +77,13 @@ class JMoleculesType {
 	 */
 	public static JMoleculesType of(Log logger, Builder<?> builder) {
 
-		Assert.notNull(logger, "PluginLogger must not be null!");
-		Assert.notNull(builder, "Builder must not be null!");
+		if (logger == null) {
+			throw new IllegalArgumentException("PluginLogger must not be null!");
+		}
+
+		if (builder == null) {
+			throw new IllegalArgumentException("Builder must not be null!");
+		}
 
 		return new JMoleculesType(logger, builder, builder.toTypeDescription());
 	}

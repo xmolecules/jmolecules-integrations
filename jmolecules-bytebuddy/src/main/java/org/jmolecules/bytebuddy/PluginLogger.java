@@ -25,8 +25,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import org.springframework.util.Assert;
-
 /**
  * Logger to aggregate information about transformations applied to individual {@link TypeDescription}s.
  *
@@ -48,8 +46,13 @@ enum PluginLogger {
 	 */
 	public Log getLog(TypeDescription description, String name) {
 
-		Assert.notNull(description, "TypeDescription must not be null!");
-		Assert.hasText(name, "Module name must not be null or empty!");
+		if (description == null) {
+			throw new IllegalArgumentException("TypeDescription must not be null!");
+		}
+
+		if (name == null || name.trim().length() == 0) {
+			throw new IllegalArgumentException("Module name must not be null or empty!");
+		}
 
 		Set<LogEntry> moduleLogs = logs.computeIfAbsent(description.getName(), it -> new TreeSet<>());
 
@@ -76,7 +79,7 @@ enum PluginLogger {
 				for (LogEntry logEntry : moduleLogs) {
 
 					String module = logEntry.getModule();
-					String prefix = (i + 1) == moduleLogs.size() ? "└─ " : "├─ ";
+					String prefix = i + 1 == moduleLogs.size() ? "└─ " : "├─ ";
 
 					log.info(String.format("%s%s - %s", prefix, module, logEntry.getMessage()),
 							logEntry.getParameters());

@@ -34,7 +34,6 @@ import java.util.Objects;
 
 import org.jmolecules.bytebuddy.PluginLogger.Log;
 import org.jmolecules.ddd.types.Entity;
-import org.springframework.util.Assert;
 
 /**
  * @author Oliver Drotbohm
@@ -122,7 +121,9 @@ class JMoleculesElementMatchers {
 	static ElementMatcher<? super FieldDescription> hasAnnotatedField(TypeDescription type,
 			Class<? extends Annotation> source, Class<? extends Annotation> target, Log log) {
 
-		Assert.notNull(type, "Type must not be null!");
+		if (type == null) {
+			throw new IllegalArgumentException("Type must not be null!");
+		}
 
 		return field -> {
 
