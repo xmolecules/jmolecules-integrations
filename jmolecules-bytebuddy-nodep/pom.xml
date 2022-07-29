@@ -14,9 +14,9 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.jmolecules.integrations</groupId>
+			<groupId>${project.groupId}</groupId>
 			<artifactId>jmolecules-bytebuddy</artifactId>
-			<version>${jmolecules.version}</version>
+			<version>${project.version}</version>
 		</dependency>
 	</dependencies>
 
