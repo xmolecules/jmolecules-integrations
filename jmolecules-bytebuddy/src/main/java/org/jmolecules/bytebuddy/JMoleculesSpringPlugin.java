@@ -35,7 +35,6 @@ import java.util.Set;
 import org.jmolecules.bytebuddy.PluginLogger.Log;
 import org.jmolecules.ddd.annotation.Repository;
 import org.jmolecules.ddd.annotation.Service;
-import org.jmolecules.event.annotation.DomainEventHandler;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -68,9 +67,11 @@ public class JMoleculesSpringPlugin implements LoggingPlugin {
 		TRIGGERS = Collections.unmodifiableSet(triggers);
 
 		Map<Class<? extends Annotation>, Class<? extends Annotation>> methods = new HashMap<>();
-		methods.put(DomainEventHandler.class, EventListener.class);
 
-		methods.put(EventListener.class, DomainEventHandler.class);
+		if (Types.DOMAIN_EVENT_HANDLER != null) {
+			methods.put(Types.DOMAIN_EVENT_HANDLER, EventListener.class);
+			methods.put(EventListener.class, Types.DOMAIN_EVENT_HANDLER);
+		}
 
 		METHOD_ANNOTATIONS = Collections.unmodifiableMap(methods);
 	}
