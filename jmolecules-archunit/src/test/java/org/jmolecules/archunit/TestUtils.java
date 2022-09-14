@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
 
 /**
@@ -49,10 +50,10 @@ class TestUtils {
 		};
 	}
 
-	static Consumer<String> violation(Class<?> source, String field, Class<?> expected, Class<?> actual) {
+	static Consumer<String> violation(Class<?> source, String field, Class<?> expected, @Nullable Class<?> actual) {
 
 		return violation("Field.*%s\\.%s.*%s.*%s.*", //
-				source.getSimpleName(), field, expected.getSimpleName(), actual.getSimpleName());
+				source.getSimpleName(), field, expected.getSimpleName(), actual == null ? "" : actual.getSimpleName());
 	}
 
 	static String abbreviate(Class<?> type) {

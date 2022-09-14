@@ -16,6 +16,7 @@
 package org.jmolecules.archunit;
 
 import static com.tngtech.archunit.base.DescribedPredicate.*;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.*;
 
 import java.lang.annotation.Annotation;
@@ -65,16 +66,14 @@ public class JMoleculesDddRules {
 	private static DescribedPredicate<CanBeAnnotated> IS_ANNOTATED_VALUE_OBJECT = annotatedWith(
 			org.jmolecules.ddd.annotation.ValueObject.class);
 
-	private static DescribedPredicate<JavaClass> IS_IMPLEMENTING_IDENTIFIABLE = JavaClass.Predicates
-			.implement(Identifiable.class);
+	private static DescribedPredicate<JavaClass> IS_IMPLEMENTING_IDENTIFIABLE = implement(Identifiable.class);
+	private static DescribedPredicate<JavaClass> IS_IMPLEMENTING_VALUE_OBJECT = implement(ValueObject.class);
 
-	private static DescribedPredicate<JavaClass> IS_IMPLEMENTING_VALUE_OBJECT = JavaClass.Predicates
-			.implement(ValueObject.class);
-
-	private static DescribedPredicate<JavaClass> IS_DOMAIN_TYPE = IS_IMPLEMENTING_IDENTIFIABLE
-			.or(IS_IMPLEMENTING_VALUE_OBJECT)
-			.or(IS_ANNOTATED_IDENTIFIABLE)
+	private static DescribedPredicate<JavaClass> IS_IDENTIFIABLE = IS_IMPLEMENTING_IDENTIFIABLE
+			.or(IS_ANNOTATED_IDENTIFIABLE);
+	private static DescribedPredicate<JavaClass> IS_VALUE_OBJECT = IS_IMPLEMENTING_VALUE_OBJECT
 			.or(IS_ANNOTATED_VALUE_OBJECT);
+	private static DescribedPredicate<JavaClass> IS_IDENTIFIER = implement(Identifier.class);
 
 	/**
 	 * An {@link ArchRule} that's composed of all other rules declared in this class.
@@ -89,6 +88,7 @@ public class JMoleculesDddRules {
 				.of(entitiesShouldBeDeclaredForUseInSameAggregate()) //
 				.and(aggregateReferencesShouldBeViaIdOrAssociation()) //
 				.and(annotatedEntitiesAndAggregatesNeedToHaveAnIdentifier()) //
+				.and(valueObjectsMustNotReferToIdentifiables()) //
 				.allowEmptyShould(true);
 	}
 
@@ -113,7 +113,7 @@ public class JMoleculesDddRules {
 	public static ArchRule entitiesShouldBeDeclaredForUseInSameAggregate() {
 
 		return ArchRuleDefinition.fields() //
-				.that(new AreDeclaredWithinADomainType()) //
+				.that(new OwnerMatches(IS_IDENTIFIABLE)) //
 				.and(areAssignableTo(Entity.class).and(not(areAssignableTo(AggregateRoot.class)))) //
 				.should(beDeclaredToBeUsedWithDeclaringAggregate()) //
 				.allowEmptyShould(true); //
@@ -142,8 +142,7 @@ public class JMoleculesDddRules {
 				.or(hasFieldTypeAnnotatedWith(org.jmolecules.ddd.annotation.AggregateRoot.class));
 
 		return ArchRuleDefinition.fields() //
-				.that(new AreDeclaredWithinADomainType()) //
-				.and(referenceAnAggregateRoot) //
+				.that(new OwnerMatches(IS_IDENTIFIABLE).and(referenceAnAggregateRoot)) //
 				.should(new ShouldUseIdReferenceOrAssociation())
 				.allowEmptyShould(true);
 	}
@@ -160,6 +159,19 @@ public class JMoleculesDddRules {
 				.that(IS_ANNOTATED_IDENTIFIABLE) //
 				.and().areNotAnnotations() //
 				.should(new DeclaresAnnotatedFieldOrMethod(Identity.class)) //
+				.allowEmptyShould(true);
+	}
+
+	/**
+	 * Verifies that value objects and identifiers do not refer to identifiables.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public static ArchRule valueObjectsMustNotReferToIdentifiables() {
+
+		return ArchRuleDefinition.fields() //
+				.that(new OwnerMatches(IS_VALUE_OBJECT.or(IS_IDENTIFIER))) //
+				.should(new FieldTypeMustNotMatchCondition(IS_IDENTIFIABLE)) //
 				.allowEmptyShould(true);
 	}
 
@@ -328,10 +340,15 @@ public class JMoleculesDddRules {
 		}
 	}
 
-	private static class AreDeclaredWithinADomainType extends DescribedPredicate<JavaField> {
+	private static class OwnerMatches extends DescribedPredicate<JavaField> {
 
-		public AreDeclaredWithinADomainType() {
-			super("are declared within a jMolecules domain type", new Object[0]);
+		private final DescribedPredicate<JavaClass> condition;
+
+		public OwnerMatches(DescribedPredicate<JavaClass> condition) {
+
+			super(String.format("are declared in a jMolecules type that %s", condition.getDescription()), new Object[0]);
+
+			this.condition = condition;
 		}
 
 		/*
@@ -340,7 +357,39 @@ public class JMoleculesDddRules {
 		 */
 		@Override
 		public boolean apply(JavaField input) {
-			return IS_DOMAIN_TYPE.apply(input.getOwner());
+			return condition.apply(input.getOwner());
+		}
+	}
+
+	private static class FieldTypeMustNotMatchCondition extends ArchCondition<JavaField> {
+
+		private final DescribedPredicate<JavaClass> condition;
+
+		public FieldTypeMustNotMatchCondition(DescribedPredicate<JavaClass> condition) {
+
+			super(condition.getDescription());
+
+			this.condition = condition;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see com.tngtech.archunit.lang.ArchCondition#check(java.lang.Object, com.tngtech.archunit.lang.ConditionEvents)
+		 */
+		@Override
+		public void check(JavaField item, ConditionEvents events) {
+
+			JavaClass type = item.getRawType();
+
+			if (condition.apply(type)) {
+
+				String ownerName = FormatableJavaClass.of(item.getOwner()).getAbbreviatedFullName();
+				String typeName = FormatableJavaClass.of(item.getRawType()).getAbbreviatedFullName();
+
+				String message = String.format("Field %s.%s refers to identifiable %s", ownerName, item.getName(), typeName);
+
+				events.add(SimpleConditionEvent.violated(item, message));
+			}
 		}
 	}
 }

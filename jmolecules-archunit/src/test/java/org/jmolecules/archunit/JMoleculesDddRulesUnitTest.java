@@ -26,6 +26,7 @@ import org.jmolecules.ddd.types.AggregateRoot;
 import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Entity;
 import org.jmolecules.ddd.types.Identifier;
+import org.jmolecules.ddd.types.ValueObject;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.junit.AnalyzeClasses;
@@ -57,7 +58,11 @@ class JMoleculesDddRulesUnitTest {
 						violation(SampleAggregate.class, "invalidAnnotatedAggregate", AnnotatedAggregate.class, Association.class), //
 						violation(SampleAggregate.class, "invalidInCollection", Collection.class, OtherAggregate.class), //
 						violation(SampleAggregate.class, "invalidInMap", Map.class, OtherAggregate.class), //
-						violation("Type.*%s.*%s.*", AnnotatedAggregate.class.getSimpleName(), Identity.class.getName()));
+						violation("Type.*%s.*%s.*", AnnotatedAggregate.class.getSimpleName(), Identity.class.getName()),
+						violation(SampleValueObject.class, "entity", SampleEntity.class, null),
+						violation(SampleValueObject.class, "annotatedEntity", AnnotatedEntity.class, null),
+						violation(SampleValueObject.class, "aggregate", SampleAggregate.class, null),
+						violation(SampleValueObject.class, "annotatedAggregate", AnnotatedAggregate.class, null));
 	}
 
 	static class SampleIdentifier implements Identifier {}
@@ -94,5 +99,14 @@ class JMoleculesDddRulesUnitTest {
 	interface AnnotatedEntity {
 		@Identity
 		Long getId();
+	}
+
+	static class SampleValueObject implements ValueObject {
+
+		SampleEntity entity;
+		AnnotatedEntity annotatedEntity;
+
+		SampleAggregate aggregate;
+		AnnotatedAggregate annotatedAggregate;
 	}
 }
