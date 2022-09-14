@@ -39,7 +39,6 @@
 							<flattenMode>oss</flattenMode>
 							<pomElements>
 								<dependencies>remove</dependencies>
-								<scm>remove</scm>
 							</pomElements>
 						</configuration>
 					</execution>
