@@ -42,6 +42,13 @@
 		<dependency>
 			<groupId>org.axonframework</groupId>
 			<artifactId>axon-modelling</artifactId>
+			<exclusions>
+				<!-- Due to a vulnerability https://ossindex.sonatype.org/vulnerability/sonatype-2022-5225 -->
+				<exclusion>
+					<groupId>com.thoughtworks.xstream</groupId>
+					<artifactId>xstream</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.axonframework</groupId>
