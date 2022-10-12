@@ -198,6 +198,7 @@ public class JMoleculesArchitectureRules {
 	private static LayeredArchitecture layeredArchitecture() {
 
 		return Architectures.layeredArchitecture()
+				.consideringOnlyDependenciesInLayers()
 				.withOptionalLayers(true)
 				.layer(INFRASTRUCTURE).definedBy(layerType(InfrastructureLayer.class))
 				.layer(DOMAIN).definedBy(layerType(DomainLayer.class))
@@ -208,6 +209,7 @@ public class JMoleculesArchitectureRules {
 	private static LayeredArchitecture onionArchitecture() {
 
 		return Architectures.layeredArchitecture()
+				.consideringOnlyDependenciesInLayers()
 				.withOptionalLayers(true)
 				.layer(ONION_CLASSICAL_INFRASTRUCTURE)
 				.definedBy(layerType(org.jmolecules.architecture.onion.classical.InfrastructureRing.class))
@@ -219,6 +221,8 @@ public class JMoleculesArchitectureRules {
 	private static LayeredArchitecture onionArchitectureSimple() {
 
 		return Architectures.layeredArchitecture()
+				.consideringOnlyDependenciesInLayers()
+				.withOptionalLayers(true)
 				.layer(ONION_SIMPLE_INFRASTRUCTURE).definedBy(layerType(InfrastructureRing.class))
 				.layer(ONION_SIMPLE_APPLICATION).definedBy(layerType(ApplicationRing.class))
 				.layer(ONION_SIMPLE_DOMAIN).definedBy(layerType(DomainRing.class));
@@ -227,6 +231,7 @@ public class JMoleculesArchitectureRules {
 	private static LayeredArchitecture hexagonalArchitecture() {
 
 		return Architectures.layeredArchitecture()
+				.consideringOnlyDependenciesInLayers()
 				.withOptionalLayers(true)
 				.layer(HEXAGONAL_APPLICATION).definedBy(layerType(Application.class))
 				.layer(HEXAGONAL_PORT).definedBy(layerType(Port.class))
@@ -274,10 +279,10 @@ public class JMoleculesArchitectureRules {
 
 		/*
 		 * (non-Javadoc)
-		 * @see com.tngtech.archunit.base.Predicate#apply(java.lang.Object)
+		 * @see java.util.function.Predicate#test(java.lang.Object)
 		 */
 		@Override
-		public boolean apply(JavaClass type) {
+		public boolean test(JavaClass type) {
 
 			if (exclusions.stream().anyMatch(it -> hasDirectOrMetaAnnotation(type, it))) {
 				return false;

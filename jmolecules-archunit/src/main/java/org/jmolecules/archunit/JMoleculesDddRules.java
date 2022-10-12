@@ -210,9 +210,11 @@ public class JMoleculesDddRules {
 
 			String ownerName = FormatableJavaClass.of(item.getOwner()).getAbbreviatedFullName();
 
-			events.add(owningType.isAssignableFrom(expectedAggregateType) ? SimpleConditionEvent.satisfied(field, "Matches")
+			events.add(owningType.isAssignableFrom(expectedAggregateType)
+					? SimpleConditionEvent.satisfied(field, "Matches")
 					: SimpleConditionEvent.violated(item,
-							String.format("Field %s.%s is of type %s and declared to be used from aggregate %s!", ownerName,
+							String.format("Field %s.%s is of type %s and declared to be used from aggregate %s!",
+									ownerName,
 									item.getName(), item.getRawType().getSimpleName(),
 									expectedAggregateType.resolve(Object.class).getSimpleName())));
 		}
@@ -261,11 +263,11 @@ public class JMoleculesDddRules {
 
 		/*
 		 * (non-Javadoc)
-		 * @see com.tngtech.archunit.base.Predicate#apply(java.lang.Object)
+		 * @see java.util.function.Predicate#test(java.lang.Object)
 		 */
 		@Override
-		public boolean apply(JavaField input) {
-			return isAnnotatedWith.apply(input.getRawType());
+		public boolean test(JavaField input) {
+			return isAnnotatedWith.test(input.getRawType());
 		}
 	}
 
@@ -283,9 +285,10 @@ public class JMoleculesDddRules {
 
 		/*
 		 * (non-Javadoc)
-		 * @see com.tngtech.archunit.base.Predicate#apply(java.lang.Object)
+		 * @see java.util.function.Predicate#test(java.lang.Object)
 		 */
-		public boolean apply(JavaField input) {
+		@Override
+		public boolean test(JavaField input) {
 
 			ResolvableType fieldType = ResolvableType.forField(input.reflect());
 			ResolvableType domainType = unwrapDomainType(fieldType);
@@ -346,18 +349,19 @@ public class JMoleculesDddRules {
 
 		public OwnerMatches(DescribedPredicate<JavaClass> condition) {
 
-			super(String.format("are declared in a jMolecules type that %s", condition.getDescription()), new Object[0]);
+			super(String.format("are declared in a jMolecules type that %s", condition.getDescription()),
+					new Object[0]);
 
 			this.condition = condition;
 		}
 
 		/*
 		 * (non-Javadoc)
-		 * @see com.tngtech.archunit.base.Predicate#apply(java.lang.Object)
+		 * @see java.util.function.Predicate#test(java.lang.Object)
 		 */
 		@Override
-		public boolean apply(JavaField input) {
-			return condition.apply(input.getOwner());
+		public boolean test(JavaField input) {
+			return condition.test(input.getOwner());
 		}
 	}
 
@@ -381,12 +385,13 @@ public class JMoleculesDddRules {
 
 			JavaClass type = item.getRawType();
 
-			if (condition.apply(type)) {
+			if (condition.test(type)) {
 
 				String ownerName = FormatableJavaClass.of(item.getOwner()).getAbbreviatedFullName();
 				String typeName = FormatableJavaClass.of(item.getRawType()).getAbbreviatedFullName();
 
-				String message = String.format("Field %s.%s refers to identifiable %s", ownerName, item.getName(), typeName);
+				String message = String.format("Field %s.%s refers to identifiable %s", ownerName, item.getName(),
+						typeName);
 
 				events.add(SimpleConditionEvent.violated(item, message));
 			}
