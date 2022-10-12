@@ -47,11 +47,18 @@ class JMoleculesJpaPluginTests {
 
 		// Adds default constructor
 		assertThat(SampleEntity.class.getDeclaredConstructors()).isNotNull();
+		assertThat(SampleEntity.class.getDeclaredField("id").getAnnotations())
+				.filteredOn(it -> it.annotationType().equals(EmbeddedId.class))
+				.hasSize(1);
 
-		// Defaults @EmbeddedId
+		// Defaults aggregate identifier to @EmbeddedId…
 		assertThat(SampleAggregate.class.getDeclaredField("id").getAnnotations())
 				.filteredOn(it -> it.annotationType().equals(EmbeddedId.class))
 				.hasSize(1);
+		// … but no other Identifiers
+		assertThat(SampleAggregate.class.getDeclaredField("otherId").getAnnotations())
+				.filteredOn(it -> it.annotationType().equals(EmbeddedId.class))
+				.isEmpty();
 
 		// Defaults OneToOne annotation
 		assertRelationshipDefaults(SampleAggregate.class.getDeclaredField("entity").getAnnotation(OneToOne.class));
@@ -83,7 +90,8 @@ class JMoleculesJpaPluginTests {
 		assertRelationshipDefaults(SampleEntity.class.getDeclaredField("nestedEntity").getAnnotation(OneToOne.class));
 
 		// Defaults collection of entities to @OneToMany(cascade = CascadeType.ALL)
-		assertRelationshipDefaults(SampleEntity.class.getDeclaredField("nestedEntities").getAnnotation(OneToMany.class));
+		assertRelationshipDefaults(
+				SampleEntity.class.getDeclaredField("nestedEntities").getAnnotation(OneToMany.class));
 	}
 
 	@Test
@@ -178,8 +186,10 @@ class JMoleculesJpaPluginTests {
 		assertThat(annotation)
 				.isNotNull()
 				.satisfies(
-						it -> assertThat(AnnotationUtils.getValue(it, "fetch")).isEqualTo(eager ? FetchType.EAGER : FetchType.LAZY))
+						it -> assertThat(AnnotationUtils.getValue(it, "fetch"))
+								.isEqualTo(eager ? FetchType.EAGER : FetchType.LAZY))
 				.satisfies(
-						it -> assertThat((CascadeType[]) AnnotationUtils.getValue(it, "cascade")).containsExactly(CascadeType.ALL));
+						it -> assertThat((CascadeType[]) AnnotationUtils.getValue(it, "cascade"))
+								.containsExactly(CascadeType.ALL));
 	}
 }

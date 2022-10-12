@@ -52,6 +52,7 @@ import org.jmolecules.ddd.annotation.Identity;
 import org.jmolecules.ddd.types.AggregateRoot;
 import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Entity;
+import org.jmolecules.ddd.types.Identifiable;
 import org.jmolecules.ddd.types.Identifier;
 import org.jmolecules.ddd.types.ValueObject;
 
@@ -99,7 +100,7 @@ class JMoleculesType {
 
 		return Arrays.stream(types).anyMatch(it -> {
 
-			return (it.isAnnotation() && hasAnnotation((Class<? extends Annotation>) it))
+			return it.isAnnotation() && hasAnnotation((Class<? extends Annotation>) it)
 					|| isAssignableTo(it);
 		});
 	}
@@ -108,7 +109,8 @@ class JMoleculesType {
 		return JMoleculesElementMatchers.hasAnnotation(type, annotation);
 	}
 
-	public boolean hasMethod(ElementMatcher<net.bytebuddy.description.method.MethodDescription.InDefinedShape> matcher) {
+	public boolean hasMethod(
+			ElementMatcher<net.bytebuddy.description.method.MethodDescription.InDefinedShape> matcher) {
 		return !type.getDeclaredMethods().filter(matcher).isEmpty();
 	}
 
@@ -208,7 +210,15 @@ class JMoleculesType {
 	@SafeVarargs
 	public final JMoleculesType annotateTypedIdentifierWith(Class<? extends Annotation> annotation,
 			Class<? extends Annotation>... filterAnnotations) {
-		return annotateFieldWith(annotation, fieldType(isSubTypeOf(Identifier.class)), filterAnnotations);
+
+		// Find identifier type based on Identifiable declaration and annotate
+		return findIdField()
+				.map(InDefinedShape::getType)
+				.map(Generic::asErasure)
+				.map(ElementMatchers::isSubTypeOf)
+				.map(ElementMatchers::fieldType)
+				.map(it -> annotateFieldWith(annotation, it, filterAnnotations))
+				.orElse(this);
 	}
 
 	@SafeVarargs
@@ -287,12 +297,14 @@ class JMoleculesType {
 					.filter(it -> it.isConstructor())
 					.filter(it -> it.getParameters().size() == 0).iterator();
 
-			InGenericShape superClassConstructor = superClassConstructors.hasNext() ? superClassConstructors.next() : null;
+			InGenericShape superClassConstructor = superClassConstructors.hasNext() ? superClassConstructors.next()
+					: null;
 			String superClassName = PluginUtils.abbreviate(superClass);
 
 			if (superClassConstructor == null) {
 				logger.info(
-						"No default constructor found on superclass {}. Skipping default constructor creation.", superClassName);
+						"No default constructor found on superclass {}. Skipping default constructor creation.",
+						superClassName);
 
 				return builder;
 			}
@@ -358,16 +370,22 @@ class JMoleculesType {
 		TypeDescription type = builder.toTypeDescription();
 
 		Generic superType = type.getInterfaces().stream()
-				.filter(it -> it.asErasure().represents(AggregateRoot.class))
+				.filter(it -> it.asErasure().represents(AggregateRoot.class) || it.asErasure().represents(Entity.class))
 				.findFirst().orElse(null);
 
 		if (superType != null) {
 
-			Generic aggregateIdType = superType.asGenericType().getTypeArguments().get(1);
+			int index = superType.asErasure().represents(Identifiable.class) ? 0 : 1;
 
-			return type.getDeclaredFields().stream()
-					.filter(it -> it.getType().equals(aggregateIdType))
-					.findFirst();
+			try {
+				Generic aggregateIdType = superType.asGenericType().getTypeArguments().get(index);
+
+				return type.getDeclaredFields().stream()
+						.filter(it -> it.getType().equals(aggregateIdType))
+						.findFirst();
+			} catch (IllegalStateException o_O) {
+				// Raw type declaration
+			}
 		}
 
 		return type.getDeclaredFields()

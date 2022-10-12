@@ -32,6 +32,7 @@ import org.jmolecules.ddd.types.Association;
 public class SampleAggregate implements AggregateRoot<SampleAggregate, SampleAggregateIdentifier> {
 
 	private final SampleAggregateIdentifier id;
+	private SampleOtherIdentifier otherId;
 
 	private SampleEntity entity;
 	private Collection<SampleEntity> listOfEntity;
