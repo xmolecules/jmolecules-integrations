@@ -26,7 +26,7 @@
 		<hibernate.version>6.1.4.Final</hibernate.version>
 		<jmolecules.version>1.6.0</jmolecules.version>
 		<spring-boot.version>2.6.12</spring-boot.version>
-		<axon.version>4.5.17</axon.version>
+		<axon.version>4.6.1</axon.version>
 	</properties>
 
 	<licenses>
