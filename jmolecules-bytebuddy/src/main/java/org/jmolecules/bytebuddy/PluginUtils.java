@@ -35,6 +35,7 @@ import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -42,7 +43,6 @@ import java.util.stream.Stream;
 
 import org.jmolecules.bytebuddy.PluginLogger.Log;
 import org.jmolecules.ddd.types.Identifier;
-import org.springframework.util.ClassUtils;
 
 /**
  * Utility methods to be used from different {@link Plugin} implementations
@@ -165,12 +165,12 @@ class PluginUtils {
 
 	static String abbreviate(String fullyQualifiedTypeName) {
 
-		String abbreviatedPackage = Arrays.stream(ClassUtils.getPackageName(fullyQualifiedTypeName) //
+		String abbreviatedPackage = Arrays.stream(getPackageName(fullyQualifiedTypeName) //
 				.split("\\.")) //
 				.map(it -> it.substring(0, 1)) //
 				.collect(Collectors.joining("."));
 
-		return abbreviatedPackage.concat(".").concat(ClassUtils.getShortName(fullyQualifiedTypeName));
+		return abbreviatedPackage.concat(".").concat(getShortName(fullyQualifiedTypeName));
 	}
 
 	@SafeVarargs
@@ -240,6 +240,47 @@ class PluginUtils {
 		};
 	}
 
+	/**
+	 * Loggable field representation.
+	 *
+	 * @param field field to log about.
+	 * @return output for the log.
+	 */
+	static String toLog(FieldDescription field) {
+
+		TypeDefinition type = field.getDeclaringType();
+
+		return abbreviate(type).concat(".").concat(field.getName());
+	}
+
+	/**
+	 * Executes the given consumer if the type with the given name is present.
+	 *
+	 * @param fullyQualifiedTypeName must not be {@literal null} or empty.
+	 * @param consumer must not be {@literal null}.
+	 */
+	static void ifTypePresent(String fullyQualifiedTypeName, Consumer<Class<?>> consumer) {
+
+		try {
+			consumer.accept(PluginUtils.class.getClassLoader().loadClass(fullyQualifiedTypeName));
+		} catch (ClassNotFoundException o_O) {}
+	}
+
+	/**
+	 * Executes the given consumer if the annotation type with the given name is present.
+	 *
+	 * @param fullyQualifiedTypeName must not be {@literal null} or empty.
+	 * @param consumer must not be {@literal null}.
+	 */
+	@SuppressWarnings("unchecked")
+	static void ifAnnotationTypePresent(String fullyQualifiedTypeName, Consumer<Class<? extends Annotation>> consumer) {
+
+		try {
+			consumer
+					.accept((Class<? extends Annotation>) PluginUtils.class.getClassLoader().loadClass(fullyQualifiedTypeName));
+		} catch (ClassNotFoundException o_O) {}
+	}
+
 	private static Builder<?> addAnnotationIfMissing(Class<? extends Annotation> annotation, Builder<?> builder,
 			TypeDescription type, Log log) {
 
@@ -253,16 +294,18 @@ class PluginUtils {
 		return builder.annotateType(getAnnotation(annotation));
 	}
 
-	/**
-	 * Loggable field representation.
-	 *
-	 * @param field field to log about.
-	 * @return output for the log.
-	 */
-	static String toLog(FieldDescription field) {
+	private static String getPackageName(String fullyQualifiedTypeName) {
 
-		TypeDefinition type = field.getDeclaringType();
+		int lastDotIndex = fullyQualifiedTypeName.lastIndexOf('.');
 
-		return abbreviate(type).concat(".").concat(field.getName());
+		return lastDotIndex == -1 ? fullyQualifiedTypeName : fullyQualifiedTypeName.substring(0, lastDotIndex);
+	}
+
+	private static String getShortName(String fullyQualifiedTypeName) {
+
+		int lastDotIndex = fullyQualifiedTypeName.lastIndexOf('.');
+
+		return lastDotIndex == -1 ? fullyQualifiedTypeName
+				: fullyQualifiedTypeName.substring(lastDotIndex, fullyQualifiedTypeName.length());
 	}
 }

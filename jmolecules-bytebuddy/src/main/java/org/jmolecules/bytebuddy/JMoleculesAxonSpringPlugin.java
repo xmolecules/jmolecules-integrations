@@ -32,7 +32,10 @@ public class JMoleculesAxonSpringPlugin implements LoggingPlugin {
 
 		// jMolecules -> Axon
 		MAPPINGS.put(AggregateRoot.class, org.axonframework.spring.stereotype.Aggregate.class);
-		MAPPINGS.put(QueryModel.class, org.springframework.stereotype.Component.class);
+
+		PluginUtils.ifAnnotationTypePresent("org.springframework.stereotype.Component", it -> {
+			MAPPINGS.put(QueryModel.class, it);
+		});
 
 		// Axon -> jMolecules
 		MAPPINGS.put(org.axonframework.spring.stereotype.Aggregate.class, AggregateRoot.class);
