@@ -25,7 +25,7 @@
 		<bytebuddy.version>1.12.18</bytebuddy.version>
 		<hibernate.version>6.1.4.Final</hibernate.version>
 		<jmolecules.version>1.6.0</jmolecules.version>
-		<spring-boot.version>2.6.12</spring-boot.version>
+		<spring-boot.version>2.6.13</spring-boot.version>
 		<axon.version>4.6.1</axon.version>
 	</properties>
 
