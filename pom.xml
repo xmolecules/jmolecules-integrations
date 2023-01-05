@@ -23,7 +23,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<archunit.version>1.0.1</archunit.version>
 		<bytebuddy.version>1.12.19</bytebuddy.version>
-		<hibernate.version>6.1.5.Final</hibernate.version>
+		<hibernate.version>6.1.6.Final</hibernate.version>
 		<jmolecules.version>1.6.0</jmolecules.version>
 		<spring-boot.version>2.6.14</spring-boot.version>
 		<axon.version>4.6.1</axon.version>
