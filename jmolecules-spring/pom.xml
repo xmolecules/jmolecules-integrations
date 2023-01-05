@@ -109,15 +109,12 @@
 
 	<build>
 		<plugins>
-		
+
 			<!-- Enable Java 17 for test cases (to be able to declare records) -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.1</version>
-				<configuration>
-					<parameters>true</parameters>
-				</configuration>
+				<version>3.10.1</version>
 				<executions>
 					<execution>
 						<id>default-testCompile</id>
