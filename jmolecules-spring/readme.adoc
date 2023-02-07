@@ -16,7 +16,7 @@ class Order implements AggregateRoot<Order, OrderIdentifier> {
 
 class Customer implements AggregateRoot<Customer, CustomerIdentifier> { /* … */ }
 
-interface Customers implements AssociationResolver<Customer, CustomerIdentifier> { /* … */ }
+interface Customers extends AssociationResolver<Customer, CustomerIdentifier> { /* … */ }
 
 Customers customers = … // obtain repository
 Customer customers.resolveRequired(order.customer); // resolve Association
