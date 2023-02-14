@@ -100,17 +100,17 @@ public class JMoleculesDddRules {
 	 * An {@link ArchRule} that verifies that fields that implement {@link Entity} within a type implementing
 	 * {@link AggregateRoot} declare the aggregate type as the owning aggregate.
 	 * <p />
-	 * <code>
-	 * class Customer implements AggregateRoot<Customer, CustomerId> { … }
-	 * class Address implements Entity<Customer, AddressId> { … }
+	 * <pre>
+	 * class Customer implements AggregateRoot&lt;Customer, CustomerId&gt; { … }
+	 * class Address implements Entity&lt;Customer, AddressId&gt; { … }
 	 *
-	 * class LineItem implements Entity<Order, LineItemId> { … }
-	 * class Order implements AggregateRoot<Order, OrderId> {
+	 * class LineItem implements Entity&lt;Order, LineItemId&gt; { … }
+	 * class Order implements AggregateRoot&lt;Order, OrderId&gt; {
 	 *
-	 *   List<LineItem> lineItems; // valid
+	 *   List&lt;LineItem&gt; lineItems; // valid
 	 *   Address shippingAddress; // invalid as Address is declared to belong to Customer
 	 * }
-	 * </code>
+	 * </pre>
 	 *
 	 * @return will never be {@literal null}.
 	 */
@@ -127,16 +127,16 @@ public class JMoleculesDddRules {
 	 * An {@link ArchRule} that ensures that one {@link AggregateRoot} does not reference another via the remote
 	 * AggregateRoot type but rather via their identifier type or an explicit {@link Association} type.
 	 * <p />
-	 * <code>
-	 * class Customer implements AggregateRoot<Customer, CustomerId> { … }
+	 * <pre>
+	 * class Customer implements AggregateRoot&lt;Customer, CustomerId&gt; { … }
 	 *
-	 * class Order implements AggregateRoot<Order, OrderId> {
+	 * class Order implements AggregateRoot&lt;Order, OrderId&gt; {
 	 *
 	 *   Customer customer; // invalid
 	 *   CustomerId customerId; // valid
-	 *   Association<Customer> customer; // valid
+	 *   Association&lt;Customer&gt; customer; // valid
 	 * }
-	 * </code>
+	 * </pre>
 	 *
 	 * @return will never be {@literal null}.
 	 */
