@@ -49,6 +49,8 @@ import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
  * <ul>
  * <li>Aggregates only refer to entities that are declared to be part of it.</li>
  * <li>References to other aggregates are established via {@link Association}s or identifier references.</li>
+ * <li>Annotated identifiables do have an identifier.</li>
+ * <li>Value objects and identifiers do not refer to identifiables.</li>
  * </ul>
  * Those rules are mostly driven by what's been presented by John Sullivan in his blog post
  * <a href="http://scabl.blogspot.com/2015/04/aeddd-9.html">here</a>.
@@ -81,6 +83,8 @@ public class JMoleculesDddRules {
 	 * @return
 	 * @see #entitiesShouldBeDeclaredForUseInSameAggregate()
 	 * @see #aggregateReferencesShouldBeViaIdOrAssociation()
+	 * @see #annotatedEntitiesAndAggregatesNeedToHaveAnIdentifier()
+	 * @see #valueObjectsMustNotReferToIdentifiables()
 	 */
 	public static ArchRule all() {
 
