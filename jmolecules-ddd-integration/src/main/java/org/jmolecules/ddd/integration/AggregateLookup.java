@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 the original author or authors.
+ * Copyright 2020-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmolecules.spring;
+package org.jmolecules.ddd.integration;
 
 import java.util.Optional;
+
+import org.jmolecules.ddd.types.AggregateRoot;
 
 /**
  * Lookup interface to be implemented e.g. some repository to find an aggregate by their identifiers.
  *
  * @author Oliver Drotbohm
- * @deprecated prefer {@code org.jmolecules.ddd.integration.AggregateLookup}.
+ * @param <T> the type of the aggregate
+ * @param <ID> the type of the identifier
  */
-@Deprecated(since = "0.15", forRemoval = true)
 public interface AggregateLookup<T, ID> {
 
 	/**
-	 * Returns the
+	 * Returns the {@link AggregateRoot} with the given identifier.
 	 *
-	 * @param id
-	 * @return
+	 * @param id must not be {@literal null}.
+	 * @return will never be {@literal null}.
 	 */
 	Optional<T> findById(ID id);
 }

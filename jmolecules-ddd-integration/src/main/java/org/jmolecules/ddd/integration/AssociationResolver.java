@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors.
+ * Copyright 2020-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmolecules.spring;
+package org.jmolecules.ddd.integration;
 
 import java.util.Optional;
 
 import org.jmolecules.ddd.types.AggregateRoot;
 import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Identifier;
-import org.springframework.util.Assert;
 
 /**
+ * Resolves {@link Association}s into the actual aggregate instance.
+ *
  * @author Oliver Drotbohm
- * @deprecated prefer {@code org.jmolecules.ddd.integration.AssociationResolver}
+ * @param <T> the actual {@link AggregateRoot}
+ * @param <ID> the actual {@link Identifier}
  */
-@Deprecated(since = "0.15", forRemoval = true)
 public interface AssociationResolver<T extends AggregateRoot<T, ID>, ID extends Identifier>
 		extends AggregateLookup<T, ID> {
 
@@ -38,7 +39,9 @@ public interface AssociationResolver<T extends AggregateRoot<T, ID>, ID extends 
 	 */
 	default Optional<T> resolve(Association<T, ID> association) {
 
-		Assert.notNull(association, "Association must not be null!");
+		if (association == null) {
+			throw new IllegalArgumentException("Association must not be null!");
+		}
 
 		return findById(association.getId());
 	}
@@ -52,7 +55,9 @@ public interface AssociationResolver<T extends AggregateRoot<T, ID>, ID extends 
 	 */
 	default T resolveRequired(Association<T, ID> association) {
 
-		Assert.notNull(association, "Association must not be null!");
+		if (association == null) {
+			throw new IllegalArgumentException("Association must not be null!");
+		}
 
 		return resolve(association).orElseThrow(
 				() -> new IllegalArgumentException(String.format("Could not resolve association %s!", association)));
