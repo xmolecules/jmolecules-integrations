@@ -18,6 +18,7 @@
 		<module>jmolecules-jpa</module>
 		<module>jmolecules-jackson</module>
 		<module>jmolecules-spring</module>
+		<module>jmolecules-starters</module>
 	</modules>
 
 	<properties>
