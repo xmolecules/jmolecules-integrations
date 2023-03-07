@@ -44,7 +44,6 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 	 * @see net.bytebuddy.build.Plugin.WithPreprocessor#onPreprocess(net.bytebuddy.description.type.TypeDescription, net.bytebuddy.dynamic.ClassFileLocator)
 	 */
 	@Override
-	@SuppressWarnings("unchecked")
 	public void onPreprocess(TypeDescription typeDescription,
 			ClassFileLocator classFileLocator) {
 
@@ -85,7 +84,7 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 
 		List<? extends Plugin> plugins = delegates.get(target);
 
-		return (plugins != null) && !plugins.isEmpty();
+		return plugins != null && !plugins.isEmpty();
 	}
 
 	/*

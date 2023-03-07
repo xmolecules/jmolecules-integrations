@@ -91,7 +91,7 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 
 		Generic superType = target.getSuperClass();
 
-		return (superType == null) || superType.represents(Object.class) ? false : matches(superType.asErasure());
+		return superType == null || superType.represents(Object.class) ? false : matches(superType.asErasure());
 	}
 
 	/*
