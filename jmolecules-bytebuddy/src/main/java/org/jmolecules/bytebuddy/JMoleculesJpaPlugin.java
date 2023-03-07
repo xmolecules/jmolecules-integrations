@@ -230,9 +230,9 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 		builder = builder.defineMethod(NULLABILITY_METHOD_NAME, void.class, Visibility.PACKAGE_PRIVATE)
 				.intercept(StubMethod.INSTANCE);
 
-		Supplier<Advice> advice = () -> {
+		Function<String, Advice> advice = it -> {
 
-			logger.info("Adding nullability verification to existing callback methods.");
+			logger.info("Adding nullability verification to existing callback method {}().", it);
 
 			return Advice.to(JMoleculesJpa.class);
 		};

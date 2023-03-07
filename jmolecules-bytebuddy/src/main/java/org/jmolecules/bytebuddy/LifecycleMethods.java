@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -72,12 +73,11 @@ class LifecycleMethods {
 	 * @param forNew
 	 * @return will never be {@literal null}.
 	 */
-	public Builder<?> apply(Supplier<Advice> forExisting, Supplier<Implementation> forNew) {
+	public Builder<?> apply(Function<String, Advice> forExisting, Supplier<Implementation> forNew) {
 
 		Builder<?> result = builder;
 		Set<String> handledMethods = new HashSet<>();
 
-		forExisting = PluginUtils.memoized(forExisting);
 		forNew = PluginUtils.memoized(forNew);
 
 		for (Entry<Class<? extends Annotation>, Optional<String>> entry : methods.entrySet()) {
@@ -91,7 +91,7 @@ class LifecycleMethods {
 					continue;
 				}
 
-				result = result.visit(forExisting.get().on(ElementMatchers.hasMethodName(name)));
+				result = result.visit(forExisting.apply(name).on(ElementMatchers.hasMethodName(name)));
 				handledMethods.add(name);
 
 			} else {

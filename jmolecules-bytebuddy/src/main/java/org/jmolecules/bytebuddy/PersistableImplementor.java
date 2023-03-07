@@ -94,7 +94,7 @@ class PersistableImplementor {
 
 		if (options.callbackAnnotations.length > 0) {
 			builder = new LifecycleMethods(builder, options.callbackAnnotations)
-					.apply(() -> Advice.to(NotNewSetter.class),
+					.apply(__ -> Advice.to(NotNewSetter.class),
 							() -> FieldAccessor.ofField(IS_NEW_FIELD).setsValue(false));
 		}
 

@@ -170,7 +170,7 @@ class PluginUtils {
 				.map(it -> it.substring(0, 1)) //
 				.collect(Collectors.joining("."));
 
-		return abbreviatedPackage.concat(".").concat(getShortName(fullyQualifiedTypeName));
+		return abbreviatedPackage.concat(getShortName(fullyQualifiedTypeName));
 	}
 
 	@SafeVarargs
