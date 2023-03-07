@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.jmolecules.integrations</groupId>
 		<artifactId>jmolecules-starters</artifactId>
-		<version>0.15.0</version>
+		<version>0.16.0-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -33,13 +33,13 @@
 		<dependency>
 			<groupId>org.jmolecules.integrations</groupId>
 			<artifactId>jmolecules-ddd-integration</artifactId>
-			<version>0.15.0</version>
+			<version>0.16.0-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.jmolecules.integrations</groupId>
 			<artifactId>jmolecules-spring</artifactId>
-			<version>0.15.0</version>
+			<version>0.16.0-SNAPSHOT</version>
 			<scope>runtime</scope>
 		</dependency>
 
