@@ -1,3 +1,4 @@
+package org.jmolecules.bytebuddy.nodep;
 /*
  * Copyright 2022 the original author or authors.
  *
