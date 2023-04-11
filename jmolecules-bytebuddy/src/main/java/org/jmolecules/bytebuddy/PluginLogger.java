@@ -73,7 +73,7 @@ enum PluginLogger {
 					return;
 				}
 
-				log.info("□- " + description);
+				log.info("□─ " + description);
 				int i = 0;
 
 				for (LogEntry logEntry : moduleLogs) {

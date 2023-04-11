@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 the original author or authors.
+ * Copyright 2022-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmolecules.spring.hibernate;
+package org.jmolecules.hibernate;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.RecordComponent;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -26,12 +28,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.hibernate.Version;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.metamodel.spi.EmbeddableInstantiator;
 import org.hibernate.metamodel.spi.ValueAccess;
-import org.jmolecules.ddd.types.Identifier;
-import org.springframework.beans.BeanUtils;
-import org.springframework.util.Assert;
 
 /**
  * Hibernate 6 specific {@link EmbeddableInstantiator} that inspects a {@link Record} for its {@link RecordComponent}s
@@ -54,8 +54,13 @@ public class RecordInstantiator implements EmbeddableInstantiator {
 	 */
 	public RecordInstantiator(Class<?> type) {
 
-		Assert.notNull(type, "Record type must not be null!");
-		Assert.isTrue(type.isRecord(), "Type must be a record!");
+		if (type == null) {
+			throw new IllegalArgumentException("Record type must not be null!");
+		}
+
+		if (!type.isRecord()) {
+			throw new IllegalArgumentException("Type must be a record!");
+		}
 
 		RecordComponent[] components = type.getRecordComponents();
 		Class<?>[] parameterTypes = Arrays.stream(components)
@@ -64,6 +69,8 @@ public class RecordInstantiator implements EmbeddableInstantiator {
 
 		this.type = type;
 		this.constructor = detectRecordConstructor(type, parameterTypes);
+
+		// Obtain parameter name indexes as they will be returned sorted alphabetically on instantiation
 		this.indexes = IntStream.range(0, components.length)
 				.mapToObj(it -> Map.entry(components[it].getName(), it))
 				.sorted(Comparator.comparing(Entry::getKey))
@@ -98,17 +105,38 @@ public class RecordInstantiator implements EmbeddableInstantiator {
 
 		Object[] sources = access.getValues();
 
-		return BeanUtils.instantiateClass(constructor, indexes.stream().map(it -> sources[it]).toArray());
+		// See https://hibernate.atlassian.net/browse/HHH-16457
+		Object[] parameters = Version.getVersionString().startsWith("6.2")
+				? sources
+				: indexes.stream().map(it -> sources[it]).toArray();
+
+		try {
+			return constructor.newInstance(parameters);
+		} catch (InstantiationException | InvocationTargetException | IllegalAccessException o_O) {
+			throw new RuntimeException(o_O);
+		}
 	}
 
 	private static Constructor<?> detectRecordConstructor(Class<?> type, Class<?>... parameterTypes) {
 
 		try {
-			return type.getDeclaredConstructor(parameterTypes);
+			return makeAccessible(type.getDeclaredConstructor(parameterTypes));
 		} catch (NoSuchMethodException | SecurityException e) {
 
 			String message = String.format("Could not find record constructor on %s!", type.getClass());
 			throw new IllegalArgumentException(message, e);
 		}
+	}
+
+	@SuppressWarnings("deprecation")
+	private static Constructor<?> makeAccessible(Constructor<?> constructor) {
+
+		if ((!Modifier.isPublic(constructor.getModifiers())
+				|| !Modifier.isPublic(constructor.getDeclaringClass().getModifiers()))
+				&& !constructor.isAccessible()) {
+			constructor.setAccessible(true);
+		}
+
+		return constructor;
 	}
 }

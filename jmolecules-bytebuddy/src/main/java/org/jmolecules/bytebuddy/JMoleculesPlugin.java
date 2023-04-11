@@ -113,7 +113,7 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 
 			return true;
 
-		}).map(JMoleculesJpaPlugin::new) //
+		}).map(it -> new JMoleculesJpaPlugin(it, world)) //
 				.map(Stream::of) //
 				.orElseGet(Stream::empty);
 	}
@@ -136,7 +136,7 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 
 		return jpa.filter(__ -> world.isAvailable("org.springframework.stereotype.Component")) //
 				.filter(__ -> world.isAvailable("org.jmolecules.spring.jpa.AssociationAttributeConverter")) //
-				.map(it -> new JMoleculesSpringJpaPlugin(it, world)) //
+				.map(it -> new JMoleculesSpringJpaPlugin(it)) //
 				.map(Stream::of).orElseGet(Stream::empty);
 	}
 

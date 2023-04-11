@@ -34,7 +34,7 @@
 				<executions>
 					<execution>
 						<goals>
-							<goal>transform</goal>
+							<goal>transform-extended</goal>
 						</goals>
 					</execution>
 				</executions>

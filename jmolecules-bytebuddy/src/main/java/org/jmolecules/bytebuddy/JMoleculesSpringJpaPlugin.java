@@ -16,10 +16,10 @@
 package org.jmolecules.bytebuddy;
 
 import jakarta.persistence.AttributeConverter;
+import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.ClassFileVersion;
-import net.bytebuddy.NamingStrategy.SuffixingRandom;
 import net.bytebuddy.build.Plugin.WithPreprocessor;
 import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.field.FieldDescription.InDefinedShape;
@@ -36,7 +36,6 @@ import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.matcher.ElementMatchers;
 
 import java.io.IOException;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -51,27 +50,10 @@ import org.jmolecules.ddd.types.Association;
  * @author Oliver Drotbohm
  */
 @NoArgsConstructor
+@AllArgsConstructor
 public class JMoleculesSpringJpaPlugin implements LoggingPlugin, WithPreprocessor {
 
 	private Jpa jpa;
-	private Class<? extends Annotation> embeddableInstantiatorAnnotationType;
-
-	public JMoleculesSpringJpaPlugin(Jpa jpa, ClassWorld world) {
-		init(jpa, world);
-	}
-
-	private void init(Jpa jpa, ClassWorld world) {
-
-		if (this.jpa != null) {
-			return;
-		}
-
-		this.jpa = jpa;
-
-		if (world.isAvailable("org.hibernate.annotations.EmbeddableInstantiator")) {
-			this.embeddableInstantiatorAnnotationType = jpa.getType("org.hibernate.annotations.EmbeddableInstantiator");
-		}
-	}
 
 	/*
 	 * (non-Javadoc)
@@ -81,8 +63,7 @@ public class JMoleculesSpringJpaPlugin implements LoggingPlugin, WithPreprocesso
 	public boolean matches(TypeDescription target) {
 
 		return target.getDeclaredAnnotations().isAnnotationPresent(jpa.getAnnotation("Entity"))
-				|| target.isAssignableTo(org.jmolecules.ddd.types.Entity.class)
-				|| target.isRecord();
+				|| target.isAssignableTo(org.jmolecules.ddd.types.Entity.class);
 	}
 
 	/*
@@ -93,7 +74,7 @@ public class JMoleculesSpringJpaPlugin implements LoggingPlugin, WithPreprocesso
 	public void onPreprocess(TypeDescription typeDescription, ClassFileLocator classFileLocator) {
 
 		ClassWorld world = ClassWorld.of(classFileLocator);
-		init(Jpa.getJavaPersistence(world).get(), world);
+		this.jpa = Jpa.getJavaPersistence(world).get();
 	}
 
 	/*
@@ -107,49 +88,7 @@ public class JMoleculesSpringJpaPlugin implements LoggingPlugin, WithPreprocesso
 
 		return JMoleculesType.of(log, builder)
 				.map(this::addConvertAnnotationIfNeeded)
-				.map(JMoleculesType::isRecord, it -> it.annotateTypeIfMissing(jpa.getAnnotation("Embeddable")))
-				.map(this::applyRecordInstantiator)
 				.conclude();
-	}
-
-	private Builder<?> applyRecordInstantiator(Builder<?> builder, Log logger) {
-
-		TypeDescription description = builder.toTypeDescription();
-
-		// No record or Hibernate 6 present
-		if (!description.isRecord() || (embeddableInstantiatorAnnotationType == null)) {
-			return builder;
-		}
-
-		// Already annotated
-		if (description.getDeclaredAnnotations().isAnnotationPresent(embeddableInstantiatorAnnotationType)) {
-
-			logger.info("Found explicit @EmbeddableInstantiator.");
-
-			return builder;
-		}
-
-		logger.info("Adding @EmbeddableInstantiator for record.");
-
-		// Parent type information
-		Class<?> instantiatorBaseType = jpa.getType("org.jmolecules.spring.hibernate.RecordInstantiator");
-		ForLoadedType supeType = new TypeDescription.ForLoadedType(instantiatorBaseType);
-		Constructor<?> constructor = getConstructor(instantiatorBaseType, Class.class);
-
-		// Dedicated instantiator class for this particular record type
-		Unloaded<?> instantiatorType = new ByteBuddy(ClassFileVersion.JAVA_V8)
-				.with(new ReferenceTypePackageNamingStrategy(description))
-				.subclass(supeType)
-				.defineConstructor(Visibility.PACKAGE_PRIVATE)
-				.intercept(MethodCall.invoke(constructor).onSuper().with(description))
-				.make();
-
-		builder = builder.require(instantiatorType);
-
-		// Add the annotation
-		return builder.annotateType(AnnotationDescription.Builder.ofType(embeddableInstantiatorAnnotationType)
-				.define("value", instantiatorType.getTypeDescription())
-				.build());
 	}
 
 	private Builder<?> addConvertAnnotationIfNeeded(Builder<?> builder, Log logger) {
@@ -238,32 +177,6 @@ public class JMoleculesSpringJpaPlugin implements LoggingPlugin, WithPreprocesso
 			return type.getDeclaredConstructor(parameters);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
-		}
-	}
-
-	/**
-	 * A naming strategy that returns a name for a type to be created so that it will be generated into the package of a
-	 * reference type.
-	 *
-	 * @author Oliver Drotbohm
-	 */
-	private static class ReferenceTypePackageNamingStrategy extends SuffixingRandom {
-
-		ReferenceTypePackageNamingStrategy(TypeDescription contextualType) {
-
-			super("jMolecules", new Suffixing.BaseNameResolver() {
-
-				/*
-				 * (non-Javadoc)
-				 * @see net.bytebuddy.NamingStrategy.SuffixingRandom.BaseNameResolver#resolve(net.bytebuddy.description.type.TypeDescription)
-				 */
-				public String resolve(TypeDescription type) {
-
-					return contextualType.getPackage().getName()
-							.concat(".")
-							.concat(type.getSimpleName());
-				}
-			});
 		}
 	}
 }

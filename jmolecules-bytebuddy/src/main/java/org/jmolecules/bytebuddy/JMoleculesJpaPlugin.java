@@ -18,8 +18,9 @@ package org.jmolecules.bytebuddy;
 import static net.bytebuddy.matcher.ElementMatchers.*;
 import static org.jmolecules.bytebuddy.JMoleculesElementMatchers.*;
 
-import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.ClassFileVersion;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.build.Plugin.WithPreprocessor;
 import net.bytebuddy.description.annotation.AnnotationDescription;
@@ -27,16 +28,20 @@ import net.bytebuddy.description.annotation.AnnotationSource;
 import net.bytebuddy.description.field.FieldDescription;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.description.type.TypeDescription.ForLoadedType;
 import net.bytebuddy.description.type.TypeDescription.Generic;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.DynamicType.Builder;
+import net.bytebuddy.dynamic.DynamicType.Unloaded;
 import net.bytebuddy.implementation.Implementation;
+import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.implementation.StubMethod;
 import net.bytebuddy.matcher.ElementMatcher;
 
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -47,12 +52,29 @@ import org.jmolecules.bytebuddy.PluginLogger.Log;
 import org.jmolecules.jpa.JMoleculesJpa;
 
 @NoArgsConstructor
-@AllArgsConstructor
 public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 
 	static final String NULLABILITY_METHOD_NAME = "__verifyNullability";
 
 	private Jpa jpa;
+	private Class<? extends Annotation> embeddableInstantiatorAnnotationType;
+
+	public JMoleculesJpaPlugin(Jpa jpa, ClassWorld world) {
+		init(jpa, world);
+	}
+
+	private void init(Jpa jpa, ClassWorld world) {
+
+		if (this.jpa != null) {
+			return;
+		}
+
+		this.jpa = jpa;
+
+		if (world.isAvailable("org.hibernate.annotations.EmbeddableInstantiator")) {
+			this.embeddableInstantiatorAnnotationType = jpa.getType("org.hibernate.annotations.EmbeddableInstantiator");
+		}
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -61,11 +83,8 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 	@Override
 	public void onPreprocess(TypeDescription typeDescription, ClassFileLocator classFileLocator) {
 
-		if (jpa != null) {
-			return;
-		}
-
-		this.jpa = Jpa.getJavaPersistence(ClassWorld.of(classFileLocator)).get();
+		ClassWorld world = ClassWorld.of(classFileLocator);
+		init(Jpa.getJavaPersistence(world).get(), world);
 	}
 
 	/*
@@ -91,7 +110,9 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 
 		Generic superType = target.getSuperClass();
 
-		return superType == null || superType.represents(Object.class) ? false : matches(superType.asErasure());
+		return superType == null || superType.represents(Object.class)
+				? false
+				: matches(superType.asErasure()) || target.isRecord();
 	}
 
 	/*
@@ -108,6 +129,8 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 				.map(JMoleculesType::isAssociation, this::handleAssociation)
 				.map(JMoleculesType::isIdentifier, this::handleIdentifier)
 				.map(JMoleculesType::isValueObject, this::handleValueObject)
+				.map(JMoleculesType::isRecord, it -> it.annotateTypeIfMissing(jpa.getAnnotation("Embeddable")))
+				.map(this::applyRecordInstantiator)
 				.conclude();
 	}
 
@@ -252,5 +275,54 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 
 		return type.addDefaultConstructorIfMissing()
 				.annotateTypeIfMissing(jpa.getAnnotation("Embeddable"));
+	}
+
+	private Builder<?> applyRecordInstantiator(Builder<?> builder, Log logger) {
+
+		TypeDescription description = builder.toTypeDescription();
+
+		// No record or Hibernate 6 present
+		if (!description.isRecord() || embeddableInstantiatorAnnotationType == null) {
+			return builder;
+		}
+
+		// Already annotated
+		if (description.getDeclaredAnnotations().isAnnotationPresent(embeddableInstantiatorAnnotationType)) {
+
+			logger.info("Found explicit @EmbeddableInstantiator.");
+
+			return builder;
+		}
+
+		logger.info("Adding @EmbeddableInstantiator for record.");
+
+		// Parent type information
+		Class<?> instantiatorBaseType = jpa.getType("org.jmolecules.hibernate.RecordInstantiator");
+		ForLoadedType supeType = new TypeDescription.ForLoadedType(instantiatorBaseType);
+		Constructor<?> constructor = getConstructor(instantiatorBaseType, Class.class);
+
+		// Dedicated instantiator class for this particular record type
+		Unloaded<?> instantiatorType = new ByteBuddy(ClassFileVersion.JAVA_V8)
+				.with(new ReferenceTypePackageNamingStrategy(description))
+				.subclass(supeType)
+				.defineConstructor(Visibility.PACKAGE_PRIVATE)
+				.intercept(MethodCall.invoke(constructor).onSuper().with(description))
+				.make();
+
+		builder = builder.require(instantiatorType);
+
+		// Add the annotation
+		return builder.annotateType(AnnotationDescription.Builder.ofType(embeddableInstantiatorAnnotationType)
+				.define("value", instantiatorType.getTypeDescription())
+				.build());
+	}
+
+	private static Constructor<?> getConstructor(Class<?> type, Class<?>... parameters) {
+
+		try {
+			return type.getDeclaredConstructor(parameters);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

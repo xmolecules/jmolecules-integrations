@@ -23,7 +23,7 @@ import javax.persistence.Convert;
 import javax.persistence.Embeddable;
 
 import org.hibernate.annotations.EmbeddableInstantiator;
-import org.jmolecules.spring.hibernate.RecordInstantiator;
+import org.jmolecules.hibernate.RecordInstantiator;
 import org.jmolecules.spring.jpa.JpaAssociationAttributeConverter;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.ResolvableType;
