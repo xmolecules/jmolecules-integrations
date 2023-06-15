@@ -1,0 +1,40 @@
+actions:
+  - exec:
+      command: ./mvnw dependency:list | grep 'jakarta.persistence-api' -q
+      define:
+        name: jpa-present
+  - inject-maven-build-plugin:
+      text: |
+        {{#if with-codegen}}
+        <plugin>
+          <groupId>net.bytebuddy</groupId>
+          <artifactId>byte-buddy-maven-plugin</artifactId>
+          <version>1.14.4</version>
+          <configuration>
+            <classPathDiscovery>true</classPathDiscovery>
+          </configuration>
+          <executions>
+            <execution>
+              <goals>
+                <goal>transform-extended</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        {{/if}}
+  - inject-maven-dependency:
+      text: |
+        {{#if with-codegen}}
+          {{#if jpa-present = 0}}
+        <dependency>
+          <groupId>org.jmolecules.integrations</groupId>
+          <artifactId>jmolecules-jpa</artifactId>
+          <scope>runtime</scope>
+        </dependency>
+          {{/if}}
+        <dependency>
+          <groupId>org.jmolecules.integrations</groupId>
+          <artifactId>jmolecules-bytebuddy-nodep</artifactId>
+          <scope>provided</scope>
+        </dependency>
+        {{/if}}

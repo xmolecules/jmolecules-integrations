@@ -1,0 +1,74 @@
+= Spring CLI Integration
+
+This module of jMolecules Integration provides integration with https://github.com/spring-projects-experimental/spring-cli[Spring CLI].
+
+== Installation
+
+Run Spring CLI and issue the `command add` command pointing it to this particular module of the repository.
+
+```
+$ spring
+spring:> command add …
+```
+
+== Usage
+
+The integration provides the following commands.
+
+=== Initializing jMolecules
+
+`jmolecules init` adds all artifacts necessary to the POM of the project, depending on which features you'd like to use.
+
+```
+NAME
+  jmolecules init - Initializes the project to use jMolecules
+
+SYNOPSIS
+  jmolecules init --with-architecture String --with-ddd Boolean --with-codegen Boolean --help
+
+OPTIONS
+  --with-architecture String
+  Which architectural stype to use (onion, hexagonal, clean)
+  [Optional]
+
+  --with-ddd Boolean
+  Whether to enable the Domain-Driven Design support
+  [Optional]
+
+  --with-codegen Boolean
+  Whether to enable the ByteBuddy based code generation for boilerplate persistence
+  [Optional]
+
+  --help or -h
+  help for jmolecules init
+  [Optional]
+```
+
+=== Adding a DDD aggregate to the project
+
+Adding an aggregate to the project results in three new files generated in the project:
+
+* The aggregate file implementing `AggregateRoot` using a custom, record-based `Identifier` implementation backed by a `UUID`.
+* A repository declaration to persist instances of the aggregate.
+* A unit test class for the aggregate itself
+
+```
+NAME
+  jmolecules add-aggregate - Add a jMolecules aggregate
+
+SYNOPSIS
+  jmolecules add-aggregate [--name String] [--module String] --help
+
+OPTIONS
+  --name String
+  The name of the aggregate (camel case)
+  [Mandatory]
+
+  --module String
+  The name of the module to create the aggregate in.
+  [Mandatory]
+
+  --help or -h
+  help for jmolecules add-aggregate
+  [Optional]
+```

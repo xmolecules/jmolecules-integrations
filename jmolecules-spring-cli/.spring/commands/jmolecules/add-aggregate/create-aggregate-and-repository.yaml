@@ -1,0 +1,13 @@
+actions:
+  - generate:
+      to: src/main/java/{{root-package-dir}}/{{module}}/{{capitalizeFirst name}}.java
+      from: Aggregate.java
+  - generate:
+      to: src/test/java/{{root-package-dir}}/{{module}}/{{capitalizeFirst name}}UnitTests.java
+      from: AggregateUnitTests.java
+  - generate:
+      to: src/main/java/{{root-package-dir}}/{{module}}/{{capitalizeFirst name}}Repository.java
+      from: Repository.java
+  - generate:
+      to: src/test/java/{{root-package-dir}}/{{module}}/{{capitalizeFirst name}}RepositoryIntegrationTests.java
+      from: RepositoryIntegrationTests.java

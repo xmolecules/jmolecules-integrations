@@ -1,0 +1,15 @@
+command:
+  description: Initializes the project to use jMolecules
+  options:
+
+    - name: with-architecture
+      description: Which architectural stype to use (onion, hexagonal, clean)
+      dataType: string
+
+    - name: with-ddd
+      description: Whether to enable the Domain-Driven Design support
+      dataType: boolean
+
+    - name: with-codegen
+      description: Whether to enable the ByteBuddy based code generation for boilerplate persistence
+      dataType: boolean

@@ -1,0 +1,15 @@
+command:
+  description: Add a jMolecules aggregate
+  options:
+
+    - name: name
+      description: The name of the aggregate (camel case)
+      dataType: string
+      inputType: text
+      required: true
+
+    - name: module
+      description: The name of the module to create the aggregate in.
+      dataType: string
+      inputType: text
+      required: true
