@@ -27,7 +27,7 @@
 		<bytebuddy.version>1.14.1</bytebuddy.version>
 		<hibernate.version>6.2.7.Final</hibernate.version>
 		<jmolecules.version>1.6.0</jmolecules.version>
-		<spring-boot.version>2.7.9</spring-boot.version>
+		<spring-boot.version>2.7.14</spring-boot.version>
 		<axon.version>4.8.0</axon.version>
 	</properties>
 
