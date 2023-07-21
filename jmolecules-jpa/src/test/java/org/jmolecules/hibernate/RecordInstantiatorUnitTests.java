@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmolecules.spring.hibernate;
+package org.jmolecules.hibernate;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import org.hibernate.metamodel.spi.ValueAccess;
-import org.jmolecules.hibernate.RecordInstantiator;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -34,8 +33,12 @@ class RecordInstantiatorUnitTests {
 
 		RecordInstantiator instantiator = new RecordInstantiator(Person.class);
 
+		Object[] values = RecordInstantiator.IS_AFFECTED_HIBERNATE_VERSION
+				? new Object[] { "Matthews", "Dave" }
+				: new Object[] { "Dave", "Matthews" };
+
 		ValueAccess access = mock(ValueAccess.class);
-		doReturn(new Object[] { "Dave", "Matthews" }).when(access).getValues();
+		doReturn(values).when(access).getValues();
 
 		assertThat(instantiator.instantiate(access, null))
 				.isEqualTo(new Person("Matthews", "Dave"));

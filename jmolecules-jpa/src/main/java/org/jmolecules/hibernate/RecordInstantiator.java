@@ -43,6 +43,9 @@ import org.hibernate.metamodel.spi.ValueAccess;
  */
 public class RecordInstantiator implements EmbeddableInstantiator {
 
+	// https://hibernate.atlassian.net/browse/HHH-16457
+	static final boolean IS_AFFECTED_HIBERNATE_VERSION = isAffectedHibernateVersion();
+
 	private final Class<?> type;
 	private final List<Integer> indexes;
 	private final Constructor<?> constructor;
@@ -106,7 +109,7 @@ public class RecordInstantiator implements EmbeddableInstantiator {
 		Object[] sources = access.getValues();
 
 		// See https://hibernate.atlassian.net/browse/HHH-16457
-		Object[] parameters = Version.getVersionString().startsWith("6.2")
+		Object[] parameters = IS_AFFECTED_HIBERNATE_VERSION
 				? sources
 				: indexes.stream().map(it -> sources[it]).toArray();
 
@@ -138,5 +141,21 @@ public class RecordInstantiator implements EmbeddableInstantiator {
 		}
 
 		return constructor;
+	}
+
+	private static boolean isAffectedHibernateVersion() {
+
+		String version = Version.getVersionString();
+		String[] parts = version.split("\\.");
+
+		if (!parts[0].equals("6")) {
+			return false;
+		}
+
+		if (!parts[1].equals("2")) {
+			return false;
+		}
+
+		return Integer.parseInt(parts[2]) < 2;
 	}
 }
