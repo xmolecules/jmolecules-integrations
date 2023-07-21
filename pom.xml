@@ -3,7 +3,7 @@
 
 	<groupId>org.jmolecules.integrations</groupId>
 	<artifactId>jmolecules-integrations</artifactId>
-	<version>0.16.0</version>
+	<version>0.17.0-SNAPSHOT</version>
 
 	<name>jMolecules - Technology integrations</name>
 	<description>Modules to integrate jMolecules abstractions with implementation technologies</description>
@@ -267,7 +267,7 @@
 		<url>https://github.com/xmolecules/jmolecules-integrations</url>
 		<connection>scm:git:https://github.com/xmolecules/jmolecules-integrations</connection>
 		<developerConnection>scm:git:ssh://git@github.com/xmolecules/jmolecules-integrations.git</developerConnection>
-		<tag>0.16.0</tag>
+		<tag>0.10.0</tag>
 	</scm>
 
 	<repositories>
