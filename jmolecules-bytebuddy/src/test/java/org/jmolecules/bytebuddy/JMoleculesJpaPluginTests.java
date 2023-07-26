@@ -161,6 +161,11 @@ class JMoleculesJpaPluginTests {
 		assertRelationshipDefaults(aggregate.getDeclaredField("entities").getAnnotation(OneToMany.class));
 	}
 
+	@Test // GH-190
+	void doesNotProcessCglibProxies() {
+		assertDoesNotHaveAnnotation(Sample$$Cglib$$Proxy.class, Entity.class);
+	}
+
 	private static void assertDoesNotHaveAnnotation(Class<?> type, Class<? extends Annotation> expected) {
 
 		Stream<Class<?>> annotationTypes = Arrays.stream(type.getAnnotations())

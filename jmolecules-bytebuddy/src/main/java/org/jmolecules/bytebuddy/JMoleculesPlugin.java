@@ -47,6 +47,10 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 	public void onPreprocess(TypeDescription typeDescription,
 			ClassFileLocator classFileLocator) {
 
+		if (PluginUtils.isCglibProxyType(typeDescription)) {
+			return;
+		}
+
 		List<LoggingPlugin> plugins = globalPlugins.computeIfAbsent(classFileLocator, locator -> {
 
 			ClassWorld world = ClassWorld.of(locator);
@@ -81,6 +85,10 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 	 */
 	@Override
 	public boolean matches(TypeDescription target) {
+
+		if (PluginUtils.isCglibProxyType(target)) {
+			return false;
+		}
 
 		List<? extends Plugin> plugins = delegates.get(target);
 

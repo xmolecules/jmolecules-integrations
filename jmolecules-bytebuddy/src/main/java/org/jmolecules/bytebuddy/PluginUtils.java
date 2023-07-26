@@ -281,6 +281,16 @@ class PluginUtils {
 		} catch (ClassNotFoundException o_O) {}
 	}
 
+	/**
+	 * Returns whether the given {@link TypeDefinition} is a CGLib proxy type.
+	 *
+	 * @param definition must not be {@literal null}.
+	 * @since 0.17
+	 */
+	static boolean isCglibProxyType(TypeDefinition definition) {
+		return definition.getTypeName().contains("$$");
+	}
+
 	private static Builder<?> addAnnotationIfMissing(Class<? extends Annotation> annotation, Builder<?> builder,
 			TypeDescription type, Log log) {
 

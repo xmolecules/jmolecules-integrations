@@ -62,8 +62,9 @@ public class JMoleculesSpringJpaPlugin implements LoggingPlugin, WithPreprocesso
 	@Override
 	public boolean matches(TypeDescription target) {
 
-		return target.getDeclaredAnnotations().isAnnotationPresent(jpa.getAnnotation("Entity"))
-				|| target.isAssignableTo(org.jmolecules.ddd.types.Entity.class);
+		return !PluginUtils.isCglibProxyType(target)
+				&& (target.getDeclaredAnnotations().isAnnotationPresent(jpa.getAnnotation("Entity"))
+						|| target.isAssignableTo(org.jmolecules.ddd.types.Entity.class));
 	}
 
 	/*

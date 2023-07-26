@@ -48,7 +48,7 @@ public class JMoleculesSpringDataJdbcPlugin implements LoggingPlugin {
 	 */
 	@Override
 	public boolean matches(TypeDescription target) {
-		return target.isAssignableTo(AggregateRoot.class);
+		return !PluginUtils.isCglibProxyType(target) && target.isAssignableTo(AggregateRoot.class);
 	}
 
 	/*

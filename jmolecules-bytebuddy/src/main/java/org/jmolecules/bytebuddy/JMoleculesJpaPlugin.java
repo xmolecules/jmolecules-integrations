@@ -94,7 +94,7 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 	@Override
 	public boolean matches(TypeDescription target) {
 
-		if (target.isAnnotation()) {
+		if (target.isAnnotation() || PluginUtils.isCglibProxyType(target)) {
 			return false;
 		}
 
@@ -110,9 +110,9 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 
 		Generic superType = target.getSuperClass();
 
-		return superType == null || superType.represents(Object.class)
-				? false
-				: matches(superType.asErasure()) || target.isRecord();
+		return superType == null || superType.represents(Object.class) ? false :
+
+				matches(superType.asErasure()) || target.isRecord();
 	}
 
 	/*
