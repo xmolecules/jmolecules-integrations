@@ -79,6 +79,14 @@ class JMoleculesModuleUnitTests {
 		assertThat(document.association).isEqualTo(Association.forId(SampleIdentifier.of(uuid)));
 	}
 
+	@Test // GH-191
+	void doesNotUseSupertypeFactory() throws Exception {
+
+		Wrapper wrapper = mapper.readValue("{ \"first\" : 42 }", Wrapper.class);
+
+		assertThat(wrapper.first).isEqualTo(new First(42L));
+	}
+
 	@Data
 	@NoArgsConstructor
 	@AllArgsConstructor
@@ -109,5 +117,25 @@ class JMoleculesModuleUnitTests {
 	@Value(staticConstructor = "of")
 	static class ImplementingValueObject implements org.jmolecules.ddd.types.ValueObject {
 		Long value;
+	}
+
+	// GH-191
+
+	interface WithFactoryMethod {
+
+		static Object of(Long source) {
+			return source.toString();
+		}
+	}
+
+	@Value
+	@ValueObject
+	static class First implements WithFactoryMethod {
+		Long number;
+	}
+
+	@Data
+	static class Wrapper {
+		First first;
 	}
 }

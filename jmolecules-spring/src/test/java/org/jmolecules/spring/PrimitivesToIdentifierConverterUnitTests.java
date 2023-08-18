@@ -88,8 +88,30 @@ class PrimitivesToIdentifierConverterUnitTests {
 		assertThat(converter.convert(uuid.toString(), STRING_DESCRIPTOR, descriptor)).isEqualTo(expected);
 	}
 
+	@Test // GH-191
+	void doesNotUseFactoryMethodOfSupertypes() {
+
+		TypeDescriptor descriptor = TypeDescriptor.valueOf(Implementation.class);
+
+		assertThat(converter.convert("id", STRING_DESCRIPTOR, descriptor)).isEqualTo(new Implementation("id"));
+	}
+
 	@Value
 	static class IdentifierWithoutFactoryMethod implements Identifier {
 		UUID id;
+	}
+
+	// GH-191
+
+	interface WithFactoryMethod {
+
+		static Object of(String source) {
+			return source;
+		}
+	}
+
+	@Value
+	static class Implementation implements WithFactoryMethod, Identifier {
+		String id;
 	}
 }
