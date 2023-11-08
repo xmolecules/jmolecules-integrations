@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors.
+ * Copyright 2021-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,16 @@
  */
 package org.jmolecules.bytebuddy;
 
+import static net.bytebuddy.matcher.ElementMatchers.*;
+
 import net.bytebuddy.asm.Advice;
+import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.method.MethodDescription.InDefinedShape;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType.Builder;
 import net.bytebuddy.implementation.Implementation;
-import net.bytebuddy.matcher.ElementMatchers;
+import net.bytebuddy.matcher.ElementMatcher;
 
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
@@ -91,7 +94,7 @@ class LifecycleMethods {
 					continue;
 				}
 
-				result = result.visit(forExisting.apply(name).on(ElementMatchers.hasMethodName(name)));
+				result = result.visit(forExisting.apply(name).on(nonStaticNoParametersNamed(name)));
 				handledMethods.add(name);
 
 			} else {
@@ -120,14 +123,17 @@ class LifecycleMethods {
 
 		Map<Class<? extends Annotation>, Optional<String>> result = new HashMap<>();
 
-		type.getDeclaredMethods().forEach(method -> {
+		type.getDeclaredMethods().stream()
+				.filter(it -> !it.isStatic())
+				.filter(it -> it.getParameters().isEmpty())
+				.forEach(method -> {
 
-			Arrays.stream(annotations).forEach(annotation -> {
-				result.compute(annotation, (annotationType, methodName) -> methodName != null && methodName.isPresent()
-						? methodName
-						: getMethodNameIfAnnotated(method, annotationType));
-			});
-		});
+					Arrays.stream(annotations).forEach(annotation -> {
+						result.compute(annotation, (annotationType, methodName) -> methodName != null && methodName.isPresent()
+								? methodName
+								: getMethodNameIfAnnotated(method, annotationType));
+					});
+				});
 
 		return result;
 
@@ -138,5 +144,14 @@ class LifecycleMethods {
 		return method.getDeclaredAnnotations().isAnnotationPresent(type)
 				? Optional.of(method.getName())
 				: Optional.empty();
+	}
+
+	private static ElementMatcher<? super MethodDescription> nonStaticNoParametersNamed(String name) {
+
+		ElementMatcher<MethodDescription> doesNotHaveParameters = method -> method.getParameters().isEmpty();
+
+		return hasMethodName(name)
+				.and(not(isStatic()))
+				.and(doesNotHaveParameters);
 	}
 }
