@@ -23,7 +23,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<archunit.version>1.1.0</archunit.version>
+		<archunit.version>1.2.1</archunit.version>
 		<bytebuddy.version>1.14.9</bytebuddy.version>
 		<hibernate.version>6.2.7.Final</hibernate.version>
 		<jmolecules.version>1.6.0</jmolecules.version>
