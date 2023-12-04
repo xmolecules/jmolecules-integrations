@@ -160,13 +160,13 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 		Class<Annotation> embeddedId = jpa.getAnnotation("EmbeddedId");
 		Class<Annotation> id = jpa.getAnnotation("Id");
 
-		JMoleculesType result = type.addDefaultConstructorIfMissing()
+		return type.addDefaultConstructorIfMissing()
 				.annotateTypedIdentifierWith(embeddedId, id)
 				.annotateAnnotatedIdentifierWith(id, embeddedId)
 				.annotateTypeIfMissing(selector, jpa.getAnnotation("Entity"), jpa.getAnnotation("MappedSuperclass"))
-				.map(this::declareNullVerificationMethod);
-
-		return defaultToEntityAssociations(result);
+				.map(this::declareNullVerificationMethod)
+				.map(this::defaultToEntityAssociations)
+				.map(this::defaultCollectionOfValueObjects);
 	}
 
 	private JMoleculesType defaultToEntityAssociations(JMoleculesType type) {
@@ -214,6 +214,15 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 		}
 
 		return result;
+	}
+
+	private JMoleculesType defaultCollectionOfValueObjects(JMoleculesType type) {
+
+		Junction<FieldDescription> matcher = genericFieldType(isCollectionOfValueObject());
+
+		return type.hasField(matcher)
+				? type.annotateFieldWith(getElementCollectionAnnotation(), matcher)
+				: type;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -324,5 +333,14 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private AnnotationDescription getElementCollectionAnnotation() {
+
+		Enum<?> fetchType = jpa.getFetchTypeEager();
+
+		return AnnotationDescription.Builder.ofType(jpa.getType("ElementCollection"))
+				.define("fetch", fetchType)
+				.build();
 	}
 }

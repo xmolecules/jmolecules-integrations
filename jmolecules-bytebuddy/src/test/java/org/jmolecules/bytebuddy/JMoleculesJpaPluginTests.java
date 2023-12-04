@@ -92,6 +92,13 @@ class JMoleculesJpaPluginTests {
 		// Defaults collection of entities to @OneToMany(cascade = CascadeType.ALL)
 		assertRelationshipDefaults(
 				SampleEntity.class.getDeclaredField("nestedEntities").getAnnotation(OneToMany.class));
+
+		// Defaults collections of value objects to @ElementCollection(fetch = FetchType.EAGER
+		var annotation = SampleEntity.class.getDeclaredField("valueObjects").getAnnotation(ElementCollection.class);
+
+		assertThat(annotation)
+				.isNotNull()
+				.satisfies(it -> assertThat(it.fetch()).isEqualTo(FetchType.EAGER));
 	}
 
 	@Test

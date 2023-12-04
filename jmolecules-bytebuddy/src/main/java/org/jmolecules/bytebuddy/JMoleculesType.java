@@ -254,6 +254,10 @@ class JMoleculesType {
 		return JMoleculesType.of(logger, mapper.apply(builder, logger));
 	}
 
+	public JMoleculesType map(Function<JMoleculesType, JMoleculesType> function) {
+		return function.apply(this);
+	}
+
 	public JMoleculesType mapBuilder(Function<Builder<?>, Builder<?>> mapper) {
 		return JMoleculesType.of(logger, mapper.apply(builder));
 	}

@@ -34,6 +34,7 @@ import java.util.Objects;
 
 import org.jmolecules.bytebuddy.PluginLogger.Log;
 import org.jmolecules.ddd.types.Entity;
+import org.jmolecules.ddd.types.ValueObject;
 
 /**
  * @author Oliver Drotbohm
@@ -51,6 +52,12 @@ class JMoleculesElementMatchers {
 
 		return it -> it.asErasure().isAssignableTo(Collection.class) //
 				&& isEntity().matches(it.asGenericType().getTypeArguments().get(0).asErasure());
+	}
+
+	public static ElementMatcher<? super Generic> isCollectionOfValueObject() {
+
+		return it -> it.asErasure().isAssignableTo(Collection.class) //
+				&& isValueObject().matches(it.asGenericType().getTypeArguments().get(0).asErasure());
 	}
 
 	static boolean hasAnnotation(TypeDescription type, Class<? extends Annotation> annotation) {
@@ -165,7 +172,13 @@ class JMoleculesElementMatchers {
 	 */
 	private static boolean residesInAnyPackageStartingWith(TypeDescription target, List<String> prefixes) {
 
-		return (target.getPackage() != null) //
+		return target.getPackage() != null //
 				&& prefixes.stream().anyMatch(it -> target.getPackage().getName().startsWith(it));
+	}
+
+	private static ElementMatcher<TypeDescription> isValueObject() {
+
+		return it -> it.isAssignableTo(ValueObject.class)
+				|| hasAnnotation(it, org.jmolecules.ddd.annotation.ValueObject.class);
 	}
 }

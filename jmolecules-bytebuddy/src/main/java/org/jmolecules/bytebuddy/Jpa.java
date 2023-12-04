@@ -21,7 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.lang.annotation.Annotation;
 import java.util.Optional;
 
-import org.jmolecules.ddd.types.Association;
 import org.springframework.core.Constants;
 import org.springframework.util.ClassUtils;
 
@@ -73,7 +72,7 @@ class Jpa {
 	 * @return
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	<T> T getFetchTypeEager() {
+	<T extends Enum<?>> T getFetchTypeEager() {
 
 		Class fetchTypeType = loadClass("FetchType");
 		return (T) Enum.valueOf(fetchTypeType, "EAGER");

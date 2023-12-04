@@ -17,7 +17,6 @@ package org.jmolecules.bytebuddy;
 
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
-import net.bytebuddy.build.Plugin;
 import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.annotation.AnnotationList;
 import net.bytebuddy.description.annotation.AnnotationSource;
