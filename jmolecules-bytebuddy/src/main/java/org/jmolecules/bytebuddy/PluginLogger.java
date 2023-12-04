@@ -115,9 +115,13 @@ enum PluginLogger {
 
 			Comparator<LogEntry> comparator = Comparator
 					.comparing(LogEntry::getModule)
-					.thenComparing(LogEntry::getMessage);
+					.thenComparing(LogEntry::getExpandedMessage);
 
 			return comparator.compare(this, o);
+		}
+
+		private String getExpandedMessage() {
+			return String.format(message.replace("{}", "%s"), parameters);
 		}
 	}
 }
