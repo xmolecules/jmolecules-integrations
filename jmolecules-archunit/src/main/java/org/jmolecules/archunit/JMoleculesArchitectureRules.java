@@ -15,11 +15,17 @@
  */
 package org.jmolecules.archunit;
 
+import lombok.RequiredArgsConstructor;
+
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.function.BiPredicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.jmolecules.architecture.hexagonal.Adapter;
 import org.jmolecules.architecture.hexagonal.Application;
@@ -38,6 +44,8 @@ import org.jmolecules.architecture.onion.classical.DomainServiceRing;
 import org.jmolecules.architecture.onion.simplified.ApplicationRing;
 import org.jmolecules.architecture.onion.simplified.DomainRing;
 import org.jmolecules.architecture.onion.simplified.InfrastructureRing;
+import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
@@ -78,6 +86,19 @@ public class JMoleculesArchitectureRules {
 	private static final String HEXAGONAL_PRIMARY_ADAPTER = "Primary adapter";
 	private static final String HEXAGONAL_SECONDARY_ADAPTER = "Secondary adapter";
 
+	static List<Class<? extends Annotation>> LAYER_ANNOTATIONS = Arrays.asList(InfrastructureLayer.class,
+			DomainLayer.class, ApplicationLayer.class, InterfaceLayer.class);
+
+	static List<Class<? extends Annotation>> ONION_SIMPLE_ANNOTATIONS = Arrays.asList(DomainRing.class,
+			ApplicationRing.class, InfrastructureRing.class);
+
+	static List<Class<? extends Annotation>> ONION_CLASSICAL_ANNOTATIONS = Arrays.asList(DomainModelRing.class,
+			DomainServiceRing.class, ApplicationServiceRing.class,
+			org.jmolecules.architecture.onion.classical.InfrastructureRing.class);
+
+	static List<Class<? extends Annotation>> HEXAGONAL_ANNOTATIONS = Arrays.asList(Application.class, Port.class,
+			PrimaryPort.class, SecondaryPort.class, Adapter.class, PrimaryAdapter.class, SecondaryAdapter.class);
+
 	/**
 	 * ArchUnit {@link LayeredArchitecture} defined by considering JMolecules layer annotations allowing access of
 	 * <em>all</em> layers below.
@@ -89,8 +110,24 @@ public class JMoleculesArchitectureRules {
 	 * @see InfrastructureLayer
 	 */
 	public static LayeredArchitecture ensureLayering() {
+		return ensureLayering(StereotypeLookup.DEFAULT_LOOKUP);
+	}
 
-		return layeredArchitecture()
+	/**
+	 * ArchUnit {@link LayeredArchitecture} defined by considering JMolecules layer annotations allowing access of
+	 * <em>all</em> layers below.
+	 *
+	 * @param lookup must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @see InterfaceLayer
+	 * @see ApplicationLayer
+	 * @see DomainLayer
+	 * @see InfrastructureLayer
+	 * @since 0.22
+	 */
+	public static LayeredArchitecture ensureLayering(StereotypeLookup lookup) {
+
+		return layeredArchitecture(lookup)
 				.whereLayer(INTERFACE).mayNotBeAccessedByAnyLayer()
 				.whereLayer(APPLICATION).mayOnlyBeAccessedByLayers(INTERFACE)
 				.whereLayer(DOMAIN).mayOnlyBeAccessedByLayers(APPLICATION, INTERFACE)
@@ -108,8 +145,24 @@ public class JMoleculesArchitectureRules {
 	 * @see InfrastructureLayer
 	 */
 	public static LayeredArchitecture ensureLayeringStrict() {
+		return ensureLayeringStrict(StereotypeLookup.defaultLookup());
+	}
 
-		return layeredArchitecture()
+	/**
+	 * ArchUnit {@link LayeredArchitecture} defined by considering JMolecules layer annotations allowing access to the
+	 * next lower layer only.
+	 *
+	 * @param lookup must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @see InterfaceLayer
+	 * @see ApplicationLayer
+	 * @see DomainLayer
+	 * @see InfrastructureLayer
+	 * @since 0.22
+	 */
+	public static LayeredArchitecture ensureLayeringStrict(StereotypeLookup lookup) {
+
+		return layeredArchitecture(lookup)
 				.whereLayer(INTERFACE).mayNotBeAccessedByAnyLayer()
 				.whereLayer(APPLICATION).mayOnlyBeAccessedByLayers(INTERFACE)
 				.whereLayer(DOMAIN).mayOnlyBeAccessedByLayers(APPLICATION)
@@ -125,8 +178,22 @@ public class JMoleculesArchitectureRules {
 	 * @see InfrastructureRing
 	 */
 	public static ArchRule ensureOnionSimple() {
+		return ensureOnionSimple(StereotypeLookup.defaultLookup());
+	}
 
-		return onionArchitectureSimple()
+	/**
+	 * ArchUnit {@link ArchRule} defining a simplified variant of the Onion Architecture.
+	 *
+	 * @param lookup must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @see ApplicationRing
+	 * @see DomainRing
+	 * @see InfrastructureRing
+	 * @since 0.22
+	 */
+	public static ArchRule ensureOnionSimple(StereotypeLookup lookup) {
+
+		return onionArchitectureSimple(lookup)
 
 				.whereLayer(ONION_SIMPLE_INFRASTRUCTURE)
 				.mayNotBeAccessedByAnyLayer()
@@ -148,8 +215,23 @@ public class JMoleculesArchitectureRules {
 	 * @see org.jmolecules.architecture.onion.classical.InfrastructureRing
 	 */
 	public static ArchRule ensureOnionClassical() {
+		return ensureOnionClassical(StereotypeLookup.defaultLookup());
+	}
 
-		return onionArchitecture()
+	/**
+	 * ArchUnit {@link ArchRule} defining the classic Onion Architecture.
+	 *
+	 * @param lookup must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @see ApplicationServiceRing
+	 * @see DomainServiceRing
+	 * @see DomainModelRing
+	 * @see org.jmolecules.architecture.onion.classical.InfrastructureRing
+	 * @since 0.22
+	 */
+	public static ArchRule ensureOnionClassical(StereotypeLookup lookup) {
+
+		return onionArchitecture(lookup)
 
 				.whereLayer(ONION_CLASSICAL_INFRASTRUCTURE)
 				.mayNotBeAccessedByAnyLayer()
@@ -165,9 +247,20 @@ public class JMoleculesArchitectureRules {
 						ONION_CLASSICAL_INFRASTRUCTURE);
 	}
 
+	/**
+	 * ArchUnit {@link ArchRule} defining Hexagonal Architecture.
+	 *
+	 * @see Adapter
+	 * @see Port
+	 * @see PrimaryAdapter
+	 * @see PrimaryPort
+	 * @see SecondaryAdapter
+	 * @see SecondaryPort
+	 * @return will never be {@literal null}.
+	 */
 	public static ArchRule ensureHexagonal() {
 
-		return hexagonalArchitecture()
+		return hexagonalArchitecture(StereotypeLookup.defaultLookup())
 
 				.whereLayer(HEXAGONAL_PRIMARY_PORT)
 				.mayOnlyBeAccessedByLayers(APPLICATION, HEXAGONAL_PORT_UNQUALIFIED, HEXAGONAL_ADAPTER_UNQUALIFIED,
@@ -190,91 +283,265 @@ public class JMoleculesArchitectureRules {
 				.mayOnlyBeAccessedByLayers(HEXAGONAL_ADAPTER_UNQUALIFIED)
 
 				.whereLayer(APPLICATION)
-				.mayNotBeAccessedByAnyLayer()
-
-		;
+				.mayNotBeAccessedByAnyLayer();
 	}
 
-	private static LayeredArchitecture layeredArchitecture() {
+	/**
+	 * A strategy how to look up stereotypes for the classes to be analyzed. Can either be on the types themselves
+	 * including a package-level assignment (via {@link #defaultLookup()}) or via a marker type that acts as replacement
+	 * for the package-level lookup.
+	 *
+	 * @author Oliver Drotbohm
+	 * @since 0.22
+	 */
+	@RequiredArgsConstructor(staticName = "of")
+	public static class StereotypeLookup {
+
+		private static final String DEFAULT_DESCRIPTION = "(meta-)annotated with %s or residing in package (meta-)annotated with %s";
+		private static StereotypeLookup DEFAULT_LOOKUP = new StereotypeLookup(DEFAULT_DESCRIPTION, null) {
+
+			@Override
+			IsStereotype forAnnotation(Class<? extends Annotation> annotation) {
+				return new IsStereotype(annotation);
+			}
+
+			@Override
+			IsStereotype forAnnotation(Class<? extends Annotation> annotation,
+					Collection<Class<? extends Annotation>> exclusions) {
+
+				return new IsStereotype(annotation, allBut(exclusions, annotation));
+			}
+		};
+
+		private final String description;
+		private final @Nullable BiPredicate<Class<? extends Annotation>, JavaClass> lookup;
+
+		/**
+		 * Creates a default {@link StereotypeLookup}, which means it for each type, it will try to find the annotation on
+		 * the type itself or any meta annotations and falls back to traversing the package annotations.
+		 *
+		 * @return will never be {@literal null}.
+		 */
+		public static StereotypeLookup defaultLookup() {
+			return DEFAULT_LOOKUP;
+		}
+
+		/**
+		 * Creates a {@link StereotypeLookup} trying to find the stereotype annotation on a marker type located in the
+		 * reference type's package or parent package.
+		 *
+		 * @param name will never be {@literal null} or empty.
+		 * @return will never be {@literal null}.
+		 */
+		public static StereotypeLookup onMarkerType(String name) {
+
+			Assert.hasText(name, "Name must not be null or empty!");
+
+			BiPredicate<Class<? extends Annotation>, JavaClass> lookup = (annotation,
+					type) -> new IsStereotype(annotation).test(type)
+							|| containsAnnotatedMarkerType(type.getPackage(), name, annotation);
+
+			return new StereotypeLookup(String.format("Annotated marker type %s", name), lookup);
+		}
+
+		/**
+		 * Creates a {@link StereotypeLookup} trying to find the stereotype annotation on marker types with the same simple
+		 * name as the given one located in the reference type's package or parent package.
+		 *
+		 * @param name will never be {@literal null} or empty.
+		 * @return will never be {@literal null}.
+		 */
+		public static StereotypeLookup onMarkerTypeName(Class<?> type) {
+			return onMarkerType(type.getSimpleName());
+		}
+
+		/**
+		 * Returns whether the given package contains a marker type with the given simple name annotated with the given
+		 * annotation type. If none is found, we traverse the given package's parent packages.
+		 *
+		 * @param pkg must not be {@literal null}.
+		 * @param name must not be {@literal null} or empty.
+		 * @param annotationType must not be {@literal null}.
+		 */
+		private static boolean containsAnnotatedMarkerType(JavaPackage pkg, String name,
+				Class<? extends Annotation> annotationType) {
+
+			return pkg.getClasses().stream()
+					.filter(it -> it.getSimpleName().equals(name))
+					.anyMatch(candidate -> candidate.isMetaAnnotatedWith(annotationType))
+					|| pkg.getParent()
+							.map(it -> containsAnnotatedMarkerType(it, name, annotationType))
+							.orElse(false);
+		}
+
+		IsStereotype forAnnotation(Class<? extends Annotation> annotations) {
+			return forAnnotation(annotations, Collections.emptySet());
+		}
+
+		IsStereotype forAnnotation(Class<? extends Annotation> annotation,
+				Collection<Class<? extends Annotation>> exclusions) {
+
+			return new IsStereotype(annotation, lookup, description, allBut(exclusions, annotation));
+		}
+
+		Collection<Class<? extends Annotation>> allBut(Collection<Class<? extends Annotation>> source,
+				Class<? extends Annotation> filter) {
+
+			return source.stream()
+					.filter(it -> !isEqualOrAnnotated(it, filter))
+					.collect(Collectors.toSet());
+		}
+
+		boolean isEqualOrAnnotated(Class<? extends Annotation> candidate, Class<? extends Annotation> reference) {
+
+			if (isJdkType(candidate)) {
+				return false;
+			}
+
+			return candidate.equals(reference)
+					|| candidate.getAnnotation(reference) != null
+					|| Arrays.stream(candidate.getAnnotations()).anyMatch(it -> isEqualOrAnnotated(it.getClass(), reference));
+		}
+
+		private static boolean isJdkType(Class<?> type) {
+
+			Package pkg = type.getPackage();
+
+			return pkg != null && Stream.of("java", "jdk").anyMatch(pkg.getName()::startsWith);
+		}
+	}
+
+	private static LayeredArchitecture layeredArchitecture(StereotypeLookup lookup) {
 
 		return Architectures.layeredArchitecture()
 				.consideringOnlyDependenciesInLayers()
 				.withOptionalLayers(true)
-				.layer(INFRASTRUCTURE).definedBy(layerType(InfrastructureLayer.class))
-				.layer(DOMAIN).definedBy(layerType(DomainLayer.class))
-				.layer(APPLICATION).definedBy(layerType(ApplicationLayer.class))
-				.layer(INTERFACE).definedBy(layerType(InterfaceLayer.class));
+
+				.layer(INFRASTRUCTURE)
+				.definedBy(lookup.forAnnotation(InfrastructureLayer.class, LAYER_ANNOTATIONS))
+
+				.layer(DOMAIN)
+				.definedBy(lookup.forAnnotation(DomainLayer.class, LAYER_ANNOTATIONS))
+
+				.layer(APPLICATION)
+				.definedBy(lookup.forAnnotation(ApplicationLayer.class, LAYER_ANNOTATIONS))
+
+				.layer(INTERFACE)
+				.definedBy(lookup.forAnnotation(InterfaceLayer.class, LAYER_ANNOTATIONS));
 	}
 
-	private static LayeredArchitecture onionArchitecture() {
+	private static LayeredArchitecture onionArchitecture(StereotypeLookup lookup) {
 
 		return Architectures.layeredArchitecture()
 				.consideringOnlyDependenciesInLayers()
 				.withOptionalLayers(true)
+
 				.layer(ONION_CLASSICAL_INFRASTRUCTURE)
-				.definedBy(layerType(org.jmolecules.architecture.onion.classical.InfrastructureRing.class))
-				.layer(ONION_CLASSICAL_APPLICATION).definedBy(layerType(ApplicationServiceRing.class))
-				.layer(ONION_CLASSICAL_DOMAIN_SERVICE).definedBy(layerType(DomainServiceRing.class))
-				.layer(ONION_CLASSICAL_DOMAIN_MODEL).definedBy(layerType(DomainModelRing.class));
+				.definedBy(lookup.forAnnotation(org.jmolecules.architecture.onion.classical.InfrastructureRing.class,
+						ONION_CLASSICAL_ANNOTATIONS))
+
+				.layer(ONION_CLASSICAL_APPLICATION)
+				.definedBy(lookup.forAnnotation(ApplicationServiceRing.class, ONION_CLASSICAL_ANNOTATIONS))
+
+				.layer(ONION_CLASSICAL_DOMAIN_SERVICE)
+				.definedBy(lookup.forAnnotation(DomainServiceRing.class, ONION_CLASSICAL_ANNOTATIONS))
+
+				.layer(ONION_CLASSICAL_DOMAIN_MODEL)
+				.definedBy(lookup.forAnnotation(DomainModelRing.class, ONION_CLASSICAL_ANNOTATIONS));
 	}
 
-	private static LayeredArchitecture onionArchitectureSimple() {
+	private static LayeredArchitecture onionArchitectureSimple(StereotypeLookup lookup) {
 
 		return Architectures.layeredArchitecture()
 				.consideringOnlyDependenciesInLayers()
 				.withOptionalLayers(true)
-				.layer(ONION_SIMPLE_INFRASTRUCTURE).definedBy(layerType(InfrastructureRing.class))
-				.layer(ONION_SIMPLE_APPLICATION).definedBy(layerType(ApplicationRing.class))
-				.layer(ONION_SIMPLE_DOMAIN).definedBy(layerType(DomainRing.class));
+
+				.layer(ONION_SIMPLE_INFRASTRUCTURE)
+				.definedBy(lookup.forAnnotation(InfrastructureRing.class, ONION_SIMPLE_ANNOTATIONS))
+
+				.layer(ONION_SIMPLE_APPLICATION)
+				.definedBy(lookup.forAnnotation(ApplicationRing.class, ONION_SIMPLE_ANNOTATIONS))
+
+				.layer(ONION_SIMPLE_DOMAIN)
+				.definedBy(lookup.forAnnotation(DomainRing.class, ONION_SIMPLE_ANNOTATIONS));
 	}
 
-	private static LayeredArchitecture hexagonalArchitecture() {
+	private static LayeredArchitecture hexagonalArchitecture(StereotypeLookup lookup) {
 
 		return Architectures.layeredArchitecture()
 				.consideringOnlyDependenciesInLayers()
 				.withOptionalLayers(true)
-				.layer(HEXAGONAL_APPLICATION).definedBy(layerType(Application.class))
-				.layer(HEXAGONAL_PORT).definedBy(layerType(Port.class))
+
+				.layer(HEXAGONAL_APPLICATION)
+				.definedBy(lookup.forAnnotation(Application.class, HEXAGONAL_ANNOTATIONS))
+
+				.layer(HEXAGONAL_PORT)
+				.definedBy(lookup.forAnnotation(Port.class, HEXAGONAL_ANNOTATIONS))
+
 				.layer(HEXAGONAL_PORT_UNQUALIFIED)
-				.definedBy(layerType(Port.class).withExclusions(PrimaryPort.class, SecondaryPort.class))
-				.layer(HEXAGONAL_PRIMARY_PORT).definedBy(layerType(PrimaryPort.class))
-				.layer(HEXAGONAL_SECONDARY_PORT).definedBy(layerType(SecondaryPort.class))
-				.layer(HEXAGONAL_ADAPTER).definedBy(layerType(Adapter.class))
+				.definedBy(lookup.forAnnotation(Port.class, HEXAGONAL_ANNOTATIONS)
+						.withExclusions(PrimaryPort.class, SecondaryPort.class))
+
+				.layer(HEXAGONAL_PRIMARY_PORT)
+				.definedBy(lookup.forAnnotation(PrimaryPort.class, HEXAGONAL_ANNOTATIONS))
+
+				.layer(HEXAGONAL_SECONDARY_PORT)
+				.definedBy(lookup.forAnnotation(SecondaryPort.class, HEXAGONAL_ANNOTATIONS))
+
+				.layer(HEXAGONAL_ADAPTER)
+				.definedBy(lookup.forAnnotation(Adapter.class, HEXAGONAL_ANNOTATIONS))
+
 				.layer(HEXAGONAL_ADAPTER_UNQUALIFIED)
-				.definedBy(layerType(Adapter.class).withExclusions(PrimaryAdapter.class, SecondaryAdapter.class))
-				.layer(HEXAGONAL_PRIMARY_ADAPTER).definedBy(layerType(PrimaryAdapter.class))
-				.layer(HEXAGONAL_SECONDARY_ADAPTER).definedBy(layerType(SecondaryAdapter.class));
+				.definedBy(lookup.forAnnotation(Adapter.class, HEXAGONAL_ANNOTATIONS)
+						.withExclusions(PrimaryAdapter.class, SecondaryAdapter.class))
+
+				.layer(HEXAGONAL_PRIMARY_ADAPTER)
+				.definedBy(lookup.forAnnotation(PrimaryAdapter.class, HEXAGONAL_ANNOTATIONS))
+
+				.layer(HEXAGONAL_SECONDARY_ADAPTER)
+				.definedBy(lookup.forAnnotation(SecondaryAdapter.class, HEXAGONAL_ANNOTATIONS));
 	}
 
-	private static IsLayerType layerType(Class<? extends Annotation> annotation) {
-		return new IsLayerType(annotation);
-	}
-
-	private static class IsLayerType extends DescribedPredicate<JavaClass> {
+	static class IsStereotype extends DescribedPredicate<JavaClass> {
 
 		private final Class<? extends Annotation> annotation;
+		private final String description;
+		private final BiPredicate<Class<? extends Annotation>, JavaClass> filter;
 		private final Collection<Class<? extends Annotation>> exclusions;
 
-		public IsLayerType(Class<? extends Annotation> annotation) {
+		public IsStereotype(Class<? extends Annotation> annotation) {
 			this(annotation, Collections.emptySet());
 		}
 
-		public IsLayerType(Class<? extends Annotation> annotation, Collection<Class<? extends Annotation>> exclusions) {
+		public IsStereotype(Class<? extends Annotation> annotation,
+				Collection<Class<? extends Annotation>> exclusions) {
 
-			super("(meta-)annotated with %s or residing in package (meta-)annotated with %s", //
-					annotation.getTypeName(), annotation.getTypeName());
+			this(annotation, null,
+					String.format(StereotypeLookup.DEFAULT_DESCRIPTION, annotation.getName(), annotation.getName()), exclusions);
+		}
+
+		public IsStereotype(Class<? extends Annotation> annotation,
+				@Nullable BiPredicate<Class<? extends Annotation>, JavaClass> filter,
+				String description, Collection<Class<? extends Annotation>> exclusions) {
+
+			super(description);
 
 			this.annotation = annotation;
+			this.description = description;
 			this.exclusions = exclusions;
+
+			this.filter = filter != null
+					? filter
+					: (it, type) -> type.isMetaAnnotatedWith(it) || hasAnnotationOnPackageOrParent(type.getPackage());
 		}
 
 		@SafeVarargs
-		public final IsLayerType withExclusions(Class<? extends Annotation>... exclusions) {
+		public final IsStereotype withExclusions(Class<? extends Annotation>... exclusions) {
 
 			Collection<Class<? extends Annotation>> newExclusions = new HashSet<>(this.exclusions);
 			newExclusions.addAll(Arrays.asList(exclusions));
 
-			return new IsLayerType(annotation, newExclusions);
+			return new IsStereotype(annotation, filter, description, newExclusions);
 		}
 
 		/*
@@ -284,28 +551,17 @@ public class JMoleculesArchitectureRules {
 		@Override
 		public boolean test(JavaClass type) {
 
-			if (exclusions.stream().anyMatch(it -> hasDirectOrMetaAnnotation(type, it))) {
-				return false;
-			}
-
-			return hasDirectOrMetaAnnotation(type, annotation)
-					|| hasAnnotationOnPackageOrParent(type.getPackage());
-		}
-
-		private boolean hasDirectOrMetaAnnotation(JavaClass type, Class<? extends Annotation> annotation) {
-			return type.isAnnotatedWith(annotation) || type.isMetaAnnotatedWith(annotation);
+			return !exclusions.stream().anyMatch(type::isMetaAnnotatedWith)
+					&& filter.test(annotation, type);
 		}
 
 		private boolean hasAnnotationOnPackageOrParent(JavaPackage javaPackage) {
 
-			boolean excluded = exclusions.stream()
-					.anyMatch(it -> javaPackage.isAnnotatedWith(it) || javaPackage.isMetaAnnotatedWith(it));
-
-			if (excluded) {
+			if (exclusions.stream().anyMatch(javaPackage::isMetaAnnotatedWith)) {
 				return false;
 			}
 
-			if (javaPackage.isAnnotatedWith(annotation) || javaPackage.isMetaAnnotatedWith(annotation)) {
+			if (javaPackage.isMetaAnnotatedWith(annotation)) {
 				return true;
 			}
 
