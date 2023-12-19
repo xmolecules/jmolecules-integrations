@@ -3,3 +3,6 @@ org.jmolecules.jackson.config.JMoleculesJacksonAutoConfiguration
 
 org.springframework.boot.test.autoconfigure.json.AutoConfigureJson=\
 org.jmolecules.jackson.config.JMoleculesJacksonAutoConfiguration
+
+org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc=\
+org.jmolecules.jackson.config.JMoleculesJacksonAutoConfiguration
