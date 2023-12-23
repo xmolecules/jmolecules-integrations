@@ -1,0 +1,117 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.jmolecules.integrations</groupId>
+		<artifactId>jmolecules-bytebuddy-tests</artifactId>
+		<version>0.19.0-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<artifactId>jmolecules-bytebuddy-tests-parent</artifactId>
+	<name>jMolecules - ByteBuddy - Tests - Parent</name>
+	<packaging>pom</packaging>
+
+	<dependencies>
+
+		<dependency>
+			<groupId>org.jmolecules</groupId>
+			<artifactId>jmolecules-ddd</artifactId>
+			<version>${jmolecules.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>jmolecules-bytebuddy-nodep</artifactId>
+			<version>${project.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>*</groupId>
+					<artifactId>*</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+	</dependencies>
+
+	<build>
+
+		<plugins>
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>3.3.0</version>
+				<executions>
+					<execution>
+						<id>add-source-generated</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>add-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>${basedir}/target/jmolecules-sources</source>
+							</sources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>3.3.1</version>
+				<executions>
+					<execution>
+						<id>copy-sources</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${basedir}/target/jmolecules-sources</outputDirectory>
+							<resources>
+								<resource>
+									<directory>${basedir}/../jmolecules-bytebuddy-tests-core/src/main/java</directory>
+									<includes>
+										<include>**/*.java</include>
+									</includes>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>17</source>
+					<target>17</target>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>net.bytebuddy</groupId>
+				<artifactId>byte-buddy-maven-plugin</artifactId>
+				<version>${bytebuddy.version}</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>transform-extended</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<classPathDiscovery>true</classPathDiscovery>
+				</configuration>
+			</plugin>
+
+		</plugins>
+
+	</build>
+
+</project>

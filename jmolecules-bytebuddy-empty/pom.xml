@@ -13,7 +13,7 @@
 		even without JPA and Spring dependencies present
 		on the classpath.
 	-->
-	<name>jMolecules - ByteBuddy plugin (without dependencies)</name>
+	<name>jMolecules - ByteBuddy (without dependencies)</name>
 
 	<artifactId>jmolecules-bytebuddy-empty</artifactId>
 

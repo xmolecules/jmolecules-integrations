@@ -28,6 +28,7 @@
 		<hibernate.version>6.4.1.Final</hibernate.version>
 		<jmolecules.version>1.8.0</jmolecules.version>
 		<spring-boot.version>2.7.18</spring-boot.version>
+		<spring-boot3.version>3.2.1</spring-boot3.version>
 		<axon.version>4.9.1</axon.version>
 	</properties>
 
@@ -63,6 +64,7 @@
 			</activation>
 			<modules>
 				<module>jmolecules-bytebuddy-empty</module>
+				<module>jmolecules-bytebuddy-tests</module>
 			</modules>
 		</profile>
 		<profile>

@@ -8,7 +8,7 @@
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
-	<name>jMolecules - ByteBuddy plugin (no dependencies)</name>
+	<name>jMolecules - ByteBuddy (no dependencies)</name>
 
 	<artifactId>jmolecules-bytebuddy-nodep</artifactId>
 
