@@ -13,7 +13,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.jmolecules.architecture.cqrs.annotation.QueryModel;
+import org.jmolecules.architecture.cqrs.QueryModel;
 import org.jmolecules.bytebuddy.PluginLogger.Log;
 import org.jmolecules.ddd.annotation.AggregateRoot;
 
@@ -35,6 +35,7 @@ public class JMoleculesAxonSpringPlugin implements LoggingPlugin {
 
 		PluginUtils.ifAnnotationTypePresent("org.springframework.stereotype.Component", it -> {
 			MAPPINGS.put(QueryModel.class, it);
+			MAPPINGS.put(org.jmolecules.architecture.cqrs.annotation.QueryModel.class, it);
 		});
 
 		// Axon -> jMolecules
@@ -45,6 +46,7 @@ public class JMoleculesAxonSpringPlugin implements LoggingPlugin {
 		 */
 		TRIGGERS.add(AggregateRoot.class);
 		TRIGGERS.add(QueryModel.class);
+		TRIGGERS.add(org.jmolecules.architecture.cqrs.annotation.QueryModel.class);
 	}
 
 	/*

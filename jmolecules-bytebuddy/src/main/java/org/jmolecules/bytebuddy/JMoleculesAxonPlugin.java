@@ -32,9 +32,9 @@ import java.util.Set;
 
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
-import org.jmolecules.architecture.cqrs.annotation.Command;
-import org.jmolecules.architecture.cqrs.annotation.CommandHandler;
-import org.jmolecules.architecture.cqrs.annotation.QueryModel;
+import org.jmolecules.architecture.cqrs.Command;
+import org.jmolecules.architecture.cqrs.CommandHandler;
+import org.jmolecules.architecture.cqrs.QueryModel;
 import org.jmolecules.ddd.annotation.AggregateRoot;
 import org.jmolecules.ddd.annotation.Association;
 import org.jmolecules.ddd.annotation.Identity;
@@ -46,6 +46,7 @@ import org.jmolecules.event.annotation.DomainEventHandler;
  * @author Simon Zambrovski
  * @author Oliver Drotbohm
  */
+@SuppressWarnings("deprecation")
 public class JMoleculesAxonPlugin implements LoggingPlugin {
 
 	private static final Map<Class<?>, Class<? extends Annotation>> MAPPINGS = new HashMap<>();
@@ -68,8 +69,13 @@ public class JMoleculesAxonPlugin implements LoggingPlugin {
 		TRIGGERS.add(QueryModel.class);
 		TRIGGERS.add(Command.class);
 
+		TRIGGERS.add(org.jmolecules.architecture.cqrs.annotation.QueryModel.class);
+		TRIGGERS.add(org.jmolecules.architecture.cqrs.annotation.Command.class);
+
 		// jMolecules -> Axon
 		METHOD_ANNOTATIONS.put(CommandHandler.class, org.axonframework.commandhandling.CommandHandler.class);
+		METHOD_ANNOTATIONS.put(org.jmolecules.architecture.cqrs.annotation.CommandHandler.class,
+				org.axonframework.commandhandling.CommandHandler.class);
 		METHOD_ANNOTATIONS.put(DomainEventHandler.class, org.axonframework.eventhandling.EventHandler.class);
 
 		// Axon -> jMolecules
