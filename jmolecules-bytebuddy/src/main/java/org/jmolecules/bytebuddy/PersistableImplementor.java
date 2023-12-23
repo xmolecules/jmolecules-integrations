@@ -53,6 +53,7 @@ import org.springframework.util.ReflectionUtils;
 @RequiredArgsConstructor(staticName = "of")
 class PersistableImplementor {
 
+	static final String GET_ID_METHOD = "getId";
 	static final String IS_NEW_METHOD = "isNew";
 	static final String MARK_NOT_NEW_METHOD = "__jMolecules__markNotNew";
 	static final String IS_NEW_FIELD = "__jMolecules__isNew";
@@ -73,32 +74,48 @@ class PersistableImplementor {
 					ElementMatcher<? super InDefinedShape> isIdField = candidate -> !candidate.getName()
 							.equals(field.getName());
 
-					return type.implement(MutablePersistable.class, type.getTypeDescription(), field.getType())
-							.mapBuilder(this::generateCallbacks)
-							.mapBuilder(it -> !it.hasField(named(IS_NEW_FIELD)), this::generateIsNewField)
+					return type.map(it -> implementPersistable(it, field))
+							.mapBuilder(__ -> options.hasCallbackAnnotations(), this::generateAnnotationCallbacks)
 							.mapBuilder(it -> !it.hasMethod(isEquals()), it -> generateEquals(it, isIdField))
-							.mapBuilder(it -> !it.hasMethod(isHashCode()), it -> generateHashCode(it, isIdField))
-							.mapBuilder(it -> !it.hasMethod(hasMethodName(IS_NEW_METHOD)), this::generateIsNewMethod);
+							.mapBuilder(it -> !it.hasMethod(isHashCode()), it -> generateHashCode(it, isIdField));
 
 				}).orElse(type);
 	}
 
-	private Builder<?> generateCallbacks(Builder<?> builder) {
+	private JMoleculesType implementPersistable(JMoleculesType type, InDefinedShape field) {
 
-		if (options.callbackInterface != null) {
+		Generic fieldType = field.getType();
 
-			builder = builder.defineMethod(MARK_NOT_NEW_METHOD, void.class, Visibility.PUBLIC)
-					.intercept(FieldAccessor.ofField(IS_NEW_FIELD).setsValue(false))
-					.require(createCallbackComponent(builder.toTypeDescription()));
+		if (options.hasCallbackInterface()) {
+
+			if (type.isAssignableTo(MutablePersistable.class)) {
+				return type;
+			}
+
+			type = type.implement(MutablePersistable.class, type.getTypeDescription(), fieldType)
+					.mapBuilder(it -> it.defineMethod(MARK_NOT_NEW_METHOD, void.class, Visibility.PUBLIC)
+							.intercept(FieldAccessor.ofField(IS_NEW_FIELD).setsValue(false))
+							.require(createCallbackComponent(it.toTypeDescription())));
+		} else {
+
+			if (type.isAssignableTo(Persistable.class)) {
+				return type;
+			}
+
+			type = type.implement(Persistable.class, fieldType);
 		}
 
-		if (options.callbackAnnotations.length > 0) {
-			builder = new LifecycleMethods(builder, options.callbackAnnotations)
-					.apply(__ -> Advice.to(NotNewSetter.class),
-							() -> FieldAccessor.ofField(IS_NEW_FIELD).setsValue(false));
-		}
+		return type
+				.mapBuilder(it -> !it.hasField(named(IS_NEW_FIELD)), this::generateIsNewField)
+				.mapBuilder(it -> !it.hasMethod(hasMethodName(GET_ID_METHOD)), it -> generateGetIdMethod(it, field))
+				.mapBuilder(it -> !it.hasMethod(hasMethodName(IS_NEW_METHOD)), this::generateIsNewMethod);
+	}
 
-		return builder;
+	private Builder<?> generateAnnotationCallbacks(Builder<?> builder) {
+
+		return new LifecycleMethods(builder, options.getCallbackAnnotations())
+				.apply(__ -> Advice.to(NotNewSetter.class),
+						() -> FieldAccessor.ofField(IS_NEW_FIELD).setsValue(false));
 	}
 
 	private Builder<?> generateIsNewField(Builder<?> builder) {
@@ -106,7 +123,7 @@ class PersistableImplementor {
 		// Add isNew field
 		builder = builder.defineField(IS_NEW_FIELD, boolean.class, Visibility.PRIVATE)
 				.value(true)
-				.annotateField(getAnnotation(options.isNewPropertyAnnotation));
+				.annotateField(getAnnotation(options.getIsNewPropertyAnnotation()));
 
 		// Tweak constructors to set the newly introduced field to true.
 		Junction<MethodDescription> isConstructor = ElementMatchers.isConstructor();
@@ -115,6 +132,12 @@ class PersistableImplementor {
 		return builder
 				.visit(Advice.to(IsNewInitializer.class).on(isConstructor))
 				.visit(Advice.to(IsNewForwarder.class).on(isWither));
+	}
+
+	private Builder<?> generateGetIdMethod(Builder<?> builder, InDefinedShape field) {
+
+		return builder.defineMethod(GET_ID_METHOD, field.getType(), Visibility.PUBLIC)
+				.intercept(FieldAccessor.ofField(field.getName()));
 	}
 
 	private Builder<?> generateIsNewMethod(Builder<?> builder) {
@@ -139,7 +162,7 @@ class PersistableImplementor {
 	private DynamicType createCallbackComponent(TypeDescription typeDescription) {
 
 		Generic callbackType = Generic.Builder
-				.parameterizedType(new TypeDescription.ForLoadedType(options.callbackInterface), typeDescription).build();
+				.parameterizedType(new TypeDescription.ForLoadedType(options.getCallbackInterface()), typeDescription).build();
 
 		return new ByteBuddy(ClassFileVersion.JAVA_V8)
 				.subclass(callbackType)

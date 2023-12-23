@@ -27,6 +27,7 @@ import javax.persistence.PostLoad;
 import javax.persistence.PrePersist;
 import javax.persistence.Transient;
 
+import org.jmolecules.spring.data.MutablePersistable;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.data.domain.Persistable;
@@ -44,7 +45,9 @@ class JMoleculesSpringDataJpaTests {
 
 	@Test // #28
 	void implementsPersistable() {
-		assertThat(Persistable.class).isAssignableFrom(SampleAggregate.class);
+		assertThat(new SampleAggregate(id))
+				.isNotInstanceOf(MutablePersistable.class)
+				.isInstanceOf(Persistable.class);
 	}
 
 	@Test // #28

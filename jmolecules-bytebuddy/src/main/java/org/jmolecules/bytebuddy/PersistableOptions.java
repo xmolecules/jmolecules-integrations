@@ -15,9 +15,10 @@
  */
 package org.jmolecules.bytebuddy;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import lombok.Value;
 import lombok.With;
 
 import java.lang.annotation.Annotation;
@@ -26,16 +27,27 @@ import java.lang.reflect.Array;
 /**
  * @author Oliver Drotbohm
  */
-@With
-@AllArgsConstructor
-@RequiredArgsConstructor(staticName = "of")
+@Value
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 class PersistableOptions {
 
-	final @NonNull Class<? extends Annotation> isNewPropertyAnnotation;
-	Class<?> callbackInterface;
+	@NonNull Class<? extends Annotation> isNewPropertyAnnotation;
+	@With Class<?> callbackInterface;
+	Class<? extends Annotation>[] callbackAnnotations;
 
-	@SuppressWarnings("unchecked") Class<? extends Annotation>[] callbackAnnotations = (Class<? extends Annotation>[]) Array
-			.newInstance(Class.class, 0);
+	@SuppressWarnings("unchecked")
+	public static PersistableOptions of(Class<? extends Annotation> isNewPropertyAnnotation) {
+		return new PersistableOptions(isNewPropertyAnnotation, null, (Class<? extends Annotation>[]) Array
+				.newInstance(Class.class, 0));
+	}
+
+	boolean hasCallbackInterface() {
+		return callbackInterface != null;
+	}
+
+	boolean hasCallbackAnnotations() {
+		return callbackAnnotations.length > 0;
+	}
 
 	@SafeVarargs
 	public final PersistableOptions withCallbackAnnotations(Class<? extends Annotation>... callbackAnnotations) {
