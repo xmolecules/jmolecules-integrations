@@ -21,9 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.lang.annotation.Annotation;
 import java.util.Optional;
 
-import org.springframework.core.Constants;
-import org.springframework.util.ClassUtils;
-
 /**
  * Helper to abstract which flavor of JPA we need to work with.
  *
@@ -56,13 +53,12 @@ class Jpa {
 	 *
 	 * @return will never be {@literal null}.
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	<T> T getCascadeTypeAll() {
 
-		Class<? extends Annotation> annotation = loadClass("CascadeType");
-		Constants constants = new Constants(annotation);
+		Class<Enum> annotation = loadClass("CascadeType");
 
-		return (T) constants.asObject("ALL");
+		return (T) Enum.valueOf(annotation, "ALL");
 	}
 
 	/**
@@ -101,9 +97,9 @@ class Jpa {
 	 * @param name must not be {@literal null} or empty.
 	 * @return
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	<T extends Annotation> Class<T> getAnnotation(String name) {
-		return (Class<T>) loadClass(name);
+		return (Class) loadClass(name);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -152,7 +148,7 @@ class Jpa {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Class<? extends Annotation> loadClass(String name) {
+	private <T> Class<T> loadClass(String name) {
 
 		if (name == null || name.trim().length() == 0) {
 			throw new IllegalArgumentException("Type must not be null or empty!");
@@ -160,7 +156,11 @@ class Jpa {
 
 		name = name.contains(".") ? name : basePackage.concat(".").concat(name);
 
-		return (Class<? extends Annotation>) ClassUtils.resolveClassName(name, Jpa.class.getClassLoader());
+		try {
+			return (Class<T>) Class.forName(name, false, Jpa.class.getClassLoader());
+		} catch (ClassNotFoundException e) {
+			throw new IllegalStateException(e);
+		}
 	}
 
 	private enum Provider {
