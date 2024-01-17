@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * Logger to aggregate information about transformations applied to individual {@link TypeDescription}s.
@@ -35,7 +36,7 @@ enum PluginLogger {
 
 	INSTANCE;
 
-	private Map<String, Set<LogEntry>> logs = new TreeMap<>();
+	private Map<String, Set<LogEntry>> logs = new ConcurrentSkipListMap<>();
 
 	/**
 	 * Obtains the {@link Log} for the given {@link TypeDescription} and module name.
