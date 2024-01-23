@@ -31,18 +31,18 @@ class RecordInstantiatorUnitTests {
 	@Test // #98, #125
 	void instantiatesRecord() {
 
-		RecordInstantiator instantiator = new RecordInstantiator(Person.class);
+		RecordInstantiator instantiator = new RecordInstantiator(Address.class);
 
 		Object[] values = RecordInstantiator.IS_AFFECTED_HIBERNATE_VERSION
-				? new Object[] { "Matthews", "Dave" }
-				: new Object[] { "Dave", "Matthews" };
+				? new Object[] { "Longstreet", "12345", "Berlin", "Germany" }
+				: new Object[] { "Berlin", "Germany", "12345", "Longstreet" };
 
 		ValueAccess access = mock(ValueAccess.class);
 		doReturn(values).when(access).getValues();
 
 		assertThat(instantiator.instantiate(access, null))
-				.isEqualTo(new Person("Matthews", "Dave"));
+				.isEqualTo(new Address("Longstreet", "12345", "Berlin", "Germany"));
 	}
 
-	record Person(String lastname, String firstname) {}
+	record Address(String street, String postalCode, String city, String country) {}
 }

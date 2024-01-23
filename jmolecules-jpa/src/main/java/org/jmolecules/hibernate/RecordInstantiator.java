@@ -20,7 +20,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.RecordComponent;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -74,9 +73,16 @@ public class RecordInstantiator implements EmbeddableInstantiator {
 		this.constructor = detectRecordConstructor(type, parameterTypes);
 
 		// Obtain parameter name indexes as they will be returned sorted alphabetically on instantiation
-		this.indexes = IntStream.range(0, components.length)
+		List<Integer> sortedParams = IntStream.range(0, components.length)
 				.mapToObj(it -> Map.entry(components[it].getName(), it))
-				.sorted(Comparator.comparing(Entry::getKey))
+				.sorted(Entry.comparingByKey())
+				.map(Entry::getValue)
+				.collect(Collectors.toList());
+
+		// Obtain indexes of alphabetically sorted parameters mapped to correct places in constructor
+		this.indexes = IntStream.range(0, components.length)
+				.mapToObj(idx -> Map.entry(sortedParams.get(idx), idx))
+				.sorted(Entry.comparingByKey())
 				.map(Entry::getValue)
 				.collect(Collectors.toList());
 	}
