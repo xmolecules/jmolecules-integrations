@@ -11,6 +11,10 @@ This module contains a ByteBuddy plugin implementation that will generate techno
 All you need to do to get the technology derivation started is adding the ByteBuddy build plugin to your project and let it work with the `org.jmolecules.integrations:jmolecules-bytebuddy` dependency.
 It will automatically detect which transformations to apply based on your classpath arrangement.
 
+IMPORTANT: The following configuration is automatically picked up for application on incremental compilation in Eclipse.
+In IDEA, you manually have to configure it to be executed for IDE-induced builds by finding the goal to be executed in the build plugin goals window, right-clicking it and selecting "`Execute after build`" and "`Execute after rebuild`".
+For details, see https://www.jetbrains.com/help/idea/work-with-maven-goals.html#trigger_goal[the corresponding section] of the IDEA reference documentation.
+
 [[quickstart.maven]]
 === Maven
 
