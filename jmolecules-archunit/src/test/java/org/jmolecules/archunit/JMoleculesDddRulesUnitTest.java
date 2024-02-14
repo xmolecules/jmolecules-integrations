@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.jmolecules.archunit.TestUtils.*;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import org.jmolecules.ddd.annotation.Identity;
@@ -38,6 +39,7 @@ import com.tngtech.archunit.lang.EvaluationResult;
  *
  * @author Oliver Drotbohm
  * @author Torsten Juergeleit
+ * @author Hasan Kara
  */
 @AnalyzeClasses(packages = "org.jmolecules.archunit")
 class JMoleculesDddRulesUnitTest {
@@ -51,6 +53,7 @@ class JMoleculesDddRulesUnitTest {
 
 		assertThat(result.getFailureReport().getDetails())
 				.satisfiesExactlyInAnyOrder( //
+						violation(SampleGrandChildEntity.class, "otherEntity", OtherEntity.class, OtherAggregate.class),
 						violation(SampleAggregate.class, "invalid", OtherEntity.class, OtherAggregate.class),
 						violation(SampleAggregate.class, "invalidAggregate", OtherAggregate.class, Association.class), //
 						violation(SampleAggregate.class, "invalidAggregateInCollection", Collection.class, Association.class), //
@@ -86,7 +89,17 @@ class JMoleculesDddRulesUnitTest {
 		AnnotatedEntity validAnnotatedEntity;
 	}
 
-	static abstract class SampleEntity implements Entity<SampleAggregate, SampleIdentifier> {}
+	static abstract class SampleEntity implements Entity<SampleAggregate, SampleIdentifier> {
+		private List<SampleChildEntity> childEntities;
+	}
+
+	static abstract class SampleChildEntity implements Entity<SampleAggregate, SampleIdentifier> {
+		private SampleGrandChildEntity grandChildEntity;
+	}
+
+	static abstract class SampleGrandChildEntity implements Entity<SampleAggregate, SampleIdentifier> {
+		private OtherEntity otherEntity;
+	}
 
 	static abstract class OtherAggregate implements AggregateRoot<OtherAggregate, SampleIdentifier> {}
 

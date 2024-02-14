@@ -211,17 +211,20 @@ public class JMoleculesDddRules {
 			ResolvableType type = getActualType(ResolvableType.forField(field));
 			ResolvableType expectedAggregateType = type.as(Entity.class).getGeneric(0);
 			ResolvableType owningType = ResolvableType.forClass(field.getDeclaringClass());
+			ResolvableType owningAggregateType = owningType.as(Entity.class).getGeneric(0);
+			boolean entitiesBelongToSameAggregate = expectedAggregateType.isAssignableFrom(owningAggregateType);
 
-			String ownerName = FormatableJavaClass.of(item.getOwner()).getAbbreviatedFullName();
-
-			events.add(owningType.isAssignableFrom(expectedAggregateType)
-					? SimpleConditionEvent.satisfied(field, "Matches")
-					: SimpleConditionEvent.violated(item,
-							String.format("Field %s.%s is of type %s and declared to be used from aggregate %s!",
-									ownerName,
-									item.getName(), item.getRawType().getSimpleName(),
-									expectedAggregateType.resolve(Object.class).getSimpleName())));
-		}
+			if (owningType.isAssignableFrom(expectedAggregateType) || entitiesBelongToSameAggregate)
+                events.add(SimpleConditionEvent.satisfied(field, "Matches"));
+            else {
+				String ownerName = FormatableJavaClass.of(item.getOwner()).getAbbreviatedFullName();
+                events.add(SimpleConditionEvent.violated(item,
+                        String.format("Field %s.%s is of type %s and declared to be used from aggregate %s!",
+                                ownerName,
+                                item.getName(), item.getRawType().getSimpleName(),
+                                expectedAggregateType.resolve(Object.class).getSimpleName())));
+            }
+        }
 
 		private static ResolvableType getActualType(ResolvableType type) {
 
