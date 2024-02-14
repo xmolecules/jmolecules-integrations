@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.jmolecules.archunit.TestUtils.*;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import org.jmolecules.ddd.annotation.Identity;
@@ -86,7 +87,11 @@ class JMoleculesDddRulesUnitTest {
 		AnnotatedEntity validAnnotatedEntity;
 	}
 
-	static abstract class SampleEntity implements Entity<SampleAggregate, SampleIdentifier> {}
+	static abstract class SampleEntity implements Entity<SampleAggregate, SampleIdentifier> {
+		private List<SampleChildEntity> childEntities;
+	}
+
+	static abstract class SampleChildEntity implements Entity<SampleAggregate, SampleIdentifier> {}
 
 	static abstract class OtherAggregate implements AggregateRoot<OtherAggregate, SampleIdentifier> {}
 
