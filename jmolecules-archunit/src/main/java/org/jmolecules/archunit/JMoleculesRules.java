@@ -31,7 +31,7 @@ import com.tngtech.archunit.lang.ArchRule;
  * <a href="http://scabl.blogspot.com/2015/04/aeddd-9.html">here</a>.
  *
  * @author Oliver Drotbohm
- * @see http://scabl.blogspot.com/2015/04/aeddd-9.html
+ * @see <a href="http://scabl.blogspot.com/2015/04/aeddd-9.html">Advancing Enterprise DDD - Reinstating the Aggregate</a>
  * @deprecated since 0.5, for removal in 0.6. Use {@link JMoleculesDddRules} instead.
  */
 @Deprecated

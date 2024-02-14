@@ -57,7 +57,7 @@ import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
  *
  * @author Oliver Drotbohm
  * @author Torsten Juergeleit
- * @see http://scabl.blogspot.com/2015/04/aeddd-9.html
+ * @see <a href="http://scabl.blogspot.com/2015/04/aeddd-9.html">Advancing Enterprise DDD - Reinstating the Aggregate</a>
  */
 public class JMoleculesDddRules {
 
