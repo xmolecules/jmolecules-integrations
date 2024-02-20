@@ -53,7 +53,6 @@ class JMoleculesDddRulesUnitTest {
 
 		assertThat(result.getFailureReport().getDetails())
 				.satisfiesExactlyInAnyOrder( //
-						violation(SampleGrandChildEntity.class, "otherEntity", OtherEntity.class, OtherAggregate.class),
 						violation(SampleAggregate.class, "invalid", OtherEntity.class, OtherAggregate.class),
 						violation(SampleAggregate.class, "invalidAggregate", OtherAggregate.class, Association.class), //
 						violation(SampleAggregate.class, "invalidAggregateInCollection", Collection.class, Association.class), //
@@ -65,7 +64,9 @@ class JMoleculesDddRulesUnitTest {
 						violation(SampleValueObject.class, "entity", SampleEntity.class, null),
 						violation(SampleValueObject.class, "annotatedEntity", AnnotatedEntity.class, null),
 						violation(SampleValueObject.class, "aggregate", SampleAggregate.class, null),
-						violation(SampleValueObject.class, "annotatedAggregate", AnnotatedAggregate.class, null));
+						violation(SampleValueObject.class, "annotatedAggregate", AnnotatedAggregate.class, null),
+						violation(SampleGrandChildEntity.class, "otherEntity", OtherEntity.class, OtherAggregate.class) // GH-222
+				);
 	}
 
 	static class SampleIdentifier implements Identifier {}
@@ -90,15 +91,15 @@ class JMoleculesDddRulesUnitTest {
 	}
 
 	static abstract class SampleEntity implements Entity<SampleAggregate, SampleIdentifier> {
-		private List<SampleChildEntity> childEntities;
+		List<SampleChildEntity> childEntities;
 	}
 
 	static abstract class SampleChildEntity implements Entity<SampleAggregate, SampleIdentifier> {
-		private SampleGrandChildEntity grandChildEntity;
+		SampleGrandChildEntity grandChildEntity;
 	}
 
 	static abstract class SampleGrandChildEntity implements Entity<SampleAggregate, SampleIdentifier> {
-		private OtherEntity otherEntity;
+		OtherEntity otherEntity;
 	}
 
 	static abstract class OtherAggregate implements AggregateRoot<OtherAggregate, SampleIdentifier> {}
