@@ -29,7 +29,23 @@ import org.junit.jupiter.api.Test;
 class RecordInstantiatorUnitTests {
 
 	@Test // #98, #125
-	void instantiatesRecord() {
+	void instantiatesPersonRecord() {
+
+		RecordInstantiator instantiator = new RecordInstantiator(Person.class);
+
+		Object[] values = RecordInstantiator.IS_AFFECTED_HIBERNATE_VERSION
+				? new Object[] { "Matthews", "Dave" }
+				: new Object[] { "Dave", "Matthews" };
+
+		ValueAccess access = mock(ValueAccess.class);
+		doReturn(values).when(access).getValues();
+
+		assertThat(instantiator.instantiate(access, null))
+				.isEqualTo(new Person("Matthews", "Dave"));
+	}
+
+	@Test
+	void instantiatesAddressRecord() {
 
 		RecordInstantiator instantiator = new RecordInstantiator(Address.class);
 
@@ -43,6 +59,8 @@ class RecordInstantiatorUnitTests {
 		assertThat(instantiator.instantiate(access, null))
 				.isEqualTo(new Address("Longstreet", "12345", "Berlin", "Germany"));
 	}
+
+	record Person(String lastname, String firstname) {}
 
 	record Address(String street, String postalCode, String city, String country) {}
 }
