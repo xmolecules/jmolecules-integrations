@@ -20,13 +20,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.RecordComponent;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.hibernate.Version;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
@@ -65,20 +62,15 @@ public class RecordInstantiator implements EmbeddableInstantiator {
 			throw new IllegalArgumentException("Type must be a record!");
 		}
 
-		RecordComponent[] components = type.getRecordComponents();
-		Class<?>[] parameterTypes = Arrays.stream(components)
+		List<RecordComponent> components = Arrays.asList(type.getRecordComponents());
+		Class<?>[] parameterTypes = components.stream()
 				.map(RecordComponent::getType)
 				.toArray(Class<?>[]::new);
 
 		this.type = type;
 		this.constructor = detectRecordConstructor(type, parameterTypes);
 
-		// Obtain parameter name indexes as they will be returned sorted alphabetically on instantiation
-		this.indexes = IntStream.range(0, components.length)
-				.mapToObj(it -> Map.entry(components[it].getName(), it))
-				.sorted(Comparator.comparing(Entry::getKey))
-				.map(Entry::getValue)
-				.collect(Collectors.toList());
+		this.indexes = calculateIndexes(components);
 	}
 
 	/*
@@ -157,5 +149,20 @@ public class RecordInstantiator implements EmbeddableInstantiator {
 		}
 
 		return Integer.parseInt(parts[2]) < 2;
+	}
+
+	private static List<Integer> calculateIndexes(List<RecordComponent> components) {
+
+		if (components.size() == 1) {
+			return Collections.singletonList(0);
+		}
+
+		List<RecordComponent> sorted = components.stream()
+				.sorted(Comparator.comparing(RecordComponent::getName))
+				.collect(Collectors.toList());
+
+		return components.stream()
+				.map(sorted::indexOf)
+				.collect(Collectors.toList());
 	}
 }
