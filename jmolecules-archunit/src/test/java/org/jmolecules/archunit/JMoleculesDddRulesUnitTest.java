@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.jmolecules.archunit.TestUtils.*;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import org.jmolecules.ddd.annotation.Identity;
@@ -38,6 +39,7 @@ import com.tngtech.archunit.lang.EvaluationResult;
  *
  * @author Oliver Drotbohm
  * @author Torsten Juergeleit
+ * @author Hasan Kara
  */
 @AnalyzeClasses(packages = "org.jmolecules.archunit")
 class JMoleculesDddRulesUnitTest {
@@ -62,7 +64,9 @@ class JMoleculesDddRulesUnitTest {
 						violation(SampleValueObject.class, "entity", SampleEntity.class, null),
 						violation(SampleValueObject.class, "annotatedEntity", AnnotatedEntity.class, null),
 						violation(SampleValueObject.class, "aggregate", SampleAggregate.class, null),
-						violation(SampleValueObject.class, "annotatedAggregate", AnnotatedAggregate.class, null));
+						violation(SampleValueObject.class, "annotatedAggregate", AnnotatedAggregate.class, null),
+						violation(SampleGrandChildEntity.class, "otherEntity", OtherEntity.class, OtherAggregate.class) // GH-222
+				);
 	}
 
 	static class SampleIdentifier implements Identifier {}
@@ -86,7 +90,17 @@ class JMoleculesDddRulesUnitTest {
 		AnnotatedEntity validAnnotatedEntity;
 	}
 
-	static abstract class SampleEntity implements Entity<SampleAggregate, SampleIdentifier> {}
+	static abstract class SampleEntity implements Entity<SampleAggregate, SampleIdentifier> {
+		List<SampleChildEntity> childEntities;
+	}
+
+	static abstract class SampleChildEntity implements Entity<SampleAggregate, SampleIdentifier> {
+		SampleGrandChildEntity grandChildEntity;
+	}
+
+	static abstract class SampleGrandChildEntity implements Entity<SampleAggregate, SampleIdentifier> {
+		OtherEntity otherEntity;
+	}
 
 	static abstract class OtherAggregate implements AggregateRoot<OtherAggregate, SampleIdentifier> {}
 

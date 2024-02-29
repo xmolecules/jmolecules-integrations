@@ -34,15 +34,15 @@ class RecordInstantiatorUnitTests {
 		RecordInstantiator instantiator = new RecordInstantiator(Person.class);
 
 		Object[] values = RecordInstantiator.IS_AFFECTED_HIBERNATE_VERSION
-				? new Object[] { "Matthews", "Dave" }
-				: new Object[] { "Dave", "Matthews" };
+				? new Object[] { "Matthews", 57, "Dave" }
+				: new Object[] { 57, "Dave", "Matthews" };
 
 		ValueAccess access = mock(ValueAccess.class);
 		doReturn(values).when(access).getValues();
 
 		assertThat(instantiator.instantiate(access, null))
-				.isEqualTo(new Person("Matthews", "Dave"));
+				.isEqualTo(new Person("Matthews", 57, "Dave"));
 	}
 
-	record Person(String lastname, String firstname) {}
+	record Person(String lastname, int age, String firstname) {}
 }

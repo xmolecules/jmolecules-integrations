@@ -26,7 +26,6 @@ import java.util.Map;
 
 import org.jmolecules.ddd.annotation.Identity;
 import org.jmolecules.ddd.types.AggregateRoot;
-import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Entity;
 import org.jmolecules.ddd.types.Identifiable;
 import org.jmolecules.ddd.types.Identifier;
@@ -48,7 +47,8 @@ import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
  * A set of ArchUnit rules that allow verification of domain models. In short the rules here verify:
  * <ul>
  * <li>Aggregates only refer to entities that are declared to be part of it.</li>
- * <li>References to other aggregates are established via {@link Association}s or identifier references.</li>
+ * <li>References to other aggregates are established via {@link org.jmolecules.ddd.types.Association}s or identifier
+ * references.</li>
  * <li>Annotated identifiables do have an identifier.</li>
  * <li>Value objects and identifiers do not refer to identifiables.</li>
  * </ul>
@@ -57,6 +57,7 @@ import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
  *
  * @author Oliver Drotbohm
  * @author Torsten Juergeleit
+ * @author Hasan Kara
  * @see <a href="http://scabl.blogspot.com/2015/04/aeddd-9.html">Advancing Enterprise DDD - Reinstating the Aggregate</a>
  */
 public class JMoleculesDddRules {
@@ -100,6 +101,7 @@ public class JMoleculesDddRules {
 	 * An {@link ArchRule} that verifies that fields that implement {@link Entity} within a type implementing
 	 * {@link AggregateRoot} declare the aggregate type as the owning aggregate.
 	 * <p />
+	 *
 	 * <pre>
 	 * class Customer implements AggregateRoot&lt;Customer, CustomerId&gt; { … }
 	 * class Address implements Entity&lt;Customer, AddressId&gt; { … }
@@ -127,6 +129,7 @@ public class JMoleculesDddRules {
 	 * An {@link ArchRule} that ensures that one {@link AggregateRoot} does not reference another via the remote
 	 * AggregateRoot type but rather via their identifier type or an explicit {@link Association} type.
 	 * <p />
+	 *
 	 * <pre>
 	 * class Customer implements AggregateRoot&lt;Customer, CustomerId&gt; { … }
 	 *
@@ -211,16 +214,22 @@ public class JMoleculesDddRules {
 			ResolvableType type = getActualType(ResolvableType.forField(field));
 			ResolvableType expectedAggregateType = type.as(Entity.class).getGeneric(0);
 			ResolvableType owningType = ResolvableType.forClass(field.getDeclaringClass());
+			ResolvableType owningAggregateType = owningType.as(Entity.class).getGeneric(0);
+			boolean entitiesBelongToSameAggregate = expectedAggregateType.isAssignableFrom(owningAggregateType);
 
-			String ownerName = FormatableJavaClass.of(item.getOwner()).getAbbreviatedFullName();
+			if (owningType.isAssignableFrom(expectedAggregateType) || entitiesBelongToSameAggregate) {
 
-			events.add(owningType.isAssignableFrom(expectedAggregateType)
-					? SimpleConditionEvent.satisfied(field, "Matches")
-					: SimpleConditionEvent.violated(item,
-							String.format("Field %s.%s is of type %s and declared to be used from aggregate %s!",
-									ownerName,
-									item.getName(), item.getRawType().getSimpleName(),
-									expectedAggregateType.resolve(Object.class).getSimpleName())));
+				events.add(SimpleConditionEvent.satisfied(field, "Matches"));
+
+			} else {
+
+				String ownerName = FormatableJavaClass.of(item.getOwner()).getAbbreviatedFullName();
+
+				events.add(SimpleConditionEvent.violated(item,
+						String.format("Field %s.%s is of type %s and declared to be used from aggregate %s!",
+								ownerName, item.getName(), item.getRawType().getSimpleName(),
+								expectedAggregateType.resolve(Object.class).getSimpleName())));
+			}
 		}
 
 		private static ResolvableType getActualType(ResolvableType type) {
