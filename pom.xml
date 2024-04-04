@@ -11,6 +11,7 @@
 	<packaging>pom</packaging>
 
 	<modules>
+		<module>jmolecules-apt</module>
 		<module>jmolecules-archunit</module>
 		<module>jmolecules-bytebuddy</module>
 		<module>jmolecules-bytebuddy-nodep</module>
