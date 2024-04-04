@@ -17,6 +17,7 @@ package org.jmolecules.annotation.processor;
 
 import io.toolisticon.aptk.common.ToolingProvider;
 import io.toolisticon.aptk.tools.TypeMirrorWrapper;
+import io.toolisticon.aptk.tools.wrapper.AnnotationMirrorWrapper;
 import io.toolisticon.aptk.tools.wrapper.ElementWrapper;
 import io.toolisticon.aptk.tools.wrapper.TypeElementWrapper;
 
@@ -216,7 +217,14 @@ public class JMoleculesProcessor implements Processor {
 		}
 
 		return element.getAnnotationMirrors().stream()
-				.filter(it -> !it.asElement().getQualifiedName().startsWith("java"))
+				.filter(JMoleculesProcessor::shouldTraverse)
 				.anyMatch(it -> hasMetaAnnotation(it.asTypeMirror().getTypeElement().get(), fqn));
+	}
+
+	private static boolean shouldTraverse(AnnotationMirrorWrapper annotation) {
+
+		String name = annotation.asTypeMirror().getQualifiedName();
+
+		return name != null && !(name.startsWith("java") || name.startsWith("jakarta"));
 	}
 }
