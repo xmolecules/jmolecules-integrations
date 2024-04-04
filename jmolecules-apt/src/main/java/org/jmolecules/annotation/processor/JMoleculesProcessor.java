@@ -122,16 +122,15 @@ public class JMoleculesProcessor implements Processor {
 	private static class JMoleculesDddVerification implements Verification {
 
 		private static final String PACKAGE = "org.jmolecules.ddd";
-
 		private static final String IDENTITY_TYPE_NAME = PACKAGE + ".annotation.Identity";
 
-		private static final TypeMirror AGGREGATE_TYPE = getTypeMirror(PACKAGE + ".types.AggregateRoot");
-		private static final TypeMirror AGGREGATE_ANNOTATION = getTypeMirror(PACKAGE + ".annotation.AggregateRoot");
-		private static final TypeMirror ENTITY_ANNOTATION = getTypeMirror("org.jmolecules.ddd.annotation.Entity");
-		private static final TypeMirror IDENTIFIABLE_TYPE = getTypeMirror(PACKAGE + ".types.Identifiable");
+		private final TypeMirror AGGREGATE_TYPE = getTypeMirror(PACKAGE + ".types.AggregateRoot");
+		private final TypeMirror AGGREGATE_ANNOTATION = getTypeMirror(PACKAGE + ".annotation.AggregateRoot");
+		private final TypeMirror ENTITY_ANNOTATION = getTypeMirror("org.jmolecules.ddd.annotation.Entity");
+		private final TypeMirror IDENTIFIABLE_TYPE = getTypeMirror(PACKAGE + ".types.Identifiable");
 
 		public static boolean isAvailable() {
-			return AGGREGATE_TYPE != null;
+			return getTypeMirror(PACKAGE + ".types.AggregateRoot") != null;
 		}
 
 		public boolean verify(TypeElementWrapper element) {
@@ -176,19 +175,19 @@ public class JMoleculesProcessor implements Processor {
 					.anyMatch(it -> hasMetaAnnotation(it, IDENTITY_TYPE_NAME));
 		}
 
-		private static boolean isAggregate(TypeMirrorWrapper mirror) {
+		private boolean isAggregate(TypeMirrorWrapper mirror) {
 
 			return mirror.isAssignableTo(AGGREGATE_TYPE)
 					|| hasMetaAnnotation(mirror, AGGREGATE_ANNOTATION);
 		}
 
-		private static boolean isIdentifiable(TypeElementWrapper element) {
+		private boolean isIdentifiable(TypeElementWrapper element) {
 
 			return element.asType().isAssignableTo(IDENTIFIABLE_TYPE)
 					|| isAnnotatedIdentifiable(element);
 		}
 
-		private static boolean isAnnotatedIdentifiable(TypeElementWrapper element) {
+		private boolean isAnnotatedIdentifiable(TypeElementWrapper element) {
 
 			return hasMetaAnnotation(element, ENTITY_ANNOTATION)
 					|| hasMetaAnnotation(element, AGGREGATE_ANNOTATION);

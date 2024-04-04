@@ -18,7 +18,6 @@ package org.jmolecules.annotation.processor;
 import io.toolisticon.cute.Cute;
 import io.toolisticon.cute.CuteApi.CompilerMessageCheckComparisonType;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -29,7 +28,6 @@ import org.junit.jupiter.api.Test;
 class JMoleculesProcessorUnitTests {
 
 	@Test
-	@Disabled
 	void detectsInvalidAggregateRootReferenceInImplementingAggregate() {
 
 		assertFailed("MyAggregateRoot")
@@ -39,7 +37,6 @@ class JMoleculesProcessorUnitTests {
 	}
 
 	@Test
-	@Disabled
 	void detectsInvalidAggregateRootReferenceInImplementingEntity() {
 
 		assertFailed("MyEntity")
