@@ -13,6 +13,7 @@
 
 	<properties>
 		<jmolecules.version>1.8.0</jmolecules.version>
+		<maven.deploy.skip>true</maven.deploy.skip>
 	</properties>
 
 	<modules>

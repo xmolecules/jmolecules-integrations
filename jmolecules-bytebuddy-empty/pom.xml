@@ -17,6 +17,10 @@
 
 	<artifactId>jmolecules-bytebuddy-empty</artifactId>
 
+	<properties>
+		<maven.deploy.skip>true</maven.deploy.skip>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.jmolecules</groupId>
