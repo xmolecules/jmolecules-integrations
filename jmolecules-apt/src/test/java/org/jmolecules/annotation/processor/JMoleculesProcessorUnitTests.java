@@ -16,8 +16,8 @@
 package org.jmolecules.annotation.processor;
 
 import io.toolisticon.cute.Cute;
+import io.toolisticon.cute.CuteApi;
 import io.toolisticon.cute.CuteApi.CompilerMessageCheckComparisonType;
-
 import org.junit.jupiter.api.Test;
 
 /**
@@ -27,84 +27,92 @@ import org.junit.jupiter.api.Test;
  */
 class JMoleculesProcessorUnitTests {
 
-	@Test
-	void detectsInvalidAggregateRootReferenceInImplementingAggregate() {
+    CuteApi.BlackBoxTestSourceFilesAndProcessorInterface baseBlackBoxSetup = Cute.blackBoxTest()
+            .given()
+            .processor(JMoleculesProcessor.class);
 
-		assertFailed("MyAggregateRoot")
-				.atLine(8)
-				.contains("Invalid aggregate root reference!")
-				.executeTest();
-	}
 
-	@Test
-	void detectsInvalidAggregateRootReferenceInImplementingEntity() {
+    @Test
+    void detectsInvalidAggregateRootReferenceInImplementingAggregate() {
 
-		assertFailed("MyEntity")
-				.atLine(8)
-				.contains("Invalid aggregate root reference!")
-				.executeTest();
-	}
+        baseBlackBoxSetup.andSourceFiles(getSourceFile("MyAggregateRoot"))
+                .whenCompiled()
+                .thenExpectThat().compilationFails()
+                .andThat().compilerMessage().ofKindError().atLine(8)
+                .contains("Invalid aggregate root reference!")
+                .executeTest();
 
-	@Test
-	void detectsInvalidAggregateRootReferenceInAnnotatedAggregate() {
+    }
 
-		assertFailed("AnnotatedAggregateRoot")
-				.atLine(10)
-				.contains("Invalid aggregate root reference!")
-				.executeTest();
-	}
+    @Test
+    void detectsInvalidAggregateRootReferenceInImplementingAggregateWithPackageInfo() {
 
-	@Test
-	void detectsMissingIdentifierInAnnotatedAggregate() {
+        baseBlackBoxSetup.andSourceFiles(getSourceFile("MyAggregateRoot"), getSourceFile("package-info"))
+                .whenCompiled()
+                .thenExpectThat().compilationFails()
+                .andThat().compilerMessage().ofKindError().atLine(8)
+                .contains("Invalid aggregate root reference!")
+                .executeTest();
 
-		assertFailed("AnnotatedAggregateRoot")
-				.atLine(9)
-				.contains("identity")
-				.executeTest();
-	}
+    }
 
-	@Test
-	void passesAnnotatedAggregateRootWithFieldIdentity() {
-		assertSucceeded("WithFieldIdentity");
-	}
+    @Test
+    void detectsInvalidAggregateRootReferenceInImplementingEntity() {
 
-	@Test
-	void passesAnnotatedAggregateRootWithMethodIdentity() {
-		assertSucceeded("WithFieldIdentity");
-	}
+        baseBlackBoxSetup.andSourceFiles(getSourceFile("MyEntity"))
+                .whenCompiled()
+                .thenExpectThat().compilationFails()
+                .andThat().compilerMessage().ofKindError()
+                .atLine(8)
+                .contains("Invalid aggregate root reference!")
+                .executeTest();
 
-	private static CompilerMessageCheckComparisonType assertFailed(String source) {
+    }
 
-		String file = getSourceFile(source);
+    @Test
+    void detectsInvalidAggregateRootReferenceInAnnotatedAggregate() {
 
-		return Cute.blackBoxTest()
-				.given()
-				.processor(JMoleculesProcessor.class)
-				.andSourceFiles(file)
-				.whenCompiled()
-				.thenExpectThat()
-				.compilationFails()
-				.andThat()
-				.compilerMessage()
-				.ofKindError()
-				.atSource(file);
-	}
+        baseBlackBoxSetup.andSourceFiles(getSourceFile("AnnotatedAggregateRoot"))
+                .whenCompiled()
+                .thenExpectThat().compilationFails()
+                .andThat().compilerMessage().ofKindError()
+                .atLine(10)
+                .contains("Invalid aggregate root reference!")
+                .executeTest();
 
-	private static void assertSucceeded(String source) {
+    }
 
-		String file = getSourceFile(source);
+    @Test
+    void detectsMissingIdentifierInAnnotatedAggregate() {
 
-		Cute.blackBoxTest()
-				.given()
-				.processor(JMoleculesProcessor.class)
-				.andSourceFiles(file)
-				.whenCompiled()
-				.thenExpectThat()
-				.compilationSucceeds()
-				.executeTest();
-	}
+        baseBlackBoxSetup.andSourceFiles(getSourceFile("AnnotatedAggregateRoot"))
+                .whenCompiled()
+                .thenExpectThat().compilationFails()
+                .andThat().compilerMessage().ofKindError()
+                .atLine(9)
+                .contains("identity")
+                .executeTest();
 
-	private static String getSourceFile(String name) {
-		return "/example/" + name + ".java";
-	}
+    }
+
+    @Test
+    void passesAnnotatedAggregateRootWithFieldIdentity() {
+        baseBlackBoxSetup.andSourceFiles(getSourceFile("WithMethodIdentity"))
+                .whenCompiled()
+                .thenExpectThat().compilationSucceeds()
+                .executeTest();
+    }
+
+    @Test
+    void passesAnnotatedAggregateRootWithMethodIdentity() {
+        baseBlackBoxSetup.andSourceFiles(getSourceFile("WithFieldIdentity"))
+                .whenCompiled()
+                .thenExpectThat().compilationSucceeds()
+                .executeTest();
+    }
+
+
+    private static String getSourceFile(String name) {
+        return "/example/" + name + ".java";
+    }
 }

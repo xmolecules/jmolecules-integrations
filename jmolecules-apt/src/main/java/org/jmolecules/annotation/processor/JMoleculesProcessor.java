@@ -17,14 +17,18 @@ package org.jmolecules.annotation.processor;
 
 import io.toolisticon.aptk.common.ToolingProvider;
 import io.toolisticon.aptk.tools.TypeMirrorWrapper;
+import io.toolisticon.aptk.tools.corematcher.AptkCoreMatchers;
 import io.toolisticon.aptk.tools.wrapper.AnnotationMirrorWrapper;
 import io.toolisticon.aptk.tools.wrapper.ElementWrapper;
+import io.toolisticon.aptk.tools.wrapper.PackageElementWrapper;
 import io.toolisticon.aptk.tools.wrapper.TypeElementWrapper;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.annotation.processing.Completion;
@@ -46,6 +50,8 @@ import javax.lang.model.type.TypeMirror;
 public class JMoleculesProcessor implements Processor {
 
 	private final List<Verification> verifications = new ArrayList<>();
+
+    private final Set<String> packagesToCheck = new HashSet<>();
 
 	/*
 	 * (non-Javadoc)
@@ -101,17 +107,38 @@ public class JMoleculesProcessor implements Processor {
 	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 
-		Set<? extends Element> rootElements = roundEnv.getRootElements();
+        if (!roundEnv.processingOver()) {
 
-		rootElements.stream()
-				.filter(TypeElement.class::isInstance)
-				.map(TypeElement.class::cast)
-				.flatMap(it -> {
+            // First collect all packages
+            for (ElementWrapper<?> rootElement : roundEnv.getRootElements().stream().map(ElementWrapper::wrap).collect(Collectors.toSet())) {
+                PackageElementWrapper packageElementWrapper;
+                if (rootElement.isTypeElement()) {
+                    packageElementWrapper = rootElement.getPackage();
+                } else {
+                    // must be Package element - this is usually the case if a package-info.java file is present
+                    packageElementWrapper = PackageElementWrapper.toPackageElement(rootElement);
+                }
+                packagesToCheck.add(packageElementWrapper.getQualifiedName());
+            }
 
-					TypeElementWrapper wrap = TypeElementWrapper.wrap(it);
-					return verifications.stream().map(verification -> verification.verify(wrap));
+        } else {
 
-				}).reduce(true, (l, r) -> l && r);
+            // In processing over phase do the checks for all types in collected packages
+            Set<TypeElementWrapper> typesToCheck = packagesToCheck.stream()
+                    .<TypeElement>flatMap(fqn -> PackageElementWrapper.wrap(
+                            ToolingProvider.getTooling().getElements().getPackageElement(fqn))
+                            .filterEnclosedElements().applyFilter(AptkCoreMatchers.IS_TYPE_ELEMENT)
+                            .getResult().stream())
+                    .map(TypeElementWrapper::wrap)
+                    .collect(Collectors.toSet());
+
+            typesToCheck.stream().flatMap(it -> {
+
+                return verifications.stream().map(verification -> verification.verify(it));
+
+            }).reduce(true, (l, r) -> l && r);
+
+        }
 
 		return true;
 	}

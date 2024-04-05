@@ -1,4 +1,4 @@
-package example;
+package org.jmolecules.annotation.processor.example;
 
 import org.jmolecules.ddd.types.AggregateRoot;
 import org.jmolecules.ddd.types.Identifier;

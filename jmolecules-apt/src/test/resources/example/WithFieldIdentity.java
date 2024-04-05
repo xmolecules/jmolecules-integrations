@@ -1,4 +1,4 @@
-package example;
+package org.jmolecules.annotation.processor.example;
 
 import java.util.UUID;
 
