@@ -127,7 +127,7 @@ public class JMoleculesProcessor implements Processor {
             Set<TypeElementWrapper> typesToCheck = packagesToCheck.stream()
                     .<TypeElement>flatMap(fqn -> PackageElementWrapper.wrap(
                             ToolingProvider.getTooling().getElements().getPackageElement(fqn))
-                            .filterEnclosedElements().applyFilter(AptkCoreMatchers.IS_TYPE_ELEMENT)
+                            .filterFlattenedEnclosedElementTree().applyFilter(AptkCoreMatchers.IS_TYPE_ELEMENT)
                             .getResult().stream())
                     .map(TypeElementWrapper::wrap)
                     .collect(Collectors.toSet());
