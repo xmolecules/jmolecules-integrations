@@ -45,13 +45,12 @@ class JMoleculesProcessorUnitTests {
 	}
 
 	@Test
-	void detectsInvalidAggregateRootReferenceInImplementingAggregateWithPackageInfo() {
+	void detectsInvalidAggregateRootReferenceInImplementingAggregateInNestedClass() {
 
-		baseBlackBoxSetup
-				.andSourceFiles(getSourceFile("MyAggregateRoot"), getSourceFile("package-info"))
+		baseBlackBoxSetup.andSourceFiles(getSourceFile("MyAggregateRootNested"))
 				.whenCompiled()
 				.thenExpectThat().compilationFails()
-				.andThat().compilerMessage().ofKindError().atLine(8)
+				.andThat().compilerMessage().ofKindError().atLine(9)
 				.contains("Invalid aggregate root reference!")
 				.executeTest();
 
