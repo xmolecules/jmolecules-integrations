@@ -124,6 +124,16 @@ class JMoleculesProcessorUnitTests {
 	}
 
 	@Test // GH-230
+	void rejectsReferencesToIdentifiablesFromRecordValueObject() {
+
+		String source = getSourceFile("MyRecord");
+
+		assertFailed(source)
+				.andThat().compilerMessage().ofKindError().atLine(5).atColumn(26).atSource(source).contains("identifiables")
+				.executeTest();
+	}
+
+	@Test // GH-230
 	void passesValidValueObject() {
 		assertSucceded(getSourceFile("valid/ValidValueObject"));
 		assertSucceded(getSourceFile("valid/ValidAnnotatedValueObject"));

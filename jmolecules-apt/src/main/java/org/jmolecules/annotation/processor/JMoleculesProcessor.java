@@ -17,7 +17,6 @@ package org.jmolecules.annotation.processor;
 
 import io.toolisticon.aptk.common.ToolingProvider;
 import io.toolisticon.aptk.tools.TypeMirrorWrapper;
-import io.toolisticon.aptk.tools.corematcher.AptkCoreMatchers;
 import io.toolisticon.aptk.tools.fluentfilter.FluentElementFilter;
 import io.toolisticon.aptk.tools.wrapper.AnnotationMirrorWrapper;
 import io.toolisticon.aptk.tools.wrapper.ElementWrapper;
@@ -42,7 +41,6 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 
 /**
@@ -120,7 +118,7 @@ public class JMoleculesProcessor implements Processor {
 
 			for (ElementWrapper<?> rootElement : elements) {
 
-				PackageElementWrapper packageElementWrapper = rootElement.isTypeElement()
+				PackageElementWrapper packageElementWrapper = rootElement.unwrap() instanceof TypeElement
 						? rootElement.getPackage()
 						: PackageElementWrapper.toPackageElement(rootElement);
 
@@ -141,13 +139,21 @@ public class JMoleculesProcessor implements Processor {
 
 	private static Stream<TypeElementWrapper> getTypesInPackage(String name) {
 
-		return PackageElementWrapper.getByFqn(name)
+		// Cannot use Stream directly, otherwise we get:
+		// java.lang.IncompatibleClassChangeError: Inconsistent constant pool data in classfile for class
+		// java/util/stream/Stream. Method 'java.util.stream.Stream empty()' at index 267 is CONSTANT_MethodRef and should
+		// be CONSTANT_InterfaceMethodRef
+
+		List<TypeElement> result = PackageElementWrapper.getByFqn(name)
 				.map(PackageElementWrapper::filterFlattenedEnclosedElementTree)
-				.map(it -> it.applyFilter(AptkCoreMatchers.IS_TYPE_ELEMENT))
 				.map(FluentElementFilter::getResult)
-				.map(List::stream)
-				.orElseGet(Stream::empty)
-				.map(TypeElementWrapper::wrap);
+				.orElseGet(Collections::emptyList)
+				.stream()
+				.filter(TypeElement.class::isInstance)
+				.map(TypeElement.class::cast)
+				.collect(Collectors.toList());
+
+		return result.stream().map(TypeElementWrapper::wrap);
 	}
 
 	private static TypeMirror getTypeMirror(String fqn) {
@@ -213,7 +219,7 @@ public class JMoleculesProcessor implements Processor {
 
 			if (isIdentifiable(element)) {
 
-				verifyFields(element, it -> !isAggregate(it.asType()),
+				verifyFields(element, it -> !isAggregate(it),
 						"Invalid aggregate root reference! Use identifier reference or Association instead!");
 			}
 
@@ -226,16 +232,20 @@ public class JMoleculesProcessor implements Processor {
 			}
 
 			if (isValueObjectOrIdentifier(element)) {
-				verifyFields(element, it -> !isIdentifiable(it.asType()),
+				verifyFields(element, it -> !isIdentifiable(it),
 						"Value object or identifier must not refer to identifiables!");
 			}
 		}
 
-		private static void verifyFields(TypeElementWrapper element, Predicate<ElementWrapper<VariableElement>> check,
+		private static void verifyFields(TypeElementWrapper element, Predicate<TypeMirrorWrapper> check,
 				String message, Object... args) {
 
-			element.getFields().forEach(field -> {
-				field.validate().asError().withCustomMessage(message, args).check(check).validateAndIssueMessages();
+			element.getFields().forEach(it -> {
+
+				it.validate().asError()
+						.withCustomMessage(message, args)
+						.check(inner -> check.test(inner.asType()))
+						.validateAndIssueMessages();
 			});
 		}
 
