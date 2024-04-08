@@ -226,7 +226,8 @@ public class JMoleculesProcessor implements Processor {
 			if (isAnnotatedIdentifiable(element.asType())) {
 
 				element.validate().asError()
-						.withCustomMessage("Needs identity field!")
+						.withCustomMessage("${0} needs identity declaration on either field or method!",
+								element.asType().getSimpleName())
 						.check(__ -> hasIdentityMethodOrField(element))
 						.validateAndIssueMessages();
 			}
