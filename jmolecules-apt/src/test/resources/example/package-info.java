@@ -1,1 +1,1 @@
-package org.jmolecules.annotation.processor.example;
+package example.valid;

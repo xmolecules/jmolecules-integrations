@@ -1,11 +1,11 @@
-package example;
+package example.valid;
+
+import java.util.UUID;
 
 import org.jmolecules.ddd.annotation.AggregateRoot;
 import org.jmolecules.ddd.annotation.Identity;
 
 @AggregateRoot
-class WithMethodIdentity {
-
-	@Identity
-	public void getId() {}
+class WithFieldIdentity {
+	@Identity UUID id;
 }

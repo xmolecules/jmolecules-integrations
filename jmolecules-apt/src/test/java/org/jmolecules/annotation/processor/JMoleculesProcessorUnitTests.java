@@ -16,7 +16,7 @@
 package org.jmolecules.annotation.processor;
 
 import io.toolisticon.cute.Cute;
-import io.toolisticon.cute.CuteApi;
+import io.toolisticon.cute.CuteApi.BlackBoxTestSourceFilesAndProcessorInterface;
 
 import org.junit.jupiter.api.Test;
 
@@ -24,14 +24,15 @@ import org.junit.jupiter.api.Test;
  * Unit tests for {@link JMoleculesProcessor}.
  *
  * @author Oliver Drotbohm
+ * @author Tobias Stamann
  */
 class JMoleculesProcessorUnitTests {
 
-	CuteApi.BlackBoxTestSourceFilesAndProcessorInterface baseBlackBoxSetup = Cute.blackBoxTest()
+	BlackBoxTestSourceFilesAndProcessorInterface baseBlackBoxSetup = Cute.blackBoxTest()
 			.given()
 			.processor(JMoleculesProcessor.class);
 
-	@Test
+	@Test // GH-230
 	void detectsInvalidAggregateRootReferenceInImplementingAggregate() {
 
 		baseBlackBoxSetup
@@ -41,22 +42,20 @@ class JMoleculesProcessorUnitTests {
 				.andThat().compilerMessage().ofKindError().atLine(8)
 				.contains("Invalid aggregate root reference!")
 				.executeTest();
-
 	}
 
-	@Test
+	@Test // GH-230
 	void detectsInvalidAggregateRootReferenceInImplementingAggregateInNestedClass() {
 
 		baseBlackBoxSetup.andSourceFiles(getSourceFile("MyAggregateRootNested"))
 				.whenCompiled()
 				.thenExpectThat().compilationFails()
-				.andThat().compilerMessage().ofKindError().atLine(9)
+				.andThat().compilerMessage().ofKindError().atLine(10)
 				.contains("Invalid aggregate root reference!")
 				.executeTest();
-
 	}
 
-	@Test
+	@Test // GH-230
 	void detectsInvalidAggregateRootReferenceInImplementingEntity() {
 
 		baseBlackBoxSetup
@@ -67,10 +66,9 @@ class JMoleculesProcessorUnitTests {
 				.atLine(8)
 				.contains("Invalid aggregate root reference!")
 				.executeTest();
-
 	}
 
-	@Test
+	@Test // GH-230
 	void detectsInvalidAggregateRootReferenceInAnnotatedAggregate() {
 
 		baseBlackBoxSetup
@@ -84,7 +82,7 @@ class JMoleculesProcessorUnitTests {
 
 	}
 
-	@Test
+	@Test // GH-230
 	void detectsMissingIdentifierInAnnotatedAggregate() {
 
 		baseBlackBoxSetup
@@ -95,24 +93,23 @@ class JMoleculesProcessorUnitTests {
 				.atLine(9)
 				.contains("identity")
 				.executeTest();
-
 	}
 
-	@Test
+	@Test // GH-230
 	void passesAnnotatedAggregateRootWithFieldIdentity() {
 
 		baseBlackBoxSetup
-				.andSourceFiles(getSourceFile("WithMethodIdentity"))
+				.andSourceFiles(getSourceFile("valid/WithMethodIdentity"))
 				.whenCompiled()
 				.thenExpectThat().compilationSucceeds()
 				.executeTest();
 	}
 
-	@Test
+	@Test // GH-230
 	void passesAnnotatedAggregateRootWithMethodIdentity() {
 
 		baseBlackBoxSetup
-				.andSourceFiles(getSourceFile("WithFieldIdentity"))
+				.andSourceFiles(getSourceFile("valid/WithFieldIdentity"))
 				.whenCompiled()
 				.thenExpectThat().compilationSucceeds()
 				.executeTest();

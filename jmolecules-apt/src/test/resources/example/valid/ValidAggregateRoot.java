@@ -1,4 +1,4 @@
-package example;
+package example.valid;
 
 import org.jmolecules.ddd.types.AggregateRoot;
 import org.jmolecules.ddd.types.Identifier;

@@ -18,6 +18,7 @@ package org.jmolecules.annotation.processor;
 import io.toolisticon.aptk.common.ToolingProvider;
 import io.toolisticon.aptk.tools.TypeMirrorWrapper;
 import io.toolisticon.aptk.tools.corematcher.AptkCoreMatchers;
+import io.toolisticon.aptk.tools.fluentfilter.FluentElementFilter;
 import io.toolisticon.aptk.tools.wrapper.AnnotationMirrorWrapper;
 import io.toolisticon.aptk.tools.wrapper.ElementWrapper;
 import io.toolisticon.aptk.tools.wrapper.PackageElementWrapper;
@@ -46,11 +47,11 @@ import javax.lang.model.type.TypeMirror;
  * An APT {@link Processor} implementation to verify DDD rules.
  *
  * @author Oliver Drotbohm
+ * @author Tobias Stamann
  */
 public class JMoleculesProcessor implements Processor {
 
 	private final List<Verification> verifications = new ArrayList<>();
-
 	private final Set<String> packagesToCheck = new HashSet<>();
 
 	/*
@@ -110,44 +111,85 @@ public class JMoleculesProcessor implements Processor {
 		if (!roundEnv.processingOver()) {
 
 			// First collect all packages
-			for (ElementWrapper<?> rootElement : roundEnv.getRootElements().stream().map(ElementWrapper::wrap)
-					.collect(Collectors.toSet())) {
-				PackageElementWrapper packageElementWrapper;
-				if (rootElement.isTypeElement()) {
-					packageElementWrapper = rootElement.getPackage();
-				} else {
-					// must be Package element - this is usually the case if a package-info.java file is present
-					packageElementWrapper = PackageElementWrapper.toPackageElement(rootElement);
-				}
+
+			Set<ElementWrapper<?>> elements = roundEnv.getRootElements().stream()
+					.map(ElementWrapper::wrap)
+					.collect(Collectors.toSet());
+
+			for (ElementWrapper<?> rootElement : elements) {
+
+				PackageElementWrapper packageElementWrapper = rootElement.isTypeElement()
+						? rootElement.getPackage()
+						: PackageElementWrapper.toPackageElement(rootElement);
+
 				packagesToCheck.add(packageElementWrapper.getQualifiedName());
 			}
 
 		} else {
 
 			// In processing over phase do the checks for all types in collected packages
-			Set<TypeElementWrapper> typesToCheck = packagesToCheck.stream()
-					.<TypeElement> flatMap(fqn -> PackageElementWrapper.wrap(
-							ToolingProvider.getTooling().getElements().getPackageElement(fqn))
-							.filterFlattenedEnclosedElementTree().applyFilter(AptkCoreMatchers.IS_TYPE_ELEMENT)
-							.getResult().stream())
-					.map(TypeElementWrapper::wrap)
-					.collect(Collectors.toSet());
 
-			typesToCheck.stream().flatMap(it -> {
-
-				return verifications.stream().map(verification -> verification.verify(it));
-
-			}).reduce(true, (l, r) -> l && r);
-
+			packagesToCheck.stream()
+					.flatMap(fqn -> getTypesInPackage(fqn))
+					.forEach(it -> verifications.stream().forEach(verification -> verification.verify(it)));
 		}
 
 		return true;
+	}
+
+	private static Stream<TypeElementWrapper> getTypesInPackage(String name) {
+
+		return PackageElementWrapper.getByFqn(name)
+				.map(PackageElementWrapper::filterFlattenedEnclosedElementTree)
+				.map(it -> it.applyFilter(AptkCoreMatchers.IS_TYPE_ELEMENT))
+				.map(FluentElementFilter::getResult)
+				.map(List::stream)
+				.orElseGet(Stream::empty)
+				.map(TypeElementWrapper::wrap);
 	}
 
 	private static TypeMirror getTypeMirror(String fqn) {
 		return TypeMirrorWrapper.wrap(fqn).erasure().unwrap();
 	}
 
+	private static boolean hasMetaAnnotation(TypeMirrorWrapper element, TypeMirror mirror) {
+
+		return TypeElementWrapper.getByTypeMirror(element.unwrap())
+				.map(it -> hasMetaAnnotation(it, mirror))
+				.orElse(false);
+	}
+
+	private static boolean hasMetaAnnotation(ElementWrapper<? extends Element> element, TypeMirror mirror) {
+		return hasMetaAnnotation(element, TypeMirrorWrapper.getQualifiedName(mirror));
+	}
+
+	private static boolean hasMetaAnnotation(ElementWrapper<? extends Element> element, String fqn) {
+
+		if (element.hasAnnotation(fqn)) {
+			return true;
+		}
+
+		return element.getAnnotationMirrors().stream()
+				.filter(JMoleculesProcessor::shouldTraverse)
+				.anyMatch(it -> hasMetaAnnotation(it.asTypeMirror().getTypeElement().get(), fqn));
+	}
+
+	private static boolean shouldTraverse(AnnotationMirrorWrapper annotation) {
+
+		String name = annotation.asTypeMirror().getQualifiedName();
+
+		return name != null && !(name.startsWith("java") || name.startsWith("jakarta"));
+	}
+
+	private interface Verification {
+		void verify(TypeElementWrapper element);
+	}
+
+	/**
+	 * JMolecules DDD-specific verifications.
+	 *
+	 * @author Oliver Drotbohm
+	 */
 	private static class JMoleculesDddVerification implements Verification {
 
 		private static final String PACKAGE = "org.jmolecules.ddd";
@@ -162,23 +204,19 @@ public class JMoleculesProcessor implements Processor {
 			return getTypeMirror(PACKAGE + ".types.AggregateRoot") != null;
 		}
 
-		public boolean verify(TypeElementWrapper element) {
-
-			boolean result = true;
+		public void verify(TypeElementWrapper element) {
 
 			if (isIdentifiable(element)) {
-				result = result & verifyAggregate(element);
+				verifyAggregate(element);
 			}
 
 			if (isAnnotatedIdentifiable(element)) {
 
-				result = result & element.validate().asError()
+				element.validate().asError()
 						.withCustomMessage("Needs identity field!")
 						.check(__ -> hasIdentityMethodOrField(element))
 						.validateAndIssueMessages();
 			}
-
-			return result;
 		}
 
 		private boolean verifyAggregate(TypeElementWrapper element) {
@@ -221,38 +259,5 @@ public class JMoleculesProcessor implements Processor {
 			return hasMetaAnnotation(element, ENTITY_ANNOTATION)
 					|| hasMetaAnnotation(element, AGGREGATE_ANNOTATION);
 		}
-	}
-
-	private interface Verification {
-		boolean verify(TypeElementWrapper element);
-	}
-
-	private static final boolean hasMetaAnnotation(TypeMirrorWrapper element, TypeMirror mirror) {
-
-		return TypeElementWrapper.getByTypeMirror(element.unwrap())
-				.map(it -> hasMetaAnnotation(it, mirror))
-				.orElse(false);
-	}
-
-	private static final boolean hasMetaAnnotation(ElementWrapper<? extends Element> element, TypeMirror mirror) {
-		return hasMetaAnnotation(element, TypeMirrorWrapper.getQualifiedName(mirror));
-	}
-
-	private static final boolean hasMetaAnnotation(ElementWrapper<? extends Element> element, String fqn) {
-
-		if (element.hasAnnotation(fqn)) {
-			return true;
-		}
-
-		return element.getAnnotationMirrors().stream()
-				.filter(JMoleculesProcessor::shouldTraverse)
-				.anyMatch(it -> hasMetaAnnotation(it.asTypeMirror().getTypeElement().get(), fqn));
-	}
-
-	private static boolean shouldTraverse(AnnotationMirrorWrapper annotation) {
-
-		String name = annotation.asTypeMirror().getQualifiedName();
-
-		return name != null && !(name.startsWith("java") || name.startsWith("jakarta"));
 	}
 }
