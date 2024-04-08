@@ -6,6 +6,6 @@ import org.jmolecules.ddd.annotation.AggregateRoot;
  * @author Oliver Drotbohm
  */
 @AggregateRoot
-public class AnnotatedAggregateRoot {
+class AnnotatedAggregateRoot {
 	AnnotatedAggregateRoot reference;
 }

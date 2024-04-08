@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -41,6 +42,7 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 
 /**
@@ -199,6 +201,9 @@ public class JMoleculesProcessor implements Processor {
 		private final TypeMirror AGGREGATE_ANNOTATION = getTypeMirror(PACKAGE + ".annotation.AggregateRoot");
 		private final TypeMirror ENTITY_ANNOTATION = getTypeMirror("org.jmolecules.ddd.annotation.Entity");
 		private final TypeMirror IDENTIFIABLE_TYPE = getTypeMirror(PACKAGE + ".types.Identifiable");
+		private final TypeMirror IDENTIFIER_TYPE = getTypeMirror(PACKAGE + ".types.Identifier");
+		private final TypeMirror VALUE_OBJECT_ANNOTATION = getTypeMirror(PACKAGE + ".annotation.ValueObject");
+		private final TypeMirror VALUE_OBJECT_TYPE = getTypeMirror(PACKAGE + ".types.ValueObject");
 
 		public static boolean isAvailable() {
 			return getTypeMirror(PACKAGE + ".types.AggregateRoot") != null;
@@ -207,39 +212,58 @@ public class JMoleculesProcessor implements Processor {
 		public void verify(TypeElementWrapper element) {
 
 			if (isIdentifiable(element)) {
-				verifyAggregate(element);
+
+				verifyFields(element, it -> !isAggregate(it.asType()),
+						"Invalid aggregate root reference! Use identifier reference or Association instead!");
 			}
 
-			if (isAnnotatedIdentifiable(element)) {
+			if (isAnnotatedIdentifiable(element.asType())) {
 
 				element.validate().asError()
 						.withCustomMessage("Needs identity field!")
 						.check(__ -> hasIdentityMethodOrField(element))
 						.validateAndIssueMessages();
 			}
+
+			if (isValueObjectOrIdentifier(element)) {
+				verifyFields(element, it -> !isIdentifiable(it.asType()),
+						"Value object or identifier must not refer to identifiables!");
+			}
 		}
 
-		private boolean verifyAggregate(TypeElementWrapper element) {
+		private static void verifyFields(TypeElementWrapper element, Predicate<ElementWrapper<VariableElement>> check,
+				String message, Object... args) {
 
-			return element.getFields().stream().map(field -> {
-
-				return field.validate()
-						.asError()
-						.withCustomMessage("Invalid aggregate root reference! Use identifier reference or Association instead!",
-								field.getSimpleName())
-						.check(it -> !isAggregate(field.asType()))
-						.validateAndIssueMessages();
-
-			}).reduce(true, (l, r) -> l && r);
+			element.getFields().forEach(field -> {
+				field.validate().asError().withCustomMessage(message, args).check(check).validateAndIssueMessages();
+			});
 		}
 
 		private static boolean hasIdentityMethodOrField(TypeElementWrapper element) {
+			return hasMethodOrFieldMatching(element, it -> hasMetaAnnotation(it, IDENTITY_TYPE_NAME));
+		}
+
+		private static boolean hasMethodOrFieldMatching(TypeElementWrapper element,
+				Predicate<ElementWrapper<? extends Element>> predicate) {
 
 			List<? extends ElementWrapper<? extends Element>> fields = element.getFields();
 			List<? extends ElementWrapper<? extends Element>> methods = element.getMethods();
 
 			return Stream.concat(fields.stream(), methods.stream())
-					.anyMatch(it -> hasMetaAnnotation(it, IDENTITY_TYPE_NAME));
+					.anyMatch(predicate);
+		}
+
+		private boolean isValueObjectOrIdentifier(TypeElementWrapper mirror) {
+
+			TypeMirrorWrapper type = mirror.asType();
+
+			return isValueObject(type) || type.isAssignableTo(IDENTIFIER_TYPE);
+		}
+
+		private boolean isValueObject(TypeMirrorWrapper mirror) {
+
+			return mirror.isAssignableTo(VALUE_OBJECT_TYPE)
+					|| hasMetaAnnotation(mirror, VALUE_OBJECT_ANNOTATION);
 		}
 
 		private boolean isAggregate(TypeMirrorWrapper mirror) {
@@ -248,16 +272,20 @@ public class JMoleculesProcessor implements Processor {
 					|| hasMetaAnnotation(mirror, AGGREGATE_ANNOTATION);
 		}
 
-		private boolean isIdentifiable(TypeElementWrapper element) {
+		private boolean isIdentifiable(TypeMirrorWrapper mirror) {
 
-			return element.asType().isAssignableTo(IDENTIFIABLE_TYPE)
-					|| isAnnotatedIdentifiable(element);
+			return mirror.isAssignableTo(IDENTIFIABLE_TYPE)
+					|| isAnnotatedIdentifiable(mirror);
 		}
 
-		private boolean isAnnotatedIdentifiable(TypeElementWrapper element) {
+		private boolean isIdentifiable(TypeElementWrapper element) {
+			return isIdentifiable(element.asType());
+		}
 
-			return hasMetaAnnotation(element, ENTITY_ANNOTATION)
-					|| hasMetaAnnotation(element, AGGREGATE_ANNOTATION);
+		private boolean isAnnotatedIdentifiable(TypeMirrorWrapper mirror) {
+
+			return hasMetaAnnotation(mirror, ENTITY_ANNOTATION)
+					|| hasMetaAnnotation(mirror, AGGREGATE_ANNOTATION);
 		}
 	}
 }
