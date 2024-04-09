@@ -1,7 +1,7 @@
 = jMolecules APT Processor
 
-The jMolcules APT Processor verifies rules attached to jMolcules concepts during compilation without the need for any third-party tooling integration.
-To activate the compiler extension include the following dependency in your project:
+The jMolecules APT (Annotation Processing Tool) Processor verifies rules attached to jMolecules concepts during compilation, without the need for any third-party tooling integration.
+To activate the compiler extension, include the following dependencies in your project:
 
 [source, xml]
 ----
@@ -19,6 +19,6 @@ To activate the compiler extension include the following dependency in your proj
 
 TIP: Use the https://github.com/xmolecules/jmolecules-bom?tab=readme-ov-file#jmolecules-bom[jMolecules BOM] to avoid having to explicitly declare dependency versions for each artifact individually.
 
-Violations detected will immediately be displayed in your IDE on compilation or on your command line build execution.
+Violations detected will be immediately displayed in your IDE upon compilation, or on your command line after build execution.
 
 image::img/ide.png[]
