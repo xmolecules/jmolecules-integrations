@@ -24,7 +24,7 @@
 		<dependency>
 			<groupId>io.toolisticon.aptk</groupId>
 			<artifactId>aptk-tools</artifactId>
-			<version>0.24.0</version>
+			<version>0.26.0</version>
 		</dependency>
 
 		<dependency>
