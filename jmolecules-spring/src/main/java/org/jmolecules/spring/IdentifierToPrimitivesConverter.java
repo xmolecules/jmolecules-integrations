@@ -19,20 +19,20 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import org.jmolecules.ddd.types.Identifier;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.converter.ConditionalGenericConverter;
-import org.springframework.core.convert.converter.Converter;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
 import org.springframework.util.ConcurrentReferenceHashMap;
 import org.springframework.util.ReflectionUtils;
 
@@ -45,12 +45,19 @@ import org.springframework.util.ReflectionUtils;
 public class IdentifierToPrimitivesConverter implements ConditionalGenericConverter {
 
 	private static final Map<Class<?>, Optional<Field>> CACHE = new ConcurrentReferenceHashMap<>();
-	private static final Set<Class<?>> DEFAULT_PRIMITIVES = new HashSet<>(Arrays.asList(String.class, UUID.class));
+	private static final List<Class<?>> DEFAULT_PRIMITIVES = Arrays.asList(UUID.class, String.class);
 
 	private final Supplier<? extends ConversionService> conversionService;
 	private Set<Class<?>> primitives;
 
+	/**
+	 * Creates a new {@link IdentifierToPrimitivesConverter} for the given {@link ConversionService}.
+	 *
+	 * @param conversionService must not be {@literal null}.
+	 */
 	public IdentifierToPrimitivesConverter(Supplier<? extends ConversionService> conversionService) {
+
+		Assert.notNull(conversionService, "ConversionService must not be null!");
 
 		this.primitives = new HashSet<>(DEFAULT_PRIMITIVES);
 		this.conversionService = conversionService;
@@ -63,10 +70,7 @@ public class IdentifierToPrimitivesConverter implements ConditionalGenericConver
 	@NonNull
 	@Override
 	public Set<ConvertiblePair> getConvertibleTypes() {
-
-		return primitives.stream()
-				.map(it -> new ConvertiblePair(Identifier.class, it))
-				.collect(Collectors.toSet());
+		return Set.of(new ConvertiblePair(Identifier.class, Object.class));
 	}
 
 	/*
@@ -94,7 +98,7 @@ public class IdentifierToPrimitivesConverter implements ConditionalGenericConver
 	@Override
 	public Object convert(@Nullable Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
 
-		if (source == null) {
+		if (source == null || sourceType.equals(targetType)) {
 			return source;
 		}
 

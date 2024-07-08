@@ -89,6 +89,14 @@ class IdentifierToPrimitivesConverterUnitTests {
 				.isTrue();
 	}
 
+	@Test // GH-246
+	void avoidsSelfCreationIfConversionTargetIsSameType() {
+
+		var identifier = SampleIdentifier.of(UUID.randomUUID());
+
+		assertThat(converter.convert(identifier, IDENTIFIER_DESCRIPTOR, IDENTIFIER_DESCRIPTOR)).isSameAs(identifier);
+	}
+
 	static abstract class IdentifierBase implements Identifier {
 		UUID id;
 	}
