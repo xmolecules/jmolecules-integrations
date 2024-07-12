@@ -186,7 +186,7 @@ public class JMoleculesProcessor implements Processor {
 
 		String name = annotation.asTypeMirror().getQualifiedName();
 
-		return name != null && !(name.startsWith("java") || name.startsWith("jakarta"));
+		return name != null && !(name.startsWith("java") || name.startsWith("jakarta") || name.startsWith("kotlin"));
 	}
 
 	private interface Verification {
