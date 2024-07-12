@@ -36,7 +36,7 @@ In the `build/plugins` section of your Maven POM add:
   <dependencies>
     <dependency> <!-- Apply jMolecules transformations -->
       <groupId>org.jmolecules.integrations</groupId>
-      <artifactId>jmolecules-bytebuddy</artifactId>
+      <artifactId>jmolecules-bytebuddy-nodep</artifactId>
       <version>${jmolecules-integrations.version}</version>
     </dependency>
   </dependencies>
