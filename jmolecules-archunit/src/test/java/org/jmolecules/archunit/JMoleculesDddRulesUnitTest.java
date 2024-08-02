@@ -65,7 +65,11 @@ class JMoleculesDddRulesUnitTest {
 						violation(SampleValueObject.class, "annotatedEntity", AnnotatedEntity.class, null),
 						violation(SampleValueObject.class, "aggregate", SampleAggregate.class, null),
 						violation(SampleValueObject.class, "annotatedAggregate", AnnotatedAggregate.class, null),
-						violation(SampleGrandChildEntity.class, "otherEntity", OtherEntity.class, OtherAggregate.class) // GH-222
+						violation(SampleGrandChildEntity.class, "otherEntity", OtherEntity.class, OtherAggregate.class), // GH-222
+						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedAggregate", AnnotatedAggregate.class, null), //
+						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedAggregateInCollection", Collection.class,
+								Association.class), //
+						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedAggregateInMap", Map.class, Association.class) //
 				);
 	}
 
@@ -122,5 +126,21 @@ class JMoleculesDddRulesUnitTest {
 
 		SampleAggregate aggregate;
 		AnnotatedAggregate annotatedAggregate;
+	}
+
+	@org.jmolecules.ddd.annotation.AggregateRoot
+	static class OtherAnnotatedAggregate {
+
+		@org.jmolecules.ddd.annotation.Identity Long id;
+		AnnotatedAggregate invalidAnnotatedAggregate;
+		Collection<AnnotatedAggregate> invalidAnnotatedAggregateInCollection;
+		Map<String, AnnotatedAggregate> invalidAnnotatedAggregateInMap;
+	}
+
+	@org.jmolecules.ddd.annotation.AggregateRoot
+	static class ThirdAnnotatedAggregate {
+
+		@org.jmolecules.ddd.annotation.Identity Long id;
+		AnnotatedEntity valid;
 	}
 }

@@ -35,6 +35,8 @@ import org.springframework.core.ResolvableType;
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaField;
+import com.tngtech.archunit.core.domain.JavaParameterizedType;
+import com.tngtech.archunit.core.domain.JavaType;
 import com.tngtech.archunit.core.domain.properties.CanBeAnnotated;
 import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
@@ -58,7 +60,8 @@ import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
  * @author Oliver Drotbohm
  * @author Torsten Juergeleit
  * @author Hasan Kara
- * @see <a href="http://scabl.blogspot.com/2015/04/aeddd-9.html">Advancing Enterprise DDD - Reinstating the Aggregate</a>
+ * @see <a href="http://scabl.blogspot.com/2015/04/aeddd-9.html">Advancing Enterprise DDD - Reinstating the
+ *      Aggregate</a>
  */
 public class JMoleculesDddRules {
 
@@ -146,7 +149,8 @@ public class JMoleculesDddRules {
 	public static ArchRule aggregateReferencesShouldBeViaIdOrAssociation() {
 
 		DescribedPredicate<JavaField> referenceAnAggregateRoot = areAssignableTo(AggregateRoot.class)
-				.or(hasFieldTypeAnnotatedWith(org.jmolecules.ddd.annotation.AggregateRoot.class));
+				.or(hasFieldTypeAnnotatedWith(org.jmolecules.ddd.annotation.AggregateRoot.class))
+				.or(hasParameterizedFieldOfTypeAnnotatedWith(org.jmolecules.ddd.annotation.AggregateRoot.class));
 
 		return ArchRuleDefinition.fields() //
 				.that(new OwnerMatches(IS_IDENTIFIABLE).and(referenceAnAggregateRoot)) //
@@ -192,6 +196,11 @@ public class JMoleculesDddRules {
 
 	private static FieldTypeIsAnnotatedWith hasFieldTypeAnnotatedWith(Class<? extends Annotation> type) {
 		return new FieldTypeIsAnnotatedWith(type);
+	}
+
+	private static DescribedPredicate<? super JavaField> hasParameterizedFieldOfTypeAnnotatedWith(
+			Class<? extends Annotation> type) {
+		return new ParameterizedFieldOfTypeAnnotatedWith(type);
 	}
 
 	private static class IsDeclaredToUseTheSameAggregate extends ArchCondition<JavaField> {
@@ -281,6 +290,37 @@ public class JMoleculesDddRules {
 		@Override
 		public boolean test(JavaField input) {
 			return isAnnotatedWith.test(input.getRawType());
+		}
+	}
+
+	private static class ParameterizedFieldOfTypeAnnotatedWith extends DescribedPredicate<JavaField> {
+
+		private final DescribedPredicate<CanBeAnnotated> isAnnotatedWith;
+
+		public ParameterizedFieldOfTypeAnnotatedWith(Class<? extends Annotation> type) {
+
+			super("is collection of type annotated with %s", type.getSimpleName());
+
+			this.isAnnotatedWith = CanBeAnnotated.Predicates.annotatedWith(type);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.util.function.Predicate#test(java.lang.Object)
+		 */
+		@Override
+		public boolean test(JavaField input) {
+
+			if (!(input.getType() instanceof JavaParameterizedType)) {
+				return false;
+			}
+
+			JavaParameterizedType parameterizedType = (JavaParameterizedType) input.getType();
+
+			return parameterizedType.getActualTypeArguments()
+					.stream()
+					.map(JavaType::toErasure)
+					.anyMatch(isAnnotatedWith);
 		}
 	}
 
