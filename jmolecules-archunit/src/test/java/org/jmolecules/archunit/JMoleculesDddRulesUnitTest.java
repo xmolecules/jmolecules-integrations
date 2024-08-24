@@ -69,7 +69,8 @@ class JMoleculesDddRulesUnitTest {
 						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedAggregate", AnnotatedAggregate.class, null) //
 
 //							To be fixed:
-//						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedAggregateInCollection", Collection.class, OtherAnnotatedAggregate.class) //
+//						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedAggregateInCollection", Collection.class, Association.class), //
+//						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedAggregateInMap", Map.class, Association.class) //
 //						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedEntity", AnnotatedEntity.class, null) //
 //						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedEntityInCollection", Collection.class, AnnotatedEntity.class) //
 				);
@@ -136,6 +137,7 @@ class JMoleculesDddRulesUnitTest {
 		Long id;
 		AnnotatedAggregate invalidAnnotatedAggregate;
 		Collection<AnnotatedAggregate> invalidAnnotatedAggregateInCollection;
+		Map<String, AnnotatedAggregate> invalidAnnotatedAggregateInMap;
 		AnnotatedEntity invalidAnnotatedEntity;
 		Collection<AnnotatedEntity> invalidAnnoatedEntityInCollection;
 	}
