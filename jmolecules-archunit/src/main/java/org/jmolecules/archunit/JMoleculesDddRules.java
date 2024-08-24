@@ -24,6 +24,8 @@ import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Map;
 
+import com.tngtech.archunit.core.domain.JavaParameterizedType;
+import com.tngtech.archunit.core.domain.JavaType;
 import org.jmolecules.ddd.annotation.Identity;
 import org.jmolecules.ddd.types.AggregateRoot;
 import org.jmolecules.ddd.types.Entity;
@@ -146,7 +148,8 @@ public class JMoleculesDddRules {
 	public static ArchRule aggregateReferencesShouldBeViaIdOrAssociation() {
 
 		DescribedPredicate<JavaField> referenceAnAggregateRoot = areAssignableTo(AggregateRoot.class)
-				.or(hasFieldTypeAnnotatedWith(org.jmolecules.ddd.annotation.AggregateRoot.class));
+				.or(hasFieldTypeAnnotatedWith(org.jmolecules.ddd.annotation.AggregateRoot.class))
+				.or(hasParameterizedFieldOfTypeAnnotatedWith(org.jmolecules.ddd.annotation.AggregateRoot.class));
 
 		return ArchRuleDefinition.fields() //
 				.that(new OwnerMatches(IS_IDENTIFIABLE).and(referenceAnAggregateRoot)) //
@@ -192,6 +195,10 @@ public class JMoleculesDddRules {
 
 	private static FieldTypeIsAnnotatedWith hasFieldTypeAnnotatedWith(Class<? extends Annotation> type) {
 		return new FieldTypeIsAnnotatedWith(type);
+	}
+
+	private static DescribedPredicate<? super JavaField> hasParameterizedFieldOfTypeAnnotatedWith(Class<? extends Annotation> type) {
+		return new ParameterizedFieldOfTypeAnnotatedWith(type);
 	}
 
 	private static class IsDeclaredToUseTheSameAggregate extends ArchCondition<JavaField> {
@@ -281,6 +288,34 @@ public class JMoleculesDddRules {
 		@Override
 		public boolean test(JavaField input) {
 			return isAnnotatedWith.test(input.getRawType());
+		}
+	}
+
+	private static class ParameterizedFieldOfTypeAnnotatedWith extends DescribedPredicate<JavaField> {
+
+		private final DescribedPredicate<CanBeAnnotated> isAnnotatedWith;
+
+		public ParameterizedFieldOfTypeAnnotatedWith(Class<? extends Annotation> type) {
+
+			super("is collection of type annotated with %s", type.getSimpleName());
+
+			this.isAnnotatedWith = CanBeAnnotated.Predicates.annotatedWith(type);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.util.function.Predicate#test(java.lang.Object)
+		 */
+		@Override
+		public boolean test(JavaField input) {
+			if (!(input.getType() instanceof JavaParameterizedType)) {
+				return false;
+			}
+			JavaParameterizedType parameterizedType = (JavaParameterizedType) input.getType();
+			return parameterizedType.getActualTypeArguments()
+					.stream()
+					.map(JavaType::toErasure)
+					.anyMatch(isAnnotatedWith);
 		}
 	}
 

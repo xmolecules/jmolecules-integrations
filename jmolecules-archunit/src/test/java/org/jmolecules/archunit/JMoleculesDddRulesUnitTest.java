@@ -66,11 +66,11 @@ class JMoleculesDddRulesUnitTest {
 						violation(SampleValueObject.class, "aggregate", SampleAggregate.class, null),
 						violation(SampleValueObject.class, "annotatedAggregate", AnnotatedAggregate.class, null),
 						violation(SampleGrandChildEntity.class, "otherEntity", OtherEntity.class, OtherAggregate.class), // GH-222
-						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedAggregate", AnnotatedAggregate.class, null) //
+						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedAggregate", AnnotatedAggregate.class, null), //
+						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedAggregateInCollection", Collection.class, Association.class), //
+						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedAggregateInMap", Map.class, Association.class) //
 
 //							To be fixed:
-//						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedAggregateInCollection", Collection.class, Association.class), //
-//						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedAggregateInMap", Map.class, Association.class) //
 //						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedEntity", AnnotatedEntity.class, null) //
 //						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedEntityInCollection", Collection.class, AnnotatedEntity.class) //
 				);
