@@ -246,6 +246,25 @@ public class JMoleculesArchitectureRules {
 				.layer(HEXAGONAL_SECONDARY_ADAPTER).definedBy(layerType(SecondaryAdapter.class));
 	}
 
+	/**
+	 * ArchUnit {@link DescribedPredicate} accepting all classes, that reside in the given layer.
+	 *
+	 * <pre>
+	 * classes().that(resideInLayer(DomainLayer.class))...
+	 *
+	 * classes().that(...).should(ArchCondition.from(resideInLayer(DomainLayer.class)))...
+	 * </pre>
+	 *
+	 * @return will never be {@literal null}.
+	 * @see org.jmolecules.architecture.hexagonal
+	 * @see org.jmolecules.architecture.layered
+	 * @see org.jmolecules.architecture.onion.classical
+	 * @see org.jmolecules.architecture.onion.simplified
+	 */
+	public static DescribedPredicate<JavaClass> resideInLayer(Class<? extends Annotation> annotation) {
+		return new IsLayerType(annotation);
+	}
+
 	private static IsLayerType layerType(Class<? extends Annotation> annotation) {
 		return new IsLayerType(annotation);
 	}
