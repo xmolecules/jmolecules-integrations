@@ -15,7 +15,6 @@
 	<dependencies>
 
 		<!-- jMolecules -->
-
 		<dependency>
 			<groupId>org.jmolecules</groupId>
 			<artifactId>jmolecules-ddd</artifactId>
