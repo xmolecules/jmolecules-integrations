@@ -10,6 +10,10 @@
 	<name>jMolecules - DDD integration</name>
 	<artifactId>jmolecules-ddd-integration</artifactId>
 
+	<properties>
+		<module.name>org.jmolecules.integrations.ddd</module.name>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.jmolecules</groupId>

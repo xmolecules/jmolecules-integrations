@@ -11,6 +11,10 @@
 	<name>jMolecules - Spring runtime integration</name>
 	<artifactId>jmolecules-spring</artifactId>
 
+	<properties>
+		<module.name>org.jmolecules.integrations.spring</module.name>
+	</properties>
+
 	<dependencies>
 
 		<dependency>

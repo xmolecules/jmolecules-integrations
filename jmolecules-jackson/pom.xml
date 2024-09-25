@@ -11,6 +11,10 @@
 	<name>jMolecules - Jackson runtime integration</name>
 	<artifactId>jmolecules-jackson</artifactId>
 
+	<properties>
+		<module.name>org.jmolecules.integrations.jackson</module.name>
+	</properties>
+
 	<dependencies>
 
 		<dependency>

@@ -28,6 +28,7 @@
 		<bytebuddy.version>1.15.0</bytebuddy.version>
 		<hibernate.version>6.5.2.Final</hibernate.version>
 		<jmolecules.version>1.8.0</jmolecules.version>
+		<module.name>org.jmolecules.integrations</module.name>
 		<spring-boot.version>2.7.18</spring-boot.version>
 		<spring-boot3.version>3.3.3</spring-boot3.version>
 		<axon.version>4.10.0</axon.version>
@@ -91,8 +92,22 @@
 					</plugin>
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-jar-plugin</artifactId>
+						<version>3.4.2</version>
+						<configuration>
+							<archive>
+								<manifestEntries>
+									<Implementation-Title>${project.name}</Implementation-Title>
+									<Implementation-Version>${project.version}</Implementation-Version>
+									<Automatic-Module-Name>${module.name}</Automatic-Module-Name>
+								</manifestEntries>
+							</archive>
+						</configuration>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>3.4.0</version>
+						<version>3.10.1</version>
 						<executions>
 							<execution>
 								<id>attach-javadocs</id>

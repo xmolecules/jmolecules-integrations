@@ -12,6 +12,10 @@
 
 	<artifactId>jmolecules-bytebuddy-nodep</artifactId>
 
+	<properties>
+		<module.name>org.jmolecules.integrations.bytebuddy.nodep</module.name>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>${project.groupId}</groupId>

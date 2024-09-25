@@ -12,6 +12,10 @@
 	<description>A ByteBuddy plugin to translate jMolecules abstractions into implementation technology abstractions</description>
 	<artifactId>jmolecules-bytebuddy</artifactId>
 
+	<properties>
+		<module.name>org.jmolecules.integrations.bytebuddy</module.name>
+	</properties>
+
 	<dependencies>
 
 		<dependency>

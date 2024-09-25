@@ -13,6 +13,10 @@
 	<name>jMolecules - ArchUnit rules</name>
 	<description>ArchUnit rules to enforce constraints implied by the jMolecules abstractions</description>
 
+	<properties>
+		<module.name>org.jmolecules.integrations.archunit</module.name>
+	</properties>
+
 	<dependencies>
 
 		<dependency>

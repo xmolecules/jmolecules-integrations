@@ -12,6 +12,10 @@
 	<description>JPA support code for the ByteBuddy based JPA integration of jMolecules</description>
 	<artifactId>jmolecules-jpa</artifactId>
 
+	<properties>
+		<module.name>org.jmolecules.integrations.jpa</module.name>
+	</properties>
+
 	<dependencies>
 
 		<dependency>
@@ -39,7 +43,7 @@
 		</dependency>
 
 	</dependencies>
-	
+
 	<build>
 		<plugins>
 
