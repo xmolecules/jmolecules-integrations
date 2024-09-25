@@ -12,7 +12,6 @@
 	<name>jMolecules - ByteBuddy - Tests</name>
 
 	<properties>
-		<byte-buddy.version>${bytebuddy.version}</byte-buddy.version>
 		<spring-boot.version>${spring-boot3.version}</spring-boot.version>
 		<maven.deploy.skip>true</maven.deploy.skip>
 	</properties>

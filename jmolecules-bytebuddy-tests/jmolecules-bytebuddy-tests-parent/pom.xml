@@ -41,7 +41,6 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>build-helper-maven-plugin</artifactId>
-				<version>3.3.0</version>
 				<executions>
 					<execution>
 						<id>add-source-generated</id>
@@ -59,8 +58,8 @@
 			</plugin>
 
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-resources-plugin</artifactId>
-				<version>3.3.1</version>
 				<executions>
 					<execution>
 						<id>copy-sources</id>
@@ -95,7 +94,6 @@
 			<plugin>
 				<groupId>net.bytebuddy</groupId>
 				<artifactId>byte-buddy-maven-plugin</artifactId>
-				<version>${bytebuddy.version}</version>
 				<executions>
 					<execution>
 						<goals>
