@@ -2,7 +2,7 @@
 
 This module contains https://www.archunit.org/[ArchUnit] rules to verify the integrity of domain concepts expressed via https://github.com/xmolecules/jmolecules#expressing-ddd-concepts[jMolecules DDD annotations or types].
 
-To use these rules, declare the following artifact as dependency of your project:
+To use these rules, declare the following artifact as dependencies of your project:
 
 .Maven dependency
 [source,xml]
@@ -11,6 +11,13 @@ To use these rules, declare the following artifact as dependency of your project
   <groupId>org.jmolecules.integrations</groupId>
   <artifactId>jmolecules-archunit</artifactId>
   <version>${jmolecules-integrations.version}</version>
+  <scope>test</scope>
+</dependency>
+<dependency>
+  <groupId>com.tngtech.archunit</groupId>
+  <artifactId>archunit-junit5</artifactId>
+  <version>${archunit.version}</version>
+  <scope>test</scope>
 </dependency>
 ----
 
@@ -18,6 +25,14 @@ The provided rules can then be used in a JUnit test as follows:
 
 [source, java, tabsize="2"]
 ----
+import static org.assertj.core.api.Assertions.*;
+
+import com.tngtech.archunit.core.domain.*;
+import com.tngtech.archunit.junit.*;
+import com.tngtech.archunit.lang.*;
+
+import org.jmolecules.archunit.*;
+
 @AnalyzeClasses(packages = "example") // <1>
 class JMoleculesRulesUnitTest {
 
