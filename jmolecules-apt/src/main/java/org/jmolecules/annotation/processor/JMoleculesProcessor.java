@@ -134,7 +134,7 @@ public class JMoleculesProcessor implements Processor {
 					.forEach(it -> verifications.stream().forEach(verification -> verification.verify(it)));
 		}
 
-		return true;
+		return false;
 	}
 
 	private static Stream<TypeElementWrapper> getTypesInPackage(String name) {
