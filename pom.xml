@@ -79,7 +79,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
-						<version>3.0.1</version>
+						<version>3.2.7</version>
 						<executions>
 							<execution>
 								<id>sign-artifacts</id>
@@ -195,7 +195,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-enforcer-plugin</artifactId>
-				<version>3.4.1</version>
+				<version>3.5.0</version>
 				<executions>
 					<execution>
 						<id>enforce-versions</id>
@@ -215,7 +215,7 @@
 
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.2.5</version>
+				<version>3.5.0</version>
 			</plugin>
 
 			<plugin>
@@ -267,7 +267,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-release-plugin</artifactId>
-				<version>3.0.1</version>
+				<version>3.1.1</version>
 				<configuration>
 					<releaseProfiles>sonatype</releaseProfiles>
 					<autoVersionSubmodules>true</autoVersionSubmodules>

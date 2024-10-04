@@ -30,7 +30,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>flatten-maven-plugin</artifactId>
-				<version>1.2.7</version>
+				<version>1.6.0</version>
 				<executions>
 					<execution>
 						<id>flatten</id>
@@ -59,7 +59,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.3.0</version>
+				<version>3.6.0</version>
 				<configuration>
 					<artifactSet>
 						<includes>
