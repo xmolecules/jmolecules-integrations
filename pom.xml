@@ -26,7 +26,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<archunit.version>1.3.0</archunit.version>
 		<bytebuddy.version>1.15.0</bytebuddy.version>
-		<hibernate.version>6.5.2.Final</hibernate.version>
+		<hibernate.version>6.6.1.Final</hibernate.version>
 		<jmolecules.version>1.8.0</jmolecules.version>
 		<module.name>org.jmolecules.integrations</module.name>
 		<spring-boot.version>2.7.18</spring-boot.version>
