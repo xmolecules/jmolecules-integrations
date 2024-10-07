@@ -15,6 +15,10 @@
  */
 package org.jmolecules.archunit;
 
+import static org.jmolecules.archunit.JMoleculesArchitectureRules.JMoleculesHexagonalArchitecture.*;
+import static org.jmolecules.archunit.JMoleculesArchitectureRules.JMoleculesLayeredArchitecture.*;
+import static org.jmolecules.archunit.JMoleculesArchitectureRules.JMoleculesOnionArchitecture.*;
+
 import lombok.RequiredArgsConstructor;
 
 import java.lang.annotation.Annotation;
@@ -85,19 +89,6 @@ public class JMoleculesArchitectureRules {
 	private static final String HEXAGONAL_ADAPTER_UNQUALIFIED = "Adapter (unqualified)";
 	private static final String HEXAGONAL_PRIMARY_ADAPTER = "Primary adapter";
 	private static final String HEXAGONAL_SECONDARY_ADAPTER = "Secondary adapter";
-
-	static List<Class<? extends Annotation>> LAYER_ANNOTATIONS = Arrays.asList(InfrastructureLayer.class,
-			DomainLayer.class, ApplicationLayer.class, InterfaceLayer.class);
-
-	static List<Class<? extends Annotation>> ONION_SIMPLE_ANNOTATIONS = Arrays.asList(DomainRing.class,
-			ApplicationRing.class, InfrastructureRing.class);
-
-	static List<Class<? extends Annotation>> ONION_CLASSICAL_ANNOTATIONS = Arrays.asList(DomainModelRing.class,
-			DomainServiceRing.class, ApplicationServiceRing.class,
-			org.jmolecules.architecture.onion.classical.InfrastructureRing.class);
-
-	static List<Class<? extends Annotation>> HEXAGONAL_ANNOTATIONS = Arrays.asList(Application.class, Port.class,
-			PrimaryPort.class, SecondaryPort.class, Adapter.class, PrimaryAdapter.class, SecondaryAdapter.class);
 
 	/**
 	 * ArchUnit {@link LayeredArchitecture} defined by considering JMolecules layer annotations allowing access of
@@ -569,5 +560,28 @@ public class JMoleculesArchitectureRules {
 					.map(this::hasAnnotationOnPackageOrParent)
 					.orElse(false);
 		}
+	}
+
+	static class JMoleculesOnionArchitecture {
+
+		static final Collection<Class<? extends Annotation>> ONION_SIMPLE_ANNOTATIONS = Arrays.asList(DomainRing.class,
+				ApplicationRing.class, InfrastructureRing.class);
+
+		static final Collection<Class<? extends Annotation>> ONION_CLASSICAL_ANNOTATIONS = Arrays.asList(
+				DomainModelRing.class,
+				DomainServiceRing.class, ApplicationServiceRing.class,
+				org.jmolecules.architecture.onion.classical.InfrastructureRing.class);
+	}
+
+	static class JMoleculesLayeredArchitecture {
+
+		static final Collection<Class<? extends Annotation>> LAYER_ANNOTATIONS = Arrays.asList(InfrastructureLayer.class,
+				DomainLayer.class, ApplicationLayer.class, InterfaceLayer.class);
+	}
+
+	static class JMoleculesHexagonalArchitecture {
+
+		static List<Class<? extends Annotation>> HEXAGONAL_ANNOTATIONS = Arrays.asList(Application.class, Port.class,
+				PrimaryPort.class, SecondaryPort.class, Adapter.class, PrimaryAdapter.class, SecondaryAdapter.class);
 	}
 }

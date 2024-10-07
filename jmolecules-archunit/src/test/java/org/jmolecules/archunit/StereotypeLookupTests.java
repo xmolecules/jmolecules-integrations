@@ -51,7 +51,7 @@ class StereotypeLookupTests {
 				.forEach(lookup -> {
 
 					IsStereotype forAnnotation = lookup.forAnnotation(ApplicationLayer.class,
-							JMoleculesArchitectureRules.LAYER_ANNOTATIONS);
+							JMoleculesArchitectureRules.JMoleculesLayeredArchitecture.LAYER_ANNOTATIONS);
 
 					assertThat(forAnnotation.test(classes.get(AppLayerType.class))).isTrue();
 					assertThat(forAnnotation.test(classes.get(NestedAppLayerType.class))).isTrue();
