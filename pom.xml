@@ -274,6 +274,7 @@
 					<pushChanges>false</pushChanges>
 					<tagNameFormat>@{project.version}</tagNameFormat>
 					<localCheckout>true</localCheckout>
+					<signTag>true</signTag>
 				</configuration>
 			</plugin>
 
