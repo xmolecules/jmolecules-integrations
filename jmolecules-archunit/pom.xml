@@ -67,4 +67,55 @@
 
 	</dependencies>
 
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>3.6.0</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<dependencyReducedPomLocation>${project.build.directory}/dependency-reduced-pom.xml</dependencyReducedPomLocation>
+					<artifactSet>
+						<includes>
+							<include>org.springframework</include>
+						</includes>
+					</artifactSet>
+					<filters>
+						<filter>
+							<artifact>org.springframework:spring-core</artifact>
+							<includes>
+								<include>org/springframework/core/ResolvableType*.class</include>
+								<include>org/springframework/core/SerializableTypeWrapper*.class</include>
+								<include>org/springframework/lang/Nullable.class</include>
+								<include>org/springframework/util/Assert.class</include>
+								<include>org/springframework/util/ClassUtils.class</include>
+								<include>org/springframework/util/ConcurrentReferenceHashMap*.class</include>
+								<include>org/springframework/util/ObjectUtils.class</include>
+								<include>org/springframework/util/StringUtils.class</include>
+							</includes>
+						</filter>
+					</filters>
+					<relocations>
+						<relocation>
+							<pattern>org.springframework</pattern>
+							<shadedPattern>org.jmolecules.spring</shadedPattern>
+						</relocation>
+						<relocation>
+							<pattern>org.apache.commons.logging</pattern>
+							<shadedPattern>org.jmolecules.spring.logging</shadedPattern>
+						</relocation>
+					</relocations>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
 </project>
