@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -48,7 +49,6 @@ import org.jmolecules.architecture.onion.classical.DomainServiceRing;
 import org.jmolecules.architecture.onion.simplified.ApplicationRing;
 import org.jmolecules.architecture.onion.simplified.DomainRing;
 import org.jmolecules.architecture.onion.simplified.InfrastructureRing;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 import com.tngtech.archunit.base.DescribedPredicate;
@@ -277,131 +277,6 @@ public class JMoleculesArchitectureRules {
 				.mayNotBeAccessedByAnyLayer();
 	}
 
-	/**
-	 * A strategy how to look up stereotypes for the classes to be analyzed. Can either be on the types themselves
-	 * including a package-level assignment (via {@link #defaultLookup()}) or via a marker type that acts as replacement
-	 * for the package-level lookup.
-	 *
-	 * @author Oliver Drotbohm
-	 * @since 0.22
-	 */
-	@RequiredArgsConstructor(staticName = "of")
-	public static class StereotypeLookup {
-
-		private static final String DEFAULT_DESCRIPTION = "(meta-)annotated with %s or residing in package (meta-)annotated with %s";
-		private static StereotypeLookup DEFAULT_LOOKUP = new StereotypeLookup(DEFAULT_DESCRIPTION, null) {
-
-			@Override
-			IsStereotype forAnnotation(Class<? extends Annotation> annotation) {
-				return new IsStereotype(annotation);
-			}
-
-			@Override
-			IsStereotype forAnnotation(Class<? extends Annotation> annotation,
-					Collection<Class<? extends Annotation>> exclusions) {
-
-				return new IsStereotype(annotation, allBut(exclusions, annotation));
-			}
-		};
-
-		private final String description;
-		private final @Nullable BiPredicate<Class<? extends Annotation>, JavaClass> lookup;
-
-		/**
-		 * Creates a default {@link StereotypeLookup}, which means it for each type, it will try to find the annotation on
-		 * the type itself or any meta annotations and falls back to traversing the package annotations.
-		 *
-		 * @return will never be {@literal null}.
-		 */
-		public static StereotypeLookup defaultLookup() {
-			return DEFAULT_LOOKUP;
-		}
-
-		/**
-		 * Creates a {@link StereotypeLookup} trying to find the stereotype annotation on a marker type located in the
-		 * reference type's package or parent package.
-		 *
-		 * @param name will never be {@literal null} or empty.
-		 * @return will never be {@literal null}.
-		 */
-		public static StereotypeLookup onMarkerType(String name) {
-
-			Assert.hasText(name, "Name must not be null or empty!");
-
-			BiPredicate<Class<? extends Annotation>, JavaClass> lookup = (annotation,
-					type) -> new IsStereotype(annotation).test(type)
-							|| containsAnnotatedMarkerType(type.getPackage(), name, annotation);
-
-			return new StereotypeLookup(String.format("Annotated marker type %s", name), lookup);
-		}
-
-		/**
-		 * Creates a {@link StereotypeLookup} trying to find the stereotype annotation on marker types with the same simple
-		 * name as the given one located in the reference type's package or parent package.
-		 *
-		 * @param name will never be {@literal null} or empty.
-		 * @return will never be {@literal null}.
-		 */
-		public static StereotypeLookup onMarkerTypeName(Class<?> type) {
-			return onMarkerType(type.getSimpleName());
-		}
-
-		/**
-		 * Returns whether the given package contains a marker type with the given simple name annotated with the given
-		 * annotation type. If none is found, we traverse the given package's parent packages.
-		 *
-		 * @param pkg must not be {@literal null}.
-		 * @param name must not be {@literal null} or empty.
-		 * @param annotationType must not be {@literal null}.
-		 */
-		private static boolean containsAnnotatedMarkerType(JavaPackage pkg, String name,
-				Class<? extends Annotation> annotationType) {
-
-			return pkg.getClasses().stream()
-					.filter(it -> it.getSimpleName().equals(name))
-					.anyMatch(candidate -> candidate.isMetaAnnotatedWith(annotationType))
-					|| pkg.getParent()
-							.map(it -> containsAnnotatedMarkerType(it, name, annotationType))
-							.orElse(false);
-		}
-
-		IsStereotype forAnnotation(Class<? extends Annotation> annotations) {
-			return forAnnotation(annotations, Collections.emptySet());
-		}
-
-		IsStereotype forAnnotation(Class<? extends Annotation> annotation,
-				Collection<Class<? extends Annotation>> exclusions) {
-
-			return new IsStereotype(annotation, lookup, description, allBut(exclusions, annotation));
-		}
-
-		Collection<Class<? extends Annotation>> allBut(Collection<Class<? extends Annotation>> source,
-				Class<? extends Annotation> filter) {
-
-			return source.stream()
-					.filter(it -> !isEqualOrAnnotated(it, filter))
-					.collect(Collectors.toSet());
-		}
-
-		boolean isEqualOrAnnotated(Class<? extends Annotation> candidate, Class<? extends Annotation> reference) {
-
-			if (isJdkType(candidate)) {
-				return false;
-			}
-
-			return candidate.equals(reference)
-					|| candidate.getAnnotation(reference) != null
-					|| Arrays.stream(candidate.getAnnotations()).anyMatch(it -> isEqualOrAnnotated(it.getClass(), reference));
-		}
-
-		private static boolean isJdkType(Class<?> type) {
-
-			Package pkg = type.getPackage();
-
-			return pkg != null && Stream.of("java", "jdk").anyMatch(pkg.getName()::startsWith);
-		}
-	}
-
 	private static LayeredArchitecture layeredArchitecture(StereotypeLookup lookup) {
 
 		return Architectures.layeredArchitecture()
@@ -474,10 +349,12 @@ public class JMoleculesArchitectureRules {
 						.withExclusions(PrimaryPort.class, SecondaryPort.class))
 
 				.layer(HEXAGONAL_PRIMARY_PORT)
-				.definedBy(lookup.forAnnotation(PrimaryPort.class, HEXAGONAL_ANNOTATIONS))
+				.definedBy(lookup.forAnnotation(PrimaryPort.class, HEXAGONAL_ANNOTATIONS)
+						.withoutExclusion(Port.class))
 
 				.layer(HEXAGONAL_SECONDARY_PORT)
-				.definedBy(lookup.forAnnotation(SecondaryPort.class, HEXAGONAL_ANNOTATIONS))
+				.definedBy(lookup.forAnnotation(SecondaryPort.class, HEXAGONAL_ANNOTATIONS)
+						.withoutExclusion(Port.class))
 
 				.layer(HEXAGONAL_ADAPTER)
 				.definedBy(lookup.forAnnotation(Adapter.class, HEXAGONAL_ANNOTATIONS))
@@ -487,17 +364,147 @@ public class JMoleculesArchitectureRules {
 						.withExclusions(PrimaryAdapter.class, SecondaryAdapter.class))
 
 				.layer(HEXAGONAL_PRIMARY_ADAPTER)
-				.definedBy(lookup.forAnnotation(PrimaryAdapter.class, HEXAGONAL_ANNOTATIONS))
+				.definedBy(lookup.forAnnotation(PrimaryAdapter.class, HEXAGONAL_ANNOTATIONS)
+						.withoutExclusion(Adapter.class))
 
 				.layer(HEXAGONAL_SECONDARY_ADAPTER)
-				.definedBy(lookup.forAnnotation(SecondaryAdapter.class, HEXAGONAL_ANNOTATIONS));
+				.definedBy(lookup.forAnnotation(SecondaryAdapter.class, HEXAGONAL_ANNOTATIONS)
+						.withoutExclusion(Adapter.class));
 	}
 
+	/**
+	 * A strategy how to look up stereotypes for the classes to be analyzed. Can either be on the types themselves
+	 * including a package-level assignment (via {@link #defaultLookup()}) or via a marker type that acts as replacement
+	 * for the package-level lookup.
+	 *
+	 * @author Oliver Drotbohm
+	 * @since 0.22
+	 */
+	@RequiredArgsConstructor(staticName = "of")
+	public static class StereotypeLookup {
+
+		private static final String DEFAULT_DESCRIPTION = "(meta-)annotated with %s or residing in package (meta-)annotated with %s";
+		private static final StereotypeLookup DEFAULT_LOOKUP = new StereotypeLookup(DEFAULT_DESCRIPTION,
+				IsStereotype.DEFAULT_MARKER_LOOKUP) {
+
+			@Override
+			IsStereotype forAnnotation(Class<? extends Annotation> annotation) {
+				return new IsStereotype(annotation);
+			}
+
+			@Override
+			IsStereotype forAnnotation(Class<? extends Annotation> annotation,
+					Collection<Class<? extends Annotation>> exclusions) {
+				return new IsStereotype(annotation, allBut(exclusions, annotation));
+			}
+		};
+
+		private final String description;
+		private final Function<JavaClass, Stream<JavaClass>> markerLookup;
+
+		private StereotypeLookup(String description, String name) {
+
+			this.description = description;
+			this.markerLookup = type -> markerTypes(type.getPackage(), name);
+		}
+
+		/**
+		 * Creates a default {@link StereotypeLookup}, which means it for each type, it will try to find the annotation on
+		 * the type itself or any meta annotations and falls back to traversing the package annotations.
+		 *
+		 * @return will never be {@literal null}.
+		 */
+		public static StereotypeLookup defaultLookup() {
+			return DEFAULT_LOOKUP;
+		}
+
+		/**
+		 * Creates a {@link StereotypeLookup} trying to find the stereotype annotation on a marker type located in the
+		 * reference type's package or parent package.
+		 *
+		 * @param name will never be {@literal null} or empty.
+		 * @return will never be {@literal null}.
+		 */
+		public static StereotypeLookup onMarkerType(String name) {
+
+			Assert.hasText(name, "Name must not be null or empty!");
+
+			return new StereotypeLookup(String.format("Annotated marker type %s", name), name);
+		}
+
+		/**
+		 * Creates a {@link StereotypeLookup} trying to find the stereotype annotation on marker types with the same simple
+		 * name as the given one located in the reference type's package or parent package.
+		 *
+		 * @param name will never be {@literal null} or empty.
+		 * @return will never be {@literal null}.
+		 */
+		public static StereotypeLookup onMarkerTypeName(Class<?> type) {
+			return onMarkerType(type.getSimpleName());
+		}
+
+		IsStereotype forAnnotation(Class<? extends Annotation> annotations) {
+			return forAnnotation(annotations, Collections.emptySet());
+		}
+
+		IsStereotype forAnnotation(Class<? extends Annotation> annotation,
+				Collection<Class<? extends Annotation>> exclusions) {
+
+			return new IsStereotype(annotation, markerLookup, description, allBut(exclusions, annotation));
+		}
+
+		Collection<Class<? extends Annotation>> allBut(Collection<Class<? extends Annotation>> source,
+				Class<? extends Annotation> filter) {
+
+			return source.stream()
+					.filter(it -> !isEqualOrAnnotated(it, filter))
+					.collect(Collectors.toSet());
+		}
+
+		boolean isEqualOrAnnotated(Class<? extends Annotation> candidate, Class<? extends Annotation> reference) {
+
+			if (isJdkType(candidate)) {
+				return false;
+			}
+
+			return candidate.equals(reference)
+					|| candidate.getAnnotation(reference) != null
+					|| Arrays.stream(candidate.getAnnotations()).anyMatch(it -> isEqualOrAnnotated(it.getClass(), reference));
+		}
+
+		private static boolean isJdkType(Class<?> type) {
+
+			String pkg = type.getName();
+
+			return pkg != null && Stream.of("java", "jdk", "com.sun").anyMatch(pkg::startsWith);
+		}
+
+		private static Stream<JavaClass> markerTypes(JavaPackage pkg, String name) {
+
+			Stream<JavaClass> result = pkg.containsClassWithSimpleName(name)
+					? Stream.of(pkg.getClassWithSimpleName(name))
+					: Stream.empty();
+
+			return pkg.getParent()
+					.map(it -> Stream.concat(markerTypes(it, name), result))
+					.orElse(result);
+		}
+	}
+
+	/**
+	 * A {@link DescribedPredicate} that tests whether a {@link JavaClass} is of a particular stereotype.
+	 *
+	 * @author Oliver Drotbohm
+	 */
 	static class IsStereotype extends DescribedPredicate<JavaClass> {
+
+		static final Function<JavaClass, Stream<JavaClass>> DEFAULT_MARKER_LOOKUP = it -> Stream.of(it);
 
 		private final Class<? extends Annotation> annotation;
 		private final String description;
-		private final BiPredicate<Class<? extends Annotation>, JavaClass> filter;
+		private final Function<JavaClass, Stream<JavaClass>> markerLookup;
+		private final BiPredicate<Class<? extends Annotation>, JavaClass> filter = (it,
+				type) -> type.isMetaAnnotatedWith(it) || hasAnnotationOnPackageOrParent(type.getPackage());
 		private final Collection<Class<? extends Annotation>> exclusions;
 
 		public IsStereotype(Class<? extends Annotation> annotation) {
@@ -507,12 +514,12 @@ public class JMoleculesArchitectureRules {
 		public IsStereotype(Class<? extends Annotation> annotation,
 				Collection<Class<? extends Annotation>> exclusions) {
 
-			this(annotation, null,
+			this(annotation, DEFAULT_MARKER_LOOKUP,
 					String.format(StereotypeLookup.DEFAULT_DESCRIPTION, annotation.getName(), annotation.getName()), exclusions);
 		}
 
 		public IsStereotype(Class<? extends Annotation> annotation,
-				@Nullable BiPredicate<Class<? extends Annotation>, JavaClass> filter,
+				Function<JavaClass, Stream<JavaClass>> markerLookup,
 				String description, Collection<Class<? extends Annotation>> exclusions) {
 
 			super(description);
@@ -520,10 +527,7 @@ public class JMoleculesArchitectureRules {
 			this.annotation = annotation;
 			this.description = description;
 			this.exclusions = exclusions;
-
-			this.filter = filter != null
-					? filter
-					: (it, type) -> type.isMetaAnnotatedWith(it) || hasAnnotationOnPackageOrParent(type.getPackage());
+			this.markerLookup = it -> Stream.concat(Stream.of(it), markerLookup.apply(it));
 		}
 
 		@SafeVarargs
@@ -532,7 +536,15 @@ public class JMoleculesArchitectureRules {
 			Collection<Class<? extends Annotation>> newExclusions = new HashSet<>(this.exclusions);
 			newExclusions.addAll(Arrays.asList(exclusions));
 
-			return new IsStereotype(annotation, filter, description, newExclusions);
+			return new IsStereotype(annotation, markerLookup, description, newExclusions);
+		}
+
+		public final IsStereotype withoutExclusion(Class<? extends Annotation> exclusion) {
+
+			Collection<Class<? extends Annotation>> newExclusions = new HashSet<>(this.exclusions);
+			newExclusions.remove(exclusion);
+
+			return new IsStereotype(annotation, markerLookup, description, newExclusions);
 		}
 
 		/*
@@ -542,8 +554,11 @@ public class JMoleculesArchitectureRules {
 		@Override
 		public boolean test(JavaClass type) {
 
-			return !exclusions.stream().anyMatch(type::isMetaAnnotatedWith)
-					&& filter.test(annotation, type);
+			// Is not annotated with exclusion
+			return !markerLookup.apply(type).anyMatch(it -> exclusions.stream().anyMatch(it::isMetaAnnotatedWith))
+
+					// Matches what we're looking for
+					&& markerLookup.apply(type).anyMatch(it -> filter.test(annotation, it));
 		}
 
 		private boolean hasAnnotationOnPackageOrParent(JavaPackage javaPackage) {
@@ -568,8 +583,7 @@ public class JMoleculesArchitectureRules {
 				ApplicationRing.class, InfrastructureRing.class);
 
 		static final Collection<Class<? extends Annotation>> ONION_CLASSICAL_ANNOTATIONS = Arrays.asList(
-				DomainModelRing.class,
-				DomainServiceRing.class, ApplicationServiceRing.class,
+				DomainModelRing.class, DomainServiceRing.class, ApplicationServiceRing.class,
 				org.jmolecules.architecture.onion.classical.InfrastructureRing.class);
 	}
 
@@ -581,7 +595,7 @@ public class JMoleculesArchitectureRules {
 
 	static class JMoleculesHexagonalArchitecture {
 
-		static List<Class<? extends Annotation>> HEXAGONAL_ANNOTATIONS = Arrays.asList(Application.class, Port.class,
+		static final List<Class<? extends Annotation>> HEXAGONAL_ANNOTATIONS = Arrays.asList(Application.class, Port.class,
 				PrimaryPort.class, SecondaryPort.class, Adapter.class, PrimaryAdapter.class, SecondaryAdapter.class);
 	}
 }
