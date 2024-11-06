@@ -16,6 +16,7 @@
 package org.jmolecules.bytebuddy;
 
 import java.lang.annotation.Annotation;
+import java.util.stream.Stream;
 
 import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
@@ -27,10 +28,16 @@ import org.springframework.util.ClassUtils;
  */
 class Types {
 
-	public static Class<? extends Annotation> DOMAIN_EVENT_HANDLER;
+	public static Class<? extends Annotation> DOMAIN_EVENT_HANDLER, AT_GENERATED;
 
 	static {
 		DOMAIN_EVENT_HANDLER = loadIfPresent("org.jmolecules.event.annotation.DomainEventHandler");
+		AT_GENERATED = Stream.of("org.springframework.aot.generate.Generated",
+				"javax.annotation.processing.Generated",
+				"javax.annotation.Generated")
+				.<Class<? extends Annotation>> map(Types::loadIfPresent)
+				.findFirst()
+				.orElse(null);
 	}
 
 	@Nullable

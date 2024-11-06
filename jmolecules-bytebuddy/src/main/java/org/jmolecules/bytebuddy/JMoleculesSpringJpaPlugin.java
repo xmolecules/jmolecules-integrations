@@ -15,7 +15,6 @@
  */
 package org.jmolecules.bytebuddy;
 
-import jakarta.persistence.AttributeConverter;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import net.bytebuddy.ByteBuddy;
@@ -138,10 +137,16 @@ public class JMoleculesSpringJpaPlugin implements LoggingPlugin, WithPreprocesso
 		Generic superType = TypeDescription.Generic.Builder
 				.parameterizedType(loadedType, aggregateType, idType, idPrimitiveType).build();
 
-		Unloaded<?> converterType = new ByteBuddy(ClassFileVersion.JAVA_V8)
+		Builder<?> converterBuilder = new ByteBuddy(ClassFileVersion.JAVA_V8)
 				.with(new ReferenceTypePackageNamingStrategy(field.getDeclaringType()))
 				.subclass(superType)
-				.annotateType(PluginUtils.getAnnotation(jpa.getAnnotation("Converter")))
+				.annotateType(PluginUtils.getAnnotation(jpa.getAnnotation("Converter")));
+
+		if (Types.AT_GENERATED != null) {
+			converterBuilder = converterBuilder.annotateType(PluginUtils.getAnnotation(Types.AT_GENERATED));
+		}
+
+		Unloaded<?> converterType = converterBuilder
 				.defineConstructor(Visibility.PACKAGE_PRIVATE)
 				.intercept(MethodCall.invoke(getConverterConstructor()).onSuper().with(idType.asErasure()))
 				.make();
