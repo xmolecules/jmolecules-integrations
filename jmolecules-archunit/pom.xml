@@ -92,6 +92,7 @@
 						<filter>
 							<artifact>org.springframework:spring-core</artifact>
 							<includes>
+								<include>org/springframework/core/NativeDetector*.class</include>
 								<include>org/springframework/core/ResolvableType*.class</include>
 								<include>org/springframework/core/SerializableTypeWrapper*.class</include>
 								<include>org/springframework/lang/Nullable.class</include>
