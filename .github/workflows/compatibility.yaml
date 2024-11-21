@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        version: ['3.2.11', '3.3.5']
+        version: ['3.2.12', '3.4.0-SNAPSHOT']
 
     name: Compatibility with Spring Boot ${{ matrix.version }}
 
@@ -22,7 +22,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Set up JDK 17
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: 17
