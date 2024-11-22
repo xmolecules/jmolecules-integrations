@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.jmolecules.integrations</groupId>
 		<artifactId>jmolecules-integrations</artifactId>
-		<version>0.24.1</version>
+		<version>0.24.2-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>jmolecules-bytebuddy-tests</artifactId>
