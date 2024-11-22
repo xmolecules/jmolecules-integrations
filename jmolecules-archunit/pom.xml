@@ -100,6 +100,7 @@
 								<include>org/springframework/util/ClassUtils.class</include>
 								<include>org/springframework/util/ConcurrentReferenceHashMap*.class</include>
 								<include>org/springframework/util/ObjectUtils.class</include>
+								<include>org/springframework/util/ReflectionUtils*.class</include>
 								<include>org/springframework/util/StringUtils.class</include>
 							</includes>
 						</filter>
