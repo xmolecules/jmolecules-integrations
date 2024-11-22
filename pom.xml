@@ -3,7 +3,7 @@
 
 	<groupId>org.jmolecules.integrations</groupId>
 	<artifactId>jmolecules-integrations</artifactId>
-	<version>0.24.0</version>
+	<version>0.24.1-SNAPSHOT</version>
 
 	<name>jMolecules - Technology integrations</name>
 	<description>Modules to integrate jMolecules abstractions with implementation technologies</description>
