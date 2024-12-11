@@ -20,6 +20,7 @@
 		<module>jmolecules-jackson</module>
 		<module>jmolecules-spring</module>
 		<module>jmolecules-starters</module>
+		<module>jmolecules-stereotype</module>
 	</modules>
 
 	<properties>
@@ -28,7 +29,9 @@
 		<archunit.version>1.4.1</archunit.version>
 		<bytebuddy.version>1.17.5</bytebuddy.version>
 		<hibernate.version>6.6.18.Final</hibernate.version>
+		<java.version>1.8</java.version>
 		<jmolecules.version>1.10.0</jmolecules.version>
+		<jmolecules-next.version>2.0.0-STEREOTYPE-SNAPSHOT</jmolecules-next.version>
 		<module.name>org.jmolecules.integrations</module.name>
 		<spring-boot.version>2.7.18</spring-boot.version>
 		<spring-boot3.version>3.4.6</spring-boot3.version>
@@ -258,8 +261,8 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
 					<parameters>true</parameters>
 				</configuration>
 			</plugin>
