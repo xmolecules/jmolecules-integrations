@@ -15,13 +15,20 @@
  */
 package org.jmolecules.annotation.processor;
 
+import static org.assertj.core.api.Assertions.*;
+
 import io.toolisticon.cute.Cute;
 import io.toolisticon.cute.CuteApi.BlackBoxTestInterface;
 import io.toolisticon.cute.CuteApi.BlackBoxTestSourceFilesAndProcessorInterface;
 import io.toolisticon.cute.CuteApi.CompilerTestExpectAndThatInterface;
 import io.toolisticon.cute.CuteApi.DoCustomAssertions;
+import net.minidev.json.JSONArray;
+
+import javax.tools.StandardLocation;
 
 import org.junit.jupiter.api.Test;
+
+import com.jayway.jsonpath.JsonPath;
 
 /**
  * Unit tests for {@link JMoleculesProcessor}.
@@ -142,6 +149,32 @@ class JMoleculesProcessorUnitTests {
 	@Test // GH-230
 	void passesValidIdentifier() {
 		assertSucceded(getSourceFile("valid/ValidIdentifier"));
+	}
+
+	@Test
+	void createsStereotypesMetadata() {
+
+		assertSourceProcessed(getSourceFile("stereotype/AssignableStereotype"))
+				.thenExpectThat().compilationSucceeds().andThat()
+				.fileObject(StandardLocation.CLASS_OUTPUT, "", "META-INF/jmolecules-stereotypes.json")
+				.exists()
+				.executeTest()
+				.executeCustomAssertions(outcome -> {
+
+					var file = outcome.getFileManager()
+							.getGeneratedResourceFile("/META-INF/jmolecules-stereotypes.json");
+
+					var content = file.get().getContent();
+					var context = JsonPath.parse(content);
+
+					assertThat(context.read("$.stereotypes[0].id", String.class))
+							.isEqualTo("example.stereotype.AssignableStereotype");
+					assertThat((JSONArray) context.read("$.stereotypes[0].targets"))
+							.containsExactly("example.stereotype.AssignableStereotype");
+					assertThat((JSONArray) context.read("$.stereotypes[0].groups"))
+							.containsExactly("example.stereotype");
+					assertThat(context.read("$.stereotypes[0].priority", Integer.class)).isEqualTo(0);
+				});
 	}
 
 	private static CompilerTestExpectAndThatInterface assertFailed(String source) {
