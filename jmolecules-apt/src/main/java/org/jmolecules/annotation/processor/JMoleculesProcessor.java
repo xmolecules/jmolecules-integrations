@@ -22,11 +22,17 @@ import io.toolisticon.aptk.tools.wrapper.AnnotationMirrorWrapper;
 import io.toolisticon.aptk.tools.wrapper.ElementWrapper;
 import io.toolisticon.aptk.tools.wrapper.PackageElementWrapper;
 import io.toolisticon.aptk.tools.wrapper.TypeElementWrapper;
+import net.minidev.json.JSONObject;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -42,6 +48,15 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
+import javax.tools.Diagnostic.Kind;
+import javax.tools.StandardLocation;
+
+import org.jmolecules.stereotype.api.Stereotype;
+import org.jmolecules.stereotype.catalog.StereotypeDefinition;
+import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment;
+import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment.Type;
+import org.jmolecules.stereotype.catalog.support.DefaultStereotypeDefinition;
+import org.jmolecules.stereotype.support.AnnotationConfiguredStereotype;
 
 /**
  * An APT {@link Processor} implementation to verify DDD rules.
@@ -53,6 +68,7 @@ public class JMoleculesProcessor implements Processor {
 
 	private final List<Verification> verifications = new ArrayList<>();
 	private final Set<String> packagesToCheck = new HashSet<>();
+	private final List<StereotypeDefinition> definitions = new ArrayList<>();
 
 	/*
 	 * (non-Javadoc)
@@ -123,6 +139,10 @@ public class JMoleculesProcessor implements Processor {
 						: PackageElementWrapper.toPackageElement(rootElement);
 
 				packagesToCheck.add(packageElementWrapper.getQualifiedName());
+
+				if (rootElement.isTypeElement()) {
+					detectStereotype(rootElement);
+				}
 			}
 
 		} else {
@@ -132,6 +152,14 @@ public class JMoleculesProcessor implements Processor {
 			packagesToCheck.stream()
 					.flatMap(fqn -> getTypesInPackage(fqn))
 					.forEach(it -> verifications.stream().forEach(verification -> verification.verify(it)));
+
+			try {
+
+				writeStereotypeFile();
+
+			} catch (IOException e) {
+				throw new UncheckedIOException(e);
+			}
 		}
 
 		return false;
@@ -187,6 +215,61 @@ public class JMoleculesProcessor implements Processor {
 		String name = annotation.asTypeMirror().getQualifiedName();
 
 		return name != null && !(name.startsWith("java") || name.startsWith("jakarta") || name.startsWith("kotlin"));
+	}
+
+	// Stereotype detection
+	private void detectStereotype(ElementWrapper<?> wrapper) {
+
+		wrapper.getAnnotation(org.jmolecules.stereotype.Stereotype.class).ifPresent(it -> {
+
+			var type = wrapper.asType();
+			var typeName = type.getQualifiedName();
+			var of = AnnotationConfiguredStereotype.of(typeName, it);
+
+			var assignmentType = wrapper.isAnnotation() ? Type.IS_ANNOTATED : Type.IMPLEMENTS;
+			var assignment = Assignment.of(typeName, assignmentType);
+
+			definitions.add(DefaultStereotypeDefinition.of(of, assignment, type));
+		});
+	}
+
+	private void writeStereotypeFile() throws IOException {
+
+		if (definitions.isEmpty()) {
+			return;
+		}
+
+		var stereotypes = definitions.stream()
+				.collect(Collectors.toMap(it -> it.getStereotype().getIdentifier(), JMoleculesProcessor::toMap));
+
+		var content = JSONObject.toJSONString(Map.of("stereotypes", stereotypes));
+		var tooling = ToolingProvider.getTooling();
+
+		tooling.getMessager().printMessage(Kind.NOTE,
+				"Writing jMolecules stereotype metadata to META-INF/jmolecules-stereotypes.json: "
+						+ definitions.stream().map(StereotypeDefinition::getStereotype)
+								.map(Stereotype::getIdentifier)
+								.collect(Collectors.joining(", ", "[ ", " ]")));
+
+		var filer = tooling.getFiler();
+		var resource = filer.createResource(StandardLocation.CLASS_OUTPUT, "",
+				"META-INF/jmolecules-stereotypes.json");
+
+		try (Writer writer = resource.openWriter()) {
+			writer.append(content);
+		}
+	}
+
+	private static Map<String, Object> toMap(StereotypeDefinition definition) {
+
+		var stereotype = definition.getStereotype();
+		var result = new LinkedHashMap<String, Object>();
+
+		result.put("targets", definition.getAssignments().stream().map(Assignment::getTarget).toArray());
+		result.put("groups", stereotype.getGroups());
+		result.put("priority", stereotype.getPriority());
+
+		return result;
 	}
 
 	private interface Verification {

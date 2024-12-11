@@ -14,6 +14,7 @@
 
 	<properties>
 		<module.name>org.jmolecules.integrations.apt</module.name>
+		<java.version>17</java.version>
 	</properties>
 
 	<dependencies>
@@ -21,8 +22,25 @@
 		<dependency>
 			<groupId>org.jmolecules</groupId>
 			<artifactId>jmolecules-ddd</artifactId>
-			<version>${jmolecules.version}</version>
+			<version>${jmolecules-next.version}</version>
 			<optional>true</optional>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.jmolecules.integrations</groupId>
+			<artifactId>jmolecules-stereotype</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>net.minidev</groupId>
+			<artifactId>json-smart</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.jayway.jsonpath</groupId>
+			<artifactId>json-path</artifactId>
+			<scope>test</scope>
 		</dependency>
 
 		<dependency>
@@ -72,6 +90,7 @@
 							<artifactSet>
 								<includes>
 									<include>io.toolisticon.aptk:*</include>
+									<include>net.minidev:*</include>
 								</includes>
 							</artifactSet>
 
@@ -79,6 +98,10 @@
 								<relocation>
 									<pattern>io.toolisticon.aptk</pattern>
 									<shadedPattern>org.jmolecules.annotation.processor.aptk</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>net.minidev</pattern>
+									<shadedPattern>org.jmolecules.annotation.processor.net.minidev</shadedPattern>
 								</relocation>
 							</relocations>
 

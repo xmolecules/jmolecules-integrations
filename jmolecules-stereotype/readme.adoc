@@ -1,0 +1,31 @@
+= jMolecules Stereotypes support
+
+This module contains support to work with jMolecules Stereotypes and primarily consists of the following parts:
+
+* A `StereotypeCatalog` abstraction that reads stereotype definitions from JSON files located in `META-INF/jmolecules-stereotypes.json` and `META-INF/jmolecules-stereotype-groups.json` following the schema definitions published https://schemas.jmolecules.org/jmolecules-catalog.json[here]. The files are picked up from JAR files and can either be authored manually or derived from code annotated with `org.jmolecules.stereotype.Stereotype` using the jMolecules APT.
++
+[source, java]
+----
+var source = CatalogSource.ofClassLoader(…);
+var catalog = new JsonPathStereotypeCatalog(source);
+var definitions = catalog.getDefinitions();
+----
+
+* A `StereotypeFactory` that allows inspecting type systems for stereotypes assigned to packages, types and methods. A reflection-based variant exists with `ReflectionStereotypeFactory`, but the interface allows implementing support for other type abstractions.
++
+[source, java]
+----
+@Stereotype
+interface example.MyStereotype {}
+
+class MyConcreteType implements MyStereotype {}
+
+var source = CatalogSource.ofClassLoader(…);
+var catalog = new JsonPathStereotypeCatalog(source);
+var factory = new ReflectionStereotypeFactory(catalog);
+
+var stereotype = factory.fromType(MyConcreteType.class).getPrimary();
+
+assertThat(stereotype.getIdentifier()).isEqualTo("example.MyStereotype");
+assertThat(stereotype.getDisplayName()).isEqualTo("My Stereotype");
+----
