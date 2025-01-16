@@ -1,0 +1,138 @@
+= jMolecules Command Line Interface
+:tabsize: 2
+
+The jMolecules CLI
+
+[[commands]]
+== Available commands
+
+[[commands.initialization]]
+=== Initializing the project
+
+[source, bash]
+----
+$ jm init [
+----
+
+Initializing the project performs the following steps
+
+* Calculates and caches the dependencies of the project.
+* Detects the applications base package by looking for a class annotated with `@SpringBootApplication`.
+* Calculates and caches the application module structure (optional, only if Spring Modulith is used).
+
+[[commands.refresh]]
+=== Refresh
+
+[[commands.generating-aggregates]]
+=== Generating Aggregates
+
+To establish an aggregate in an application, a few different abstractions have to be created:
+
+* An identifier type
+* An aggregate root type
+* A repository interface
+* Test types for both the aggregate and the repository
+
+[source, bash]
+----
+$ jm add-aggregate [-hV] [-m=<module>] [-p=<pkg>] <name>
+  -h, --help              Show this help message and exit.
+  -m, --module=<module>
+  -p, --package=<pkg>
+----
+
+An example invocation of the `add-aggregate` command to create a `Customer` would create the following types:
+
+[source, bash]
+----
+$ jm add-aggregate Customer …
+----
+
+.`Customer.java`
+[source, java]
+----
+package …;
+
+import java.lang.Override;
+import java.lang.String;
+import java.util.UUID;
+import org.jmolecules.ddd.types.AggregateRoot;
+import org.jmolecules.ddd.types.Identifier;
+import org.jmolecules.event.types.DomainEvent;
+
+class Customer implements AggregateRoot<Customer, Customer.CustomerIdentifier> {
+
+	private final CustomerIdentifier id;
+
+	Customer() {
+ 		this.id = new CustomerIdentifier(UUID.randomUUID());
+	}
+
+	@Override
+	public CustomerIdentifier getId() {
+		return id;
+	}
+
+	public record CustomerIdentifier(UUID id) implements Identifier {
+	
+		@Override
+		public String toString() {
+			return id.toString();
+		}
+	}
+}
+----
+
+If the project contains `jmolecules-events` on the classpath, an additional creation event will be created:
+
+[source, java]
+----
+import org.jmolecules.event.types.DomainEvent;
+
+class Customer … {
+
+	public record CustomerCreated(CustomerIdentifier id) implements DomainEvent {
+	
+		@Override
+		public String toString() {
+			return id.toString();
+		}
+	}
+}
+----
+
+If in turn Spring Data is available on the classpath, the aggregate will extend `AbstractAggregateRoot` and automatically register the event when a fresh instance is created.
+
+[source, java]
+----
+import org.springframework.data.domain.AbstractAggregateRoot;
+
+class Customer extends AbstractAggregateRoot<Customer> … {
+
+	Customer() {
+ 		// …
+		registerEvent(new CustomerCreated(id));
+	}
+}
+----
+
+[[configuration]]
+== Configuration options
+
+[cols = 2, options="header"]
+|===
+|Property
+|Description
+
+|`base-package`
+|The application's base package.
+
+|`lombok.enabled`
+|Whether support for Lombok is enabled. Primarily influences <<commands.generating-aggregates, code generation>>. Initially populated on <<commands.initialization, initialization>>. 
+
+|`spring-data.enabled`
+|Whether support for Spring Data is enabled. Primarily influences <<commands.generating-aggregates, code generation>>. Initially populated on <<commands.initialization, initialization>>.
+
+|`spring-modulith.enabled`
+|Whether support for Spring Modulith is enabled. Primarily influences <<commands.generating-aggregates, code generation>>. Initially populated on <<commands.initialization, initialization>>.  
+|===
