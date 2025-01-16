@@ -15,11 +15,13 @@
 		<module>jmolecules-archunit</module>
 		<module>jmolecules-bytebuddy</module>
 		<module>jmolecules-bytebuddy-nodep</module>
+		<module>jmolecules-cli</module>
+		<module>jmolecules-codegen</module>
 		<module>jmolecules-ddd-integration</module>
 		<module>jmolecules-jpa</module>
 		<module>jmolecules-jackson</module>
 		<module>jmolecules-spring</module>
-		<module>jmolecules-starters</module>
+		<module>jmolecules-starters</module>		
 	</modules>
 
 	<properties>
@@ -28,6 +30,7 @@
 		<archunit.version>1.4.1</archunit.version>
 		<bytebuddy.version>1.17.5</bytebuddy.version>
 		<hibernate.version>6.6.18.Final</hibernate.version>
+		<java.version>1.8</java.version>
 		<jmolecules.version>1.10.0</jmolecules.version>
 		<module.name>org.jmolecules.integrations</module.name>
 		<spring-boot.version>2.7.18</spring-boot.version>
@@ -257,8 +260,8 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
 					<parameters>true</parameters>
 				</configuration>
 			</plugin>
