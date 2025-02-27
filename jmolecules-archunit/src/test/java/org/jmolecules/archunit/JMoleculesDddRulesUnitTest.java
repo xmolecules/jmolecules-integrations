@@ -15,12 +15,16 @@
  */
 package org.jmolecules.archunit;
 
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.jmolecules.archunit.TestUtils.*;
+
+import lombok.Value;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.jmolecules.ddd.annotation.Identity;
 import org.jmolecules.ddd.types.AggregateRoot;
@@ -71,6 +75,15 @@ class JMoleculesDddRulesUnitTest {
 								Association.class), //
 						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedAggregateInMap", Map.class, Association.class) //
 				);
+	}
+
+	@ArchTest // GH-301
+	void doesNotRejectSyntheticOwnerFieldsOfNonStaticInnerClasses(JavaClasses classes) {
+
+		EvaluationResult result = JMoleculesDddRules.valueObjectsMustNotReferToIdentifiables()
+				.evaluate(classes.that(simpleName("MyInnerClass")));
+
+		assertThat(result.hasViolation()).isFalse();
 	}
 
 	static class SampleIdentifier implements Identifier {}
@@ -142,5 +155,19 @@ class JMoleculesDddRulesUnitTest {
 
 		@org.jmolecules.ddd.annotation.Identity Long id;
 		AnnotatedEntity valid;
+	}
+
+	// GH-301
+
+	@org.jmolecules.ddd.annotation.AggregateRoot
+	static class MyAggregateRoot {
+
+		@Identity UUID id;
+		MyInnerClass myInnerClass;
+
+		@Value
+		class MyInnerClass implements ValueObject {
+			String param;
+		}
 	}
 }

@@ -18,6 +18,7 @@ package org.jmolecules.archunit;
 import static com.tngtech.archunit.base.DescribedPredicate.*;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.*;
+import static com.tngtech.archunit.core.domain.properties.HasModifiers.Predicates.*;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -35,15 +36,18 @@ import org.springframework.core.ResolvableType;
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaField;
+import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.core.domain.JavaParameterizedType;
 import com.tngtech.archunit.core.domain.JavaType;
 import com.tngtech.archunit.core.domain.properties.CanBeAnnotated;
+import com.tngtech.archunit.core.domain.properties.HasModifiers;
 import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.CompositeArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
+import com.tngtech.archunit.lang.syntax.elements.GivenFieldsConjunction;
 
 /**
  * A set of ArchUnit rules that allow verification of domain models. In short the rules here verify:
@@ -80,6 +84,7 @@ public class JMoleculesDddRules {
 	private static DescribedPredicate<JavaClass> IS_VALUE_OBJECT = IS_IMPLEMENTING_VALUE_OBJECT
 			.or(IS_ANNOTATED_VALUE_OBJECT);
 	private static DescribedPredicate<JavaClass> IS_IDENTIFIER = implement(Identifier.class);
+	private static DescribedPredicate<HasModifiers> IS_SYNTHETIC = modifier(JavaModifier.SYNTHETIC);
 
 	/**
 	 * An {@link ArchRule} that's composed of all other rules declared in this class.
@@ -121,8 +126,8 @@ public class JMoleculesDddRules {
 	 */
 	public static ArchRule entitiesShouldBeDeclaredForUseInSameAggregate() {
 
-		return ArchRuleDefinition.fields() //
-				.that(new OwnerMatches(IS_IDENTIFIABLE)) //
+		return nonSyntheticFields() //
+				.and(new OwnerMatches(IS_IDENTIFIABLE)) //
 				.and(areAssignableTo(Entity.class).and(not(areAssignableTo(AggregateRoot.class)))) //
 				.should(beDeclaredToBeUsedWithDeclaringAggregate()) //
 				.allowEmptyShould(true); //
@@ -152,8 +157,8 @@ public class JMoleculesDddRules {
 				.or(hasFieldTypeAnnotatedWith(org.jmolecules.ddd.annotation.AggregateRoot.class))
 				.or(hasParameterizedFieldOfTypeAnnotatedWith(org.jmolecules.ddd.annotation.AggregateRoot.class));
 
-		return ArchRuleDefinition.fields() //
-				.that(new OwnerMatches(IS_IDENTIFIABLE).and(referenceAnAggregateRoot)) //
+		return nonSyntheticFields() //
+				.and(new OwnerMatches(IS_IDENTIFIABLE).and(referenceAnAggregateRoot))
 				.should(new ShouldUseIdReferenceOrAssociation())
 				.allowEmptyShould(true);
 	}
@@ -180,10 +185,14 @@ public class JMoleculesDddRules {
 	 */
 	public static ArchRule valueObjectsMustNotReferToIdentifiables() {
 
-		return ArchRuleDefinition.fields() //
-				.that(new OwnerMatches(IS_VALUE_OBJECT.or(IS_IDENTIFIER))) //
+		return nonSyntheticFields() //
+				.and(new OwnerMatches(IS_VALUE_OBJECT.or(IS_IDENTIFIER))) //
 				.should(new FieldTypeMustNotMatchCondition(IS_IDENTIFIABLE)) //
 				.allowEmptyShould(true);
+	}
+
+	private static GivenFieldsConjunction nonSyntheticFields() {
+		return ArchRuleDefinition.fields().that(not(IS_SYNTHETIC));
 	}
 
 	private static IsDeclaredToUseTheSameAggregate beDeclaredToBeUsedWithDeclaringAggregate() {
