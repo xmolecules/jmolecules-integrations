@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 
 import javax.persistence.*;
 
+import org.hibernate.annotations.EmbeddableInstantiator;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.junit.jupiter.api.Test;
@@ -172,6 +173,18 @@ class JMoleculesJpaPluginTests {
 	@Test // GH-190
 	void doesNotProcessCglibProxies() {
 		assertDoesNotHaveAnnotation(Sample$$Cglib$$Proxy.class, Entity.class);
+	}
+
+	@Test // GH-305
+	void annotatesRecordConverterWithAtGenerated() throws Exception {
+
+		var annotation = SampleRecord.class.getAnnotation(EmbeddableInstantiator.class);
+
+		assertThat(annotation).isNotNull();
+		assertThat(annotation.value().getDeclaredAnnotations())
+				.extracting(Annotation::annotationType)
+				.extracting(Class::getSimpleName)
+				.contains("Generated");
 	}
 
 	private static void assertDoesNotHaveAnnotation(Class<?> type, Class<? extends Annotation> expected) {

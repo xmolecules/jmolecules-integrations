@@ -21,6 +21,12 @@
 		</dependency>
 
 		<dependency>
+			<groupId>net.bytebuddy</groupId>
+			<artifactId>byte-buddy</artifactId>
+			<version>${bytebuddy.version}</version>
+		</dependency>
+
+		<dependency>
 			<groupId>${project.groupId}</groupId>
 			<artifactId>jmolecules-bytebuddy-nodep</artifactId>
 			<version>${project.version}</version>

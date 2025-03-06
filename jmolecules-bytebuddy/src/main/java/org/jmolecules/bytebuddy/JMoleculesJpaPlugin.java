@@ -303,20 +303,24 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 			return builder;
 		}
 
-		logger.info("Adding @EmbeddableInstantiator for record.");
-
 		// Parent type information
 		Class<?> instantiatorBaseType = jpa.getType("org.jmolecules.hibernate.RecordInstantiator");
 		ForLoadedType supeType = new TypeDescription.ForLoadedType(instantiatorBaseType);
 		Constructor<?> constructor = getConstructor(instantiatorBaseType, Class.class);
 
 		// Dedicated instantiator class for this particular record type
-		Unloaded<?> instantiatorType = new ByteBuddy(ClassFileVersion.JAVA_V8)
+		Builder<?> subclass = new ByteBuddy(ClassFileVersion.JAVA_V8)
 				.with(new ReferenceTypePackageNamingStrategy(description))
 				.subclass(supeType)
 				.defineConstructor(Visibility.PACKAGE_PRIVATE)
-				.intercept(MethodCall.invoke(constructor).onSuper().with(description))
-				.make();
+				.intercept(MethodCall.invoke(constructor).onSuper().with(description));
+
+		if (Types.AT_GENERATED != null) {
+			subclass = subclass.annotateType(PluginUtils.getAnnotation(Types.AT_GENERATED));
+		}
+
+		Unloaded<?> instantiatorType = subclass.make();
+		logger.info("Adding @EmbeddableInstantiator({}) for record.", subclass.toTypeDescription().getName());
 
 		builder = builder.require(instantiatorType);
 
