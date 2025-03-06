@@ -55,7 +55,7 @@
 			"minItems": 1
 		},
 		"groups": {
-			"$ref": "https://schemas.jmolecules.org/jmolecules-groups.schema.json#/properties/groups"
+			"$ref": "https://schemas.jmolecules.org/jmolecules-stereotype-groups.schema.json#/properties/groups"
 		}
 	},
 	"required": ["stereotypes"],
