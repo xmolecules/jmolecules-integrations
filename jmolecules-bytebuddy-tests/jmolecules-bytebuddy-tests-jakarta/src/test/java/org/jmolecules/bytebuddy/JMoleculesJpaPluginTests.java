@@ -179,12 +179,12 @@ class JMoleculesJpaPluginTests {
 
 		var annotation = SampleRecord.class.getAnnotation(EmbeddableInstantiator.class);
 
-		Arrays.stream(annotation.value().getAnnotations()).forEach(it -> {
-			System.out.println(it);
-		});
-
 		assertThat(annotation).isNotNull();
-		assertThat(annotation.value().getDeclaredAnnotations())
+
+		var instantiatorType = annotation.value();
+
+		assertThat(instantiatorType.getName()).startsWith("example.SampleRecordInstantiator");
+		assertThat(instantiatorType.getDeclaredAnnotations())
 				.extracting(Annotation::annotationType)
 				.extracting(Class::getSimpleName)
 				.contains("Generated");

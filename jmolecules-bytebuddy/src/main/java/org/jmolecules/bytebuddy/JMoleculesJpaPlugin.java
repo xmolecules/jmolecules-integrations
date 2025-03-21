@@ -310,7 +310,7 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 
 		// Dedicated instantiator class for this particular record type
 		Builder<?> subclass = new ByteBuddy(ClassFileVersion.JAVA_V8)
-				.with(new ReferenceTypePackageNamingStrategy(description))
+				.with(new ReferenceTypePackageNamingStrategy(description, "Instantiator"))
 				.subclass(supeType)
 				.defineConstructor(Visibility.PACKAGE_PRIVATE)
 				.intercept(MethodCall.invoke(constructor).onSuper().with(description));

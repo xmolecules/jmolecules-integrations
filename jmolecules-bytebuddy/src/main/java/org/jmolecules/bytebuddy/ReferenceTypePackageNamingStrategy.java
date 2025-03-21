@@ -26,7 +26,7 @@ import net.bytebuddy.description.type.TypeDescription;
  */
 class ReferenceTypePackageNamingStrategy extends SuffixingRandom {
 
-	ReferenceTypePackageNamingStrategy(TypeDescription contextualType) {
+	ReferenceTypePackageNamingStrategy(TypeDescription contextualType, String suffix) {
 
 		super("jMolecules", new Suffixing.BaseNameResolver() {
 
@@ -38,7 +38,7 @@ class ReferenceTypePackageNamingStrategy extends SuffixingRandom {
 
 				return contextualType.getPackage().getName()
 						.concat(".")
-						.concat(type.getSimpleName());
+						.concat(contextualType.getSimpleName() + suffix);
 			}
 		});
 	}
