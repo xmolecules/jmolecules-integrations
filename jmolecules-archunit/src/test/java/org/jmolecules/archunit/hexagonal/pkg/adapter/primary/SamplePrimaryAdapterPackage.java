@@ -19,6 +19,7 @@ import org.jmolecules.archunit.hexagonal.pkg.adapter.SampleAdapter;
 import org.jmolecules.archunit.hexagonal.pkg.adapter.SamplePrimaryAdapter;
 import org.jmolecules.archunit.hexagonal.pkg.adapter.SampleSecondaryAdapter;
 import org.jmolecules.archunit.hexagonal.pkg.adapter.secondary.SampleSecondaryAdapterPackage;
+import org.jmolecules.archunit.hexagonal.pkg.application.SampleApplication;
 import org.jmolecules.archunit.hexagonal.pkg.port.SamplePort;
 import org.jmolecules.archunit.hexagonal.pkg.port.SamplePrimaryPort;
 import org.jmolecules.archunit.hexagonal.pkg.port.SampleSecondaryPort;
@@ -37,6 +38,9 @@ public class SamplePrimaryAdapterPackage {
 	SamplePrimaryPortPackage primaryPortPackage;
 	SamplePrimaryAdapter primaryAdapter;
 	SamplePrimaryAdapterPackage primaryAdapterPackage;
+
+	// Invalid in strict
+	SampleApplication application;
 
 	// Invalid
 	SampleSecondaryAdapter secondaryAdapter;

@@ -36,6 +36,6 @@ public class SampleAdapter {
 	SampleSecondaryAdapter secondaryAdapter;
 	SampleSecondaryAdapterPackage secondaryAdapterPackage;
 
-	// Invalid
+	// Invalid in strict
 	SampleApplication application;
 }

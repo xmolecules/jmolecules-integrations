@@ -27,7 +27,9 @@ class SamplePrimaryAdapter {
 	SamplePort port;
 	SamplePrimaryPort primaryPort;
 
-	// Invalid
+	// Invalid in strict
 	SampleApplication application;
+
+	// Invalid
 	SampleSecondaryPort secondaryPort;
 }

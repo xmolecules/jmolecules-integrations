@@ -15,6 +15,8 @@
  */
 package org.jmolecules.archunit;
 
+import static com.tngtech.archunit.base.DescribedPredicate.*;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 import static org.jmolecules.archunit.JMoleculesArchitectureRules.JMoleculesHexagonalArchitecture.*;
 import static org.jmolecules.archunit.JMoleculesArchitectureRules.JMoleculesLayeredArchitecture.*;
 import static org.jmolecules.archunit.JMoleculesArchitectureRules.JMoleculesOnionArchitecture.*;
@@ -52,8 +54,11 @@ import org.jmolecules.architecture.onion.simplified.InfrastructureRing;
 import org.springframework.util.Assert;
 
 import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.domain.JavaAnnotation;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaPackage;
+import com.tngtech.archunit.core.domain.JavaType;
+import com.tngtech.archunit.core.domain.properties.HasAnnotations;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.library.Architectures;
 import com.tngtech.archunit.library.Architectures.LayeredArchitecture;
@@ -89,6 +94,9 @@ public class JMoleculesArchitectureRules {
 	private static final String HEXAGONAL_ADAPTER_UNQUALIFIED = "Adapter (unqualified)";
 	private static final String HEXAGONAL_PRIMARY_ADAPTER = "Primary adapter";
 	private static final String HEXAGONAL_SECONDARY_ADAPTER = "Secondary adapter";
+
+	private static final String UNANNOTATED = "Unannotated";
+	private static final String ANNOTATIONS = "Architecture annotations";
 
 	/**
 	 * ArchUnit {@link LayeredArchitecture} defined by considering JMolecules layer annotations allowing access of
@@ -239,8 +247,10 @@ public class JMoleculesArchitectureRules {
 	}
 
 	/**
-	 * ArchUnit {@link ArchRule} defining Hexagonal Architecture.
+	 * ArchUnit {@link ArchRule} for Hexagonal Architecture as defined
+	 * <a href="https://alistair.cockburn.us/hexagonal-architecture/">here</a>.
 	 *
+	 * @see Application
 	 * @see Adapter
 	 * @see Port
 	 * @see PrimaryAdapter
@@ -250,31 +260,90 @@ public class JMoleculesArchitectureRules {
 	 * @return will never be {@literal null}.
 	 */
 	public static ArchRule ensureHexagonal() {
+		return ensureHexagonal(VerificationDepth.STRICT);
+	}
 
-		return hexagonalArchitecture(StereotypeLookup.defaultLookup())
+	/**
+	 * ArchUnit {@link ArchRule} for Hexagonal Architecture as defined
+	 * <a href="https://alistair.cockburn.us/hexagonal-architecture/">here</a> and a given {@link VerificationDepth}.
+	 *
+	 * @see Application
+	 * @see Adapter
+	 * @see Port
+	 * @see PrimaryAdapter
+	 * @see PrimaryPort
+	 * @see SecondaryAdapter
+	 * @see SecondaryPort
+	 * @return will never be {@literal null}.
+	 * @since 0.25
+	 */
+	public static ArchRule ensureHexagonal(VerificationDepth depth) {
+		return ensureHexagonal(depth, StereotypeLookup.defaultLookup());
+	}
 
-				.whereLayer(HEXAGONAL_PRIMARY_PORT)
-				.mayOnlyBeAccessedByLayers(APPLICATION, HEXAGONAL_PORT_UNQUALIFIED, HEXAGONAL_ADAPTER_UNQUALIFIED,
-						HEXAGONAL_PRIMARY_ADAPTER)
+	/**
+	 * ArchUnit {@link ArchRule} for Hexagonal Architecture as defined
+	 * <a href="https://alistair.cockburn.us/hexagonal-architecture/">here</a> using the given {@link StereotypeLookup}.
+	 *
+	 * @see Application
+	 * @see Adapter
+	 * @see Port
+	 * @see PrimaryAdapter
+	 * @see PrimaryPort
+	 * @see SecondaryAdapter
+	 * @see SecondaryPort
+	 * @return will never be {@literal null}.
+	 */
+	public static ArchRule ensureHexagonal(StereotypeLookup lookup) {
+		return ensureHexagonal(VerificationDepth.LENIENT, lookup);
+	}
 
-				.whereLayer(HEXAGONAL_SECONDARY_PORT)
-				.mayOnlyBeAccessedByLayers(APPLICATION, HEXAGONAL_PORT_UNQUALIFIED, HEXAGONAL_ADAPTER_UNQUALIFIED,
-						HEXAGONAL_SECONDARY_ADAPTER)
+	public static ArchRule ensureHexagonal(VerificationDepth depth, StereotypeLookup lookup) {
+		return hexagonalArchitecture(lookup)
 
-				.whereLayer(HEXAGONAL_PORT)
-				.mayOnlyBeAccessedByLayers(APPLICATION, HEXAGONAL_ADAPTER)
+				// Adapters
 
 				.whereLayer(HEXAGONAL_ADAPTER_UNQUALIFIED)
-				.mayOnlyBeAccessedByLayers(HEXAGONAL_PRIMARY_ADAPTER, HEXAGONAL_SECONDARY_ADAPTER)
+				.mayOnlyAccessLayers(
+						depth.augmentPrimaryAdapters(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PORT, HEXAGONAL_PRIMARY_ADAPTER,
+								HEXAGONAL_SECONDARY_ADAPTER))
 
 				.whereLayer(HEXAGONAL_PRIMARY_ADAPTER)
 				.mayOnlyBeAccessedByLayers(HEXAGONAL_ADAPTER_UNQUALIFIED)
 
+				.whereLayer(HEXAGONAL_PRIMARY_ADAPTER)
+				.mayOnlyAccessLayers(
+						depth.augmentPrimaryAdapters(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PRIMARY_PORT, HEXAGONAL_PORT_UNQUALIFIED,
+								HEXAGONAL_ADAPTER_UNQUALIFIED))
+
 				.whereLayer(HEXAGONAL_SECONDARY_ADAPTER)
 				.mayOnlyBeAccessedByLayers(HEXAGONAL_ADAPTER_UNQUALIFIED)
 
-				.whereLayer(APPLICATION)
-				.mayNotBeAccessedByAnyLayer();
+				.whereLayer(HEXAGONAL_SECONDARY_ADAPTER)
+				.mayOnlyAccessLayers(
+						depth.augmentSecondaryAdapters(ANNOTATIONS, UNANNOTATED, HEXAGONAL_SECONDARY_PORT,
+								HEXAGONAL_PORT_UNQUALIFIED,
+								HEXAGONAL_ADAPTER_UNQUALIFIED))
+
+				// Ports
+
+				.whereLayer(HEXAGONAL_PORT_UNQUALIFIED)
+				.mayOnlyAccessLayers(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PORT)
+
+				.whereLayer(HEXAGONAL_PRIMARY_PORT)
+				.mayOnlyAccessLayers(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PORT_UNQUALIFIED, HEXAGONAL_SECONDARY_PORT)
+
+				.whereLayer(HEXAGONAL_SECONDARY_PORT)
+				.mayOnlyAccessLayers(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PORT_UNQUALIFIED)
+
+				.whereLayer(HEXAGONAL_PORT_UNQUALIFIED)
+				.mayOnlyAccessLayers(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PRIMARY_PORT, HEXAGONAL_SECONDARY_PORT)
+
+				// Application
+
+				.whereLayer(HEXAGONAL_APPLICATION)
+				.mayOnlyAccessLayers(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PRIMARY_PORT, HEXAGONAL_SECONDARY_PORT,
+						HEXAGONAL_PORT_UNQUALIFIED);
 	}
 
 	private static LayeredArchitecture layeredArchitecture(StereotypeLookup lookup) {
@@ -334,9 +403,17 @@ public class JMoleculesArchitectureRules {
 
 	private static LayeredArchitecture hexagonalArchitecture(StereotypeLookup lookup) {
 
+		String hexagonalPackage = Application.class.getPackage().getName();
+
 		return Architectures.layeredArchitecture()
 				.consideringOnlyDependenciesInLayers()
 				.withOptionalLayers(true)
+
+				.layer(ANNOTATIONS)
+				.definedBy(resideInAPackage(hexagonalPackage))
+
+				.layer(UNANNOTATED)
+				.definedBy(not(lookup.hasAnnotationFromPackageOnItselfOrPackage(hexagonalPackage)))
 
 				.layer(HEXAGONAL_APPLICATION)
 				.definedBy(lookup.forAnnotation(Application.class, HEXAGONAL_ANNOTATIONS))
@@ -349,12 +426,10 @@ public class JMoleculesArchitectureRules {
 						.withExclusions(PrimaryPort.class, SecondaryPort.class))
 
 				.layer(HEXAGONAL_PRIMARY_PORT)
-				.definedBy(lookup.forAnnotation(PrimaryPort.class, HEXAGONAL_ANNOTATIONS)
-						.withoutExclusion(Port.class))
+				.definedBy(lookup.forAnnotation(PrimaryPort.class))
 
 				.layer(HEXAGONAL_SECONDARY_PORT)
-				.definedBy(lookup.forAnnotation(SecondaryPort.class, HEXAGONAL_ANNOTATIONS)
-						.withoutExclusion(Port.class))
+				.definedBy(lookup.forAnnotation(SecondaryPort.class))
 
 				.layer(HEXAGONAL_ADAPTER)
 				.definedBy(lookup.forAnnotation(Adapter.class, HEXAGONAL_ANNOTATIONS))
@@ -384,8 +459,7 @@ public class JMoleculesArchitectureRules {
 	public static class StereotypeLookup {
 
 		private static final String DEFAULT_DESCRIPTION = "(meta-)annotated with %s or residing in package (meta-)annotated with %s";
-		private static final StereotypeLookup DEFAULT_LOOKUP = new StereotypeLookup(DEFAULT_DESCRIPTION,
-				IsStereotype.DEFAULT_MARKER_LOOKUP) {
+		private static final StereotypeLookup DEFAULT_LOOKUP = new StereotypeLookup(IsStereotype.DEFAULT_MARKER_LOOKUP) {
 
 			@Override
 			IsStereotype forAnnotation(Class<? extends Annotation> annotation) {
@@ -399,12 +473,10 @@ public class JMoleculesArchitectureRules {
 			}
 		};
 
-		private final String description;
 		private final Function<JavaClass, Stream<JavaClass>> markerLookup;
 
-		private StereotypeLookup(String description, String name) {
+		private StereotypeLookup(String name) {
 
-			this.description = description;
 			this.markerLookup = type -> markerTypes(type.getPackage(), name);
 		}
 
@@ -429,14 +501,14 @@ public class JMoleculesArchitectureRules {
 
 			Assert.hasText(name, "Name must not be null or empty!");
 
-			return new StereotypeLookup(String.format("Annotated marker type %s", name), name);
+			return new StereotypeLookup(name);
 		}
 
 		/**
 		 * Creates a {@link StereotypeLookup} trying to find the stereotype annotation on marker types with the same simple
 		 * name as the given one located in the reference type's package or parent package.
 		 *
-		 * @param name will never be {@literal null} or empty.
+		 * @param type will never be {@literal null} or empty.
 		 * @return will never be {@literal null}.
 		 */
 		public static StereotypeLookup onMarkerTypeName(Class<?> type) {
@@ -450,7 +522,11 @@ public class JMoleculesArchitectureRules {
 		IsStereotype forAnnotation(Class<? extends Annotation> annotation,
 				Collection<Class<? extends Annotation>> exclusions) {
 
-			return new IsStereotype(annotation, markerLookup, description, allBut(exclusions, annotation));
+			return new IsStereotype(annotation, markerLookup, allBut(exclusions, annotation));
+		}
+
+		DescribedPredicate<JavaClass> hasAnnotationFromPackageOnItselfOrPackage(String name) {
+			return hasAnnotationFromPackage(markerLookup, name);
 		}
 
 		Collection<Class<? extends Annotation>> allBut(Collection<Class<? extends Annotation>> source,
@@ -492,6 +568,61 @@ public class JMoleculesArchitectureRules {
 	}
 
 	/**
+	 * Defines the depth of verification of Hexagonal Architectures, in particular the relationship between adapters and
+	 * the application core.
+	 *
+	 * @author Oliver Drotbohm
+	 * @since 0.25
+	 */
+	public enum VerificationDepth {
+
+		/**
+		 * Allows access to non-port application code from primary and secondary adapters.
+		 */
+		LENIENT,
+
+		/**
+		 * Allows access to non-port application code from secondary but not primary adapters.
+		 */
+		SEMI_STRICT,
+
+		/**
+		 * Does not allow access to non-port application code from any adapters.
+		 */
+		STRICT;
+
+		String[] augmentPrimaryAdapters(String... allowed) {
+
+			switch (this) {
+				case LENIENT:
+					return augmentAdapterAccess(allowed);
+				case SEMI_STRICT:
+				default:
+					return allowed;
+			}
+		}
+
+		String[] augmentSecondaryAdapters(String... allowed) {
+
+			switch (this) {
+				case LENIENT:
+				case SEMI_STRICT:
+					return augmentAdapterAccess(allowed);
+				default:
+					return allowed;
+			}
+		}
+
+		private static String[] augmentAdapterAccess(String... abstractions) {
+
+			String[] result = Arrays.copyOf(abstractions, abstractions.length + 1);
+			result[abstractions.length] = HEXAGONAL_APPLICATION;
+
+			return result;
+		}
+	}
+
+	/**
 	 * A {@link DescribedPredicate} that tests whether a {@link JavaClass} is of a particular stereotype.
 	 *
 	 * @author Oliver Drotbohm
@@ -514,20 +645,35 @@ public class JMoleculesArchitectureRules {
 		public IsStereotype(Class<? extends Annotation> annotation,
 				Collection<Class<? extends Annotation>> exclusions) {
 
-			this(annotation, DEFAULT_MARKER_LOOKUP,
-					String.format(StereotypeLookup.DEFAULT_DESCRIPTION, annotation.getName(), annotation.getName()), exclusions);
+			this(annotation, DEFAULT_MARKER_LOOKUP, exclusions);
 		}
 
-		public IsStereotype(Class<? extends Annotation> annotation,
-				Function<JavaClass, Stream<JavaClass>> markerLookup,
-				String description, Collection<Class<? extends Annotation>> exclusions) {
+		private IsStereotype(Class<? extends Annotation> annotation, Function<JavaClass, Stream<JavaClass>> markerLookup,
+				Collection<Class<? extends Annotation>> exclusions) {
 
-			super(description);
+			super("");
+
+			String description = String.format(StereotypeLookup.DEFAULT_DESCRIPTION, annotation.getName(),
+					annotation.getName());
+
+			if (!exclusions.isEmpty()) {
+				description += String.format(", but not (meta-)annotated with %s.",
+						exclusions.stream().map(Class::getName).collect(Collectors.joining(", ")));
+			}
 
 			this.annotation = annotation;
 			this.description = description;
 			this.exclusions = exclusions;
 			this.markerLookup = it -> Stream.concat(Stream.of(it), markerLookup.apply(it));
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see com.tngtech.archunit.base.DescribedPredicate#getDescription()
+		 */
+		@Override
+		public String getDescription() {
+			return description;
 		}
 
 		@SafeVarargs
@@ -536,7 +682,7 @@ public class JMoleculesArchitectureRules {
 			Collection<Class<? extends Annotation>> newExclusions = new HashSet<>(this.exclusions);
 			newExclusions.addAll(Arrays.asList(exclusions));
 
-			return new IsStereotype(annotation, markerLookup, description, newExclusions);
+			return new IsStereotype(annotation, markerLookup, newExclusions);
 		}
 
 		public final IsStereotype withoutExclusion(Class<? extends Annotation> exclusion) {
@@ -544,7 +690,7 @@ public class JMoleculesArchitectureRules {
 			Collection<Class<? extends Annotation>> newExclusions = new HashSet<>(this.exclusions);
 			newExclusions.remove(exclusion);
 
-			return new IsStereotype(annotation, markerLookup, description, newExclusions);
+			return new IsStereotype(annotation, markerLookup, newExclusions);
 		}
 
 		/*
@@ -597,5 +743,32 @@ public class JMoleculesArchitectureRules {
 
 		static final List<Class<? extends Annotation>> HEXAGONAL_ANNOTATIONS = Arrays.asList(Application.class, Port.class,
 				PrimaryPort.class, SecondaryPort.class, Adapter.class, PrimaryAdapter.class, SecondaryAdapter.class);
+	}
+
+	static DescribedPredicate<JavaClass> hasAnnotationFromPackage(Function<JavaClass, Stream<JavaClass>> markerLookup,
+			String name) {
+
+		return new DescribedPredicate<JavaClass>("has annotation from package %s", name) {
+
+			/*
+			 * (non-Javadoc)
+			 * @see java.util.function.Predicate#test(java.lang.Object)
+			 */
+			@Override
+			public boolean test(JavaClass t) {
+
+				return markerLookup.apply(t)
+						.flatMap(it -> Stream.of(it, it.getPackage()))
+						.anyMatch(it -> hasAnnotationFromPackage(it, name));
+			}
+
+			private boolean hasAnnotationFromPackage(HasAnnotations<?> target, String name) {
+
+				return target.getAnnotations().stream()
+						.map(JavaAnnotation::getType)
+						.map(JavaType::getName)
+						.anyMatch(it -> it.startsWith(name + "."));
+			}
+		};
 	}
 }

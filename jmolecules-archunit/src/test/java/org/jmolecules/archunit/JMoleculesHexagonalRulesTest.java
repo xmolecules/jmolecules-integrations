@@ -21,14 +21,19 @@ import static org.jmolecules.archunit.JMoleculesArchitectureRules.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.jmolecules.archunit.JMoleculesArchitectureRules.VerificationDepth;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.EvaluationResult;
+import com.tngtech.archunit.thirdparty.com.google.common.base.Predicate;
 
 /**
- * Unit tests for {@link JMoleculesArchitectureRules#ensureHexagonal()}.
+ * Unit tests for {@link JMoleculesArchitectureRules#ensureHexagonal()} and
+ * {@link JMoleculesArchitectureRules#ensureHexagonalStrict()}.
  *
  * @author Oliver Drotbohm
  */
@@ -37,91 +42,115 @@ class JMoleculesHexagonalRulesTest {
 	@AnalyzeClasses(packages = "org.jmolecules.archunit.hexagonal.pkg")
 	static class PackageBased {
 
-		@ArchTest
+		List<String> expected = Arrays.asList("adapter.SampleAdapter.application", //
+				"adapter.SamplePrimaryAdapter.application", //
+				"adapter.SamplePrimaryAdapter.secondaryAdapter", //
+				"adapter.SamplePrimaryAdapter.secondaryAdapterPackage", //
+				"adapter.SamplePrimaryAdapter.secondaryPort", //
+				"adapter.SamplePrimaryAdapter.secondaryPortPackage", //
+				"adapter.SampleSecondaryAdapter.application", //
+				"adapter.SampleSecondaryAdapter.primaryAdapter", //
+				"adapter.SampleSecondaryAdapter.primaryAdapterPackage", //
+				"adapter.SampleSecondaryAdapter.primaryPort", //
+				"adapter.SampleSecondaryAdapter.primaryPortPackage", //
+				"adapter.primary.SamplePrimaryAdapterPackage.application", //
+				"adapter.primary.SamplePrimaryAdapterPackage.secondaryAdapter", //
+				"adapter.primary.SamplePrimaryAdapterPackage.secondaryAdapterPackage", //
+				"adapter.primary.SamplePrimaryAdapterPackage.secondaryPort", //
+				"adapter.primary.SamplePrimaryAdapterPackage.secondaryPortPackage", //
+				"adapter.secondary.SampleSecondaryAdapterPackage.application", //
+				"adapter.secondary.SampleSecondaryAdapterPackage.primaryAdapter", //
+				"adapter.secondary.SampleSecondaryAdapterPackage.primaryAdapterPackage", //
+				"adapter.secondary.SampleSecondaryAdapterPackage.primaryPort", //
+				"adapter.secondary.SampleSecondaryAdapterPackage.primaryPortPackage", //
+				"application.SampleApplication.adapter", //
+				"application.SampleApplication.primaryAdapter", //
+				"application.SampleApplication.primaryAdapterPackage", //
+				"application.SampleApplication.secondaryAdapter", //
+				"application.SampleApplication.secondaryAdapterPackage", //
+				"port.SamplePort.sampleAdapter()", //
+				"port.SamplePort.samplePrimaryAdapter()", //
+				"port.SamplePort.samplePrimaryAdapterPackage()", //
+				"port.SamplePort.sampleSecondaryAdapter()", //
+				"port.SamplePort.sampleSecondaryAdapterPackage()", //
+				"port.SamplePrimaryPort.sampleAdapter()", //
+				"port.SamplePrimaryPort.samplePrimaryAdapter()", //
+				"port.SamplePrimaryPort.samplePrimaryAdapterPackage()", //
+				"port.SamplePrimaryPort.sampleSecondaryAdapter()", //
+				"port.SamplePrimaryPort.sampleSecondaryAdapterPackage()", //
+				"port.SampleSecondaryPort.sampleAdapter()", //
+				"port.SampleSecondaryPort.samplePrimaryAdapter()", //
+				"port.SampleSecondaryPort.samplePrimaryAdapterPackage()", //
+				"port.SampleSecondaryPort.samplePrimaryPort()", //
+				"port.SampleSecondaryPort.samplePrimaryPortPackage()", //
+				"port.SampleSecondaryPort.sampleSecondaryAdapter()", //
+				"port.SampleSecondaryPort.sampleSecondaryAdapterPackage()")
+				.stream() //
+				.map("org.jmolecules.archunit.hexagonal.pkg."::concat) //
+				.collect(Collectors.toList());
+
+		@ArchTest // GH-306
+		void verifiesStrictHexagonalArchitecture(JavaClasses classes) {
+			assertExpectedViolations(ensureHexagonal().evaluate(classes), expected, it -> true);
+		}
+
+		@ArchTest // GH-306
+		void verifiesSemiStrictHexagonalArchitecture(JavaClasses classes) {
+			assertExpectedViolations(ensureHexagonal(VerificationDepth.SEMI_STRICT).evaluate(classes), expected,
+					it -> !(it.endsWith("application") && it.contains("SecondaryAdapter")));
+		}
+
+		@ArchTest // GH-306
 		void verifiesHexagonalArchitecture(JavaClasses classes) {
-
-			List<String> expectedViolations = Arrays.asList("adapter.SampleAdapter.application", //
-					"adapter.SamplePrimaryAdapter.application", //
-					"adapter.SamplePrimaryAdapter.secondaryAdapter", //
-					"adapter.SamplePrimaryAdapter.secondaryAdapterPackage", //
-					"adapter.SamplePrimaryAdapter.secondaryPort", //
-					"adapter.SamplePrimaryAdapter.secondaryPortPackage", //
-					"adapter.SampleSecondaryAdapter.application", //
-					"adapter.SampleSecondaryAdapter.primaryAdapter", //
-					"adapter.SampleSecondaryAdapter.primaryAdapterPackage", //
-					"adapter.SampleSecondaryAdapter.primaryPort", //
-					"adapter.SampleSecondaryAdapter.primaryPortPackage", //
-					"adapter.primary.SamplePrimaryAdapterPackage.secondaryAdapter", //
-					"adapter.primary.SamplePrimaryAdapterPackage.secondaryAdapterPackage", //
-					"adapter.primary.SamplePrimaryAdapterPackage.secondaryPort", //
-					"adapter.primary.SamplePrimaryAdapterPackage.secondaryPortPackage", //
-					"adapter.secondary.SampleSecondaryAdapterPackage.application", //
-					"adapter.secondary.SampleSecondaryAdapterPackage.primaryAdapter", //
-					"adapter.secondary.SampleSecondaryAdapterPackage.primaryAdapterPackage", //
-					"adapter.secondary.SampleSecondaryAdapterPackage.primaryPort", //
-					"adapter.secondary.SampleSecondaryAdapterPackage.primaryPortPackage", //
-					"application.SampleApplication.adapter", //
-					"application.SampleApplication.primaryAdapter", //
-					"application.SampleApplication.primaryAdapterPackage", //
-					"application.SampleApplication.secondaryAdapter", //
-					"application.SampleApplication.secondaryAdapterPackage", //
-					"port.SamplePort.sampleAdapter()", //
-					"port.SamplePort.samplePrimaryAdapter()", //
-					"port.SamplePort.samplePrimaryAdapterPackage()", //
-					"port.SamplePort.sampleSecondaryAdapter()", //
-					"port.SamplePort.sampleSecondaryAdapterPackage()", //
-					"port.SamplePrimaryPort.sampleAdapter()", //
-					"port.SamplePrimaryPort.samplePrimaryAdapter()", //
-					"port.SamplePrimaryPort.samplePrimaryAdapterPackage()", //
-					"port.SamplePrimaryPort.sampleSecondaryAdapter()", //
-					"port.SamplePrimaryPort.sampleSecondaryAdapterPackage()", //
-					"port.SamplePrimaryPort.sampleSecondaryPort()", //
-					"port.SamplePrimaryPort.sampleSecondaryPortPackage()", //
-					"port.SampleSecondaryPort.sampleAdapter()", //
-					"port.SampleSecondaryPort.samplePrimaryAdapter()", //
-					"port.SampleSecondaryPort.samplePrimaryAdapterPackage()", //
-					"port.SampleSecondaryPort.samplePrimaryPort()", //
-					"port.SampleSecondaryPort.samplePrimaryPortPackage()", //
-					"port.SampleSecondaryPort.sampleSecondaryAdapter()", //
-					"port.SampleSecondaryPort.sampleSecondaryAdapterPackage()") //
-					.stream() //
-					.map("org.jmolecules.archunit.hexagonal.pkg."::concat) //
-					.collect(Collectors.toList());
-
-			assertExpectedViolations(ensureHexagonal().evaluate(classes), expectedViolations);
+			assertExpectedViolations(ensureHexagonal(VerificationDepth.LENIENT).evaluate(classes), expected,
+					it -> !it.endsWith("application"));
 		}
 	}
 
 	@AnalyzeClasses(packages = "org.jmolecules.archunit.hexagonal.simple")
 	static class TypeBased {
 
-		@ArchTest
+		List<String> expected = Arrays.asList( //
+				"SampleAdapter.application", //
+				"SampleApplication.adapter", //
+				"SampleApplication.primaryAdapter", //
+				"SampleApplication.secondaryAdapter", //
+				"SamplePrimaryAdapter.application", //
+				"SamplePrimaryAdapter.secondaryPort", //
+				"SampleSecondaryAdapter.application", //
+				"SampleSecondaryAdapter.primaryPort") //
+				.stream() //
+				.map("Field <org.jmolecules.archunit.hexagonal.simple."::concat) //
+				.collect(Collectors.toList());
+
+		@ArchTest // GH-306
+		void verifiesStrictHexagonalArchitecture(JavaClasses classes) {
+			assertExpectedViolations(ensureHexagonal().evaluate(classes), expected, it -> true);
+		}
+
+		@ArchTest // GH-306
+		void verifiesSemiStrictHexagonalArchitecture(JavaClasses classes) {
+			assertExpectedViolations(ensureHexagonal(VerificationDepth.SEMI_STRICT).evaluate(classes), expected,
+					it -> !(it.endsWith("application") && it.contains("SecondaryAdapter")));
+		}
+
+		@ArchTest // GH-306
 		void verifiesHexagonalArchitecture(JavaClasses classes) {
-
-			List<String> expectedViolations = Arrays.asList( //
-					"SampleAdapter.application", //
-					"SampleApplication.adapter", //
-					"SampleApplication.primaryAdapter", //
-					"SampleApplication.secondaryAdapter", //
-					"SamplePrimaryAdapter.application", //
-					"SamplePrimaryAdapter.secondaryPort", //
-					"SampleSecondaryAdapter.application", //
-					"SampleSecondaryAdapter.primaryPort") //
-					.stream() //
-					.map("Field <org.jmolecules.archunit.hexagonal.simple."::concat) //
-					.collect(Collectors.toList());
-
-			assertExpectedViolations(ensureHexagonal().evaluate(classes), expectedViolations);
+			assertExpectedViolations(ensureHexagonal(VerificationDepth.LENIENT).evaluate(classes), expected,
+					it -> !it.endsWith("application"));
 		}
 	}
 
-	private static void assertExpectedViolations(EvaluationResult result, List<String> expected) {
+	private static void assertExpectedViolations(EvaluationResult result, List<String> expected,
+			Predicate<String> filter) {
 
-		assertThat(result.getFailureReport().getDetails()).hasSameSizeAs(expected);
+		List<String> filtered = expected.stream().filter(filter).collect(Collectors.toList());
 
-		EvaluationResult postFilter = result
-				.filterDescriptionsMatching(message -> !expected.stream().anyMatch(message::contains));
+		List<String> messages = result.getFailureReport().getDetails();
+		assertThat(messages.stream().distinct()).hasSameSizeAs(filtered);
 
-		assertThat(postFilter.hasViolation()).isFalse();
+		Stream<String> consumed = messages.stream().distinct()
+				.filter(message -> !filtered.stream().anyMatch(message::contains));
+		assertThat(consumed).isEmpty();
 	}
 }

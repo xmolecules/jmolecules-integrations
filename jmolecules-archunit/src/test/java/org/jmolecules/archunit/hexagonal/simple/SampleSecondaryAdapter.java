@@ -27,7 +27,9 @@ class SampleSecondaryAdapter implements SampleSecondaryPort {
 	SamplePort port;
 	SampleSecondaryPort secondaryPort;
 
-	// Invalid
+	// Invalid in strict
 	SampleApplication application;
+
+	// Invalid
 	SamplePrimaryPort primaryPort;
 }

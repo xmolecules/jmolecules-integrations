@@ -37,8 +37,10 @@ public abstract class SampleSecondaryAdapterPackage
 	SampleSecondaryAdapter secondaryAdapter;
 	SampleSecondaryAdapterPackage secondaryAdapterPackage;
 
-	// Invalid: secondary -> primary
+	// INvalid in strict
 	SampleApplication application;
+
+	// Invalid: secondary -> primary
 	SamplePrimaryAdapter primaryAdapter;
 	SamplePrimaryAdapterPackage primaryAdapterPackage;
 	SamplePrimaryPort primaryPort;

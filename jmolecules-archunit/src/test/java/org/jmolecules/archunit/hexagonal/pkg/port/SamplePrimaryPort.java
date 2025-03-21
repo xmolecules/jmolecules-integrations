@@ -38,11 +38,11 @@ public interface SamplePrimaryPort {
 
 	SamplePrimaryPortPackage samplePrimaryPortPackage();
 
-	// Invalid
-
 	SampleSecondaryPort sampleSecondaryPort();
 
 	SampleSecondaryPortPackage sampleSecondaryPortPackage();
+
+	// Invalid
 
 	SampleAdapter sampleAdapter();
 

@@ -40,8 +40,10 @@ public class SamplePrimaryAdapter {
 	SamplePrimaryPort primaryPort;
 	SamplePrimaryPortPackage primaryPortPackage;
 
-	// Invalid
+	// Invalid in strict and semi-strict
 	SampleApplication application;
+
+	// Invalid
 	SampleSecondaryAdapter secondaryAdapter;
 	SampleSecondaryAdapterPackage secondaryAdapterPackage;
 	SampleSecondaryPort secondaryPort;

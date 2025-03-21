@@ -16,9 +16,14 @@
 package org.jmolecules.archunit;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.jmolecules.archunit.JMoleculesArchitectureRules.JMoleculesHexagonalArchitecture.*;
 
 import java.util.stream.Stream;
 
+import org.jmolecules.architecture.hexagonal.Adapter;
+import org.jmolecules.architecture.hexagonal.Application;
+import org.jmolecules.architecture.hexagonal.Port;
+import org.jmolecules.architecture.hexagonal.SecondaryPort;
 import org.jmolecules.architecture.layered.ApplicationLayer;
 import org.jmolecules.architecture.layered.InfrastructureLayer;
 import org.jmolecules.archunit.JMoleculesArchitectureRules.IsStereotype;
@@ -27,9 +32,13 @@ import org.jmolecules.archunit.markered.app.AppLayerType;
 import org.jmolecules.archunit.markered.app.JMolecules;
 import org.jmolecules.archunit.markered.app.nested.AnnotatedNestedAppLayerType;
 import org.jmolecules.archunit.markered.app.nested.NestedAppLayerType;
+import org.junit.jupiter.api.Test;
 
+import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
+import com.tngtech.archunit.core.importer.ClassFileImporter;
+import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 
@@ -41,6 +50,10 @@ import com.tngtech.archunit.junit.ArchTest;
  */
 @AnalyzeClasses(packagesOf = AppLayerType.class)
 class StereotypeLookupTests {
+
+	JavaClasses classes = new ClassFileImporter()
+			.withImportOption(new ImportOption.OnlyIncludeTests())
+			.importPackages("org.jmolecules.archunit");
 
 	@ArchTest
 	void discoveresTypeByMarkerType(JavaClasses classes) {
@@ -63,4 +76,39 @@ class StereotypeLookupTests {
 					assertThat(lookup.forAnnotation(InfrastructureLayer.class).test(type)).isTrue();
 				});
 	}
+
+	@Test // GH-306
+	void doesNotDetectStereotypeOnParentTypes() {
+
+		IsStereotype isPort = StereotypeLookup.defaultLookup().forAnnotation(Port.class);
+
+		assertThat(isPort).rejects(classes.get(SampleApplication.class));
+	}
+
+	@Test // GH-306
+	void detectsAdapterExpressedThroughPackageAnnotation() {
+
+		IsStereotype isAdapter = StereotypeLookup.defaultLookup().forAnnotation(Adapter.class, HEXAGONAL_ANNOTATIONS);
+
+		assertThat(isAdapter).accepts(classes.get(org.jmolecules.archunit.hexagonal.pkg.adapter.SampleAdapter.class));
+	}
+
+	@Test // GH-306
+	void detectsAnnotationFromNamespaceOnPackageStereotypedType() {
+
+		DescribedPredicate<JavaClass> isJMoleculesAnnotated = StereotypeLookup.defaultLookup()
+				.hasAnnotationFromPackageOnItselfOrPackage("org.jmolecules.architecture.hexagonal");
+
+		assertThat(isJMoleculesAnnotated).accepts(classes.get(SamplePort.class));
+	}
+
+	@Application
+	@SecondaryPort
+	static class SampleSecondaryPort {}
+
+	@Port
+	interface SamplePort {}
+
+	@Application
+	static class SampleApplication implements SamplePort {}
 }

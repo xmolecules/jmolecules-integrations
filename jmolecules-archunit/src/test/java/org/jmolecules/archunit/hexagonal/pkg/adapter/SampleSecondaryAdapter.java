@@ -39,8 +39,10 @@ public abstract class SampleSecondaryAdapter implements SampleSecondaryPort {
 	SampleSecondaryPort secondaryPort;
 	SampleSecondaryPortPackage secondaryPortPackage;
 
-	// Invalid
+	// Invalid in strict
 	SampleApplication application;
+
+	// Invalid
 	SamplePrimaryAdapter primaryAdapter;
 	SamplePrimaryAdapterPackage primaryAdapterPackage;
 	SamplePrimaryPort primaryPort;
