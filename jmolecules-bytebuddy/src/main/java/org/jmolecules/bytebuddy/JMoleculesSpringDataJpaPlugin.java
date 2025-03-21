@@ -69,7 +69,7 @@ public class JMoleculesSpringDataJpaPlugin implements LoggingPlugin, WithPreproc
 
 		Log log = PluginLogger.INSTANCE.getLog(typeDescription, "Spring Data JPA");
 
-		return JMoleculesType.of(log, builder)
+		return JMoleculesTypeBuilder.of(log, builder)
 				.implementPersistable(options)
 				.conclude();
 	}

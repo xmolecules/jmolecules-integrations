@@ -60,7 +60,7 @@ class PersistableImplementor {
 
 	private final PersistableOptions options;
 
-	JMoleculesType implementPersistable(JMoleculesType type) {
+	JMoleculesTypeBuilder implementPersistable(JMoleculesTypeBuilder type) {
 
 		if (type.isAssignableTo(Persistable.class)) {
 			return type;
@@ -82,7 +82,7 @@ class PersistableImplementor {
 				}).orElse(type);
 	}
 
-	private JMoleculesType implementPersistable(JMoleculesType type, InDefinedShape field) {
+	private JMoleculesTypeBuilder implementPersistable(JMoleculesTypeBuilder type, InDefinedShape field) {
 
 		Generic fieldType = field.getType();
 

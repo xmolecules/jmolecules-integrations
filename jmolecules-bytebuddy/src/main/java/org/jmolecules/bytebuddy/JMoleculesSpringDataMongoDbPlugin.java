@@ -60,7 +60,7 @@ public class JMoleculesSpringDataMongoDbPlugin implements LoggingPlugin {
 
 		Log log = PluginLogger.INSTANCE.getLog(typeDescription, "Spring Data MongoDB");
 
-		return JMoleculesType.of(log, builder)
+		return JMoleculesTypeBuilder.of(log, builder)
 				.annotateIdentifierWith(Id.class)
 				.annotateTypeIfMissing(Document.class)
 				.implementPersistable(options)

@@ -32,4 +32,5 @@ public class SampleEntity implements Entity<SampleAggregate, Long> {
 	private SampleEntity nestedEntity;
 	private List<SampleEntity> nestedEntities;
 	private List<SampleValueObject> valueObjects;
+	private SampleRecord sampleRecord;
 }

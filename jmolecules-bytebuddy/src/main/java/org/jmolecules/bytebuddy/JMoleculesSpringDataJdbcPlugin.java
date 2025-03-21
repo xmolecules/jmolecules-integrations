@@ -59,7 +59,7 @@ public class JMoleculesSpringDataJdbcPlugin implements LoggingPlugin {
 	public Builder<?> apply(Builder<?> builder, TypeDescription typeDescription, ClassFileLocator classFileLocator) {
 
 		Log log = PluginLogger.INSTANCE.getLog(typeDescription, "Spring Data JDBC");
-		JMoleculesType type = JMoleculesType.of(log, builder);
+		JMoleculesTypeBuilder type = JMoleculesTypeBuilder.of(log, builder);
 
 		return type.annotateIdentifierWith(Id.class)
 				.annotateTypeIfMissing(Table.class)

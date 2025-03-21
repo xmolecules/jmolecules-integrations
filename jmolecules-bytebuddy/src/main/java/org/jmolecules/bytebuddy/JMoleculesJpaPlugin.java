@@ -42,6 +42,8 @@ import net.bytebuddy.matcher.ElementMatcher;
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -55,6 +57,7 @@ import org.jmolecules.jpa.JMoleculesJpa;
 public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 
 	static final String NULLABILITY_METHOD_NAME = "__verifyNullability";
+	private static final Set<TypeDescription> EMBEDDABLE_RECORDS = new HashSet<>();
 
 	private Jpa jpa;
 	private Class<? extends Annotation> embeddableInstantiatorAnnotationType;
@@ -85,6 +88,18 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 
 		ClassWorld world = ClassWorld.of(classFileLocator);
 		init(Jpa.getJavaPersistence(world).get(), world);
+
+		JMoleculesType type = new JMoleculesType(typeDescription);
+
+		if (!type.isEntity()) {
+			return;
+		}
+
+		typeDescription.getDeclaredFields().stream()
+				.map(it -> it.getType())
+				.filter(Generic::isRecord)
+				.map(Generic::asErasure)
+				.forEach(EMBEDDABLE_RECORDS::add);
 	}
 
 	/*
@@ -124,12 +139,13 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 
 		Log log = PluginLogger.INSTANCE.getLog(type, "JPA");
 
-		return JMoleculesType.of(log, builder)
-				.map(JMoleculesType::isEntity, this::handleEntity)
-				.map(JMoleculesType::isAssociation, this::handleAssociation)
-				.map(JMoleculesType::isIdentifier, this::handleIdentifier)
-				.map(JMoleculesType::isValueObject, this::handleValueObject)
-				.map(JMoleculesType::isRecord, it -> it.annotateTypeIfMissing(jpa.getAnnotation("Embeddable")))
+		return JMoleculesTypeBuilder.of(log, builder)
+				.map(JMoleculesTypeBuilder::isEntity, this::handleEntity)
+				.map(JMoleculesTypeBuilder::isAssociation, this::handleAssociation)
+				.map(JMoleculesTypeBuilder::isIdentifier, this::handleIdentifier)
+				.map(JMoleculesTypeBuilder::isValueObject, this::handleValueObject)
+				.map(it -> EMBEDDABLE_RECORDS.contains(it.getTypeDescription()),
+						it -> it.annotateTypeIfMissing(jpa.getAnnotation("Embeddable")))
 				.map(this::applyRecordInstantiator)
 				.conclude();
 	}
@@ -142,17 +158,17 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 				.or(isAnnotatedWith(jpa.getAnnotation("ManyToMany")));
 	}
 
-	private JMoleculesType handleIdentifier(JMoleculesType type) {
+	private JMoleculesTypeBuilder handleIdentifier(JMoleculesTypeBuilder type) {
 		return handleValueObject(type.implement(Serializable.class));
 	}
 
-	private JMoleculesType handleAssociation(JMoleculesType type) {
+	private JMoleculesTypeBuilder handleAssociation(JMoleculesTypeBuilder type) {
 
 		return type.addDefaultConstructorIfMissing()
 				.annotateTypeIfMissing(jpa.getAnnotation("Embeddable"));
 	}
 
-	private JMoleculesType handleEntity(JMoleculesType type) {
+	private JMoleculesTypeBuilder handleEntity(JMoleculesTypeBuilder type) {
 
 		Function<TypeDescription, Class<? extends Annotation>> selector = it -> !type.isAggregateRoot()
 				&& type.isAbstract() ? jpa.getAnnotation("MappedSuperclass") : jpa.getAnnotation("Entity");
@@ -169,7 +185,7 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 				.map(this::defaultCollectionOfValueObjects);
 	}
 
-	private JMoleculesType defaultToEntityAssociations(JMoleculesType type) {
+	private JMoleculesTypeBuilder defaultToEntityAssociations(JMoleculesTypeBuilder type) {
 
 		Junction<FieldDescription> doesNotHaveAtJoinColumn = not(isAnnotatedWith(jpa.getAnnotation("JoinColumn")));
 		Junction<FieldDescription> doesNotHaveRelationShipAnnotation = not(hasJpaRelationShipAnnotation());
@@ -189,7 +205,7 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 		AnnotationDescription joinColumnAnnotation = getJoinColumnAnnotation();
 
 		// Default @OneToOne
-		JMoleculesType result = type.annotateFieldWith(oneToOneDescription, isUndefaultedEntity)
+		JMoleculesTypeBuilder result = type.annotateFieldWith(oneToOneDescription, isUndefaultedEntity)
 
 				// Default @JoinColumn if no relationship annotation and no @JoinColumn found
 				.annotateFieldWith(joinColumnAnnotation, isUndefaultedEntity.and(doesNotHaveAtJoinColumn))
@@ -216,7 +232,7 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 		return result;
 	}
 
-	private JMoleculesType defaultCollectionOfValueObjects(JMoleculesType type) {
+	private JMoleculesTypeBuilder defaultCollectionOfValueObjects(JMoleculesTypeBuilder type) {
 
 		Junction<FieldDescription> matcher = genericFieldType(isCollectionOfValueObject());
 
@@ -280,7 +296,7 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 				.apply(advice, implementation);
 	}
 
-	private JMoleculesType handleValueObject(JMoleculesType type) {
+	private JMoleculesTypeBuilder handleValueObject(JMoleculesTypeBuilder type) {
 
 		return type.addDefaultConstructorIfMissing()
 				.annotateTypeIfMissing(jpa.getAnnotation("Embeddable"));
@@ -292,6 +308,10 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 
 		// No record or Hibernate 6 present
 		if (!description.isRecord() || embeddableInstantiatorAnnotationType == null) {
+			return builder;
+		}
+
+		if (!EMBEDDABLE_RECORDS.contains(description)) {
 			return builder;
 		}
 
@@ -316,6 +336,10 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 				.intercept(MethodCall.invoke(constructor).onSuper().with(description));
 
 		if (Types.AT_GENERATED != null) {
+
+			logger.info("Adding {} to generated {}.", PluginUtils.abbreviate(Types.AT_GENERATED),
+					subclass.toTypeDescription().getName());
+
 			subclass = subclass.annotateType(PluginUtils.getAnnotation(Types.AT_GENERATED));
 		}
 

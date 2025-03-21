@@ -86,7 +86,7 @@ public class JMoleculesSpringJpaPlugin implements LoggingPlugin, WithPreprocesso
 
 		Log log = PluginLogger.INSTANCE.getLog(typeDescription, "Spring JPA");
 
-		return JMoleculesType.of(log, builder)
+		return JMoleculesTypeBuilder.of(log, builder)
 				.map(this::addConvertAnnotationIfNeeded)
 				.conclude();
 	}

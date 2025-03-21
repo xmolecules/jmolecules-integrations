@@ -148,7 +148,7 @@ public class JMoleculesAxonPlugin implements LoggingPlugin {
 			}
 		}
 
-		return JMoleculesType.of(log, builder)
+		return JMoleculesTypeBuilder.of(log, builder)
 				.annotateIdentifierWith(AggregateIdentifier.class)
 				.conclude();
 	}

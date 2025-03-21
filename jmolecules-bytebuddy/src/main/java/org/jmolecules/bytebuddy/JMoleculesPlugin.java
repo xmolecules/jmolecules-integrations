@@ -75,6 +75,11 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 
 			return plugins.stream()
 					.filter(plugin -> plugin.matches(it))
+					.peek(plugin -> {
+						if (plugin instanceof WithPreprocessor) {
+							((WithPreprocessor) plugin).onPreprocess(it, classFileLocator);
+						}
+					})
 					.collect(Collectors.toList());
 		});
 	}
