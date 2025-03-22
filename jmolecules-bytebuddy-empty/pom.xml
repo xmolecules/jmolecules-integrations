@@ -34,7 +34,6 @@
 			<plugin>
 				<groupId>net.bytebuddy</groupId>
 				<artifactId>byte-buddy-maven-plugin</artifactId>
-				<version>${bytebuddy.version}</version>
 				<executions>
 					<execution>
 						<goals>
