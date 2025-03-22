@@ -138,7 +138,7 @@ public class JMoleculesSpringJpaPlugin implements LoggingPlugin, WithPreprocesso
 				.parameterizedType(loadedType, aggregateType, idType, idPrimitiveType).build();
 
 		Builder<?> converterBuilder = new ByteBuddy(ClassFileVersion.JAVA_V8)
-				.with(new ReferenceTypePackageNamingStrategy(field.getDeclaringType(), "Converter"))
+				.with(new ReferenceTypePackageNamingStrategy(aggregateType.asErasure(), "AssociationConverter"))
 				.subclass(superType)
 				.annotateType(PluginUtils.getAnnotation(jpa.getAnnotation("Converter")));
 
