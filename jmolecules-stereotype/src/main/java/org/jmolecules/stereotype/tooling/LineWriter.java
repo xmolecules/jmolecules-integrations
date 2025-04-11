@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 the original author or authors.
+ * Copyright 2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package example;
-
-import org.springframework.stereotype.Controller;
+package org.jmolecules.stereotype.tooling;
 
 /**
  * @author Oliver Drotbohm
  */
-@Controller
-public class MyController {}
+public interface LineWriter {
+
+	void write(String content);
+
+	void write(String content, NestingLevel level);
+
+	void writeEmptyLine();
+}

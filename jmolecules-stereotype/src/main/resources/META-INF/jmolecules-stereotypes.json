@@ -1,0 +1,17 @@
+{
+	"stereotypes" : [
+		{
+			"id": "java.Exception",
+			"assignments": [
+				"java.lang.Exception"
+			],
+			"groups": [ "java" ]
+		}
+	],
+	"groups" : [
+		{
+			"ids" : [ "java" ],
+			"displayName" : "Java"
+		}
+	]
+}

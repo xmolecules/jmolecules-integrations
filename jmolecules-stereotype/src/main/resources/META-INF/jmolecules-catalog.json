@@ -7,7 +7,7 @@
 			"description": "Schema to define jMolecules stereotype groups",
 			"fileMatch": [
 				"jmolecules-stereotype-groups.json",
-				"**/jmolecules-stereotype-groups.json",
+				"**/jmolecules-stereotype-groups.json"
 			],
 			"url": "https://schemas.jmolecules.org/jmolecules-stereotype-groups.schema.json"
 		},

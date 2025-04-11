@@ -33,8 +33,8 @@ import org.jmolecules.stereotype.api.Stereotypes;
 import org.jmolecules.stereotype.catalog.StereotypeCatalog;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment.Type;
-import org.jmolecules.stereotype.catalog.StereotypeMatcher;
 import org.jmolecules.stereotype.catalog.StereotypeDefinitionRegistry;
+import org.jmolecules.stereotype.catalog.StereotypeMatcher;
 import org.jmolecules.stereotype.catalog.support.DefaultStereotypeDefinition;
 import org.jmolecules.stereotype.support.AnnotationConfiguredStereotype;
 
@@ -169,6 +169,10 @@ public class ReflectionStereotypeFactory implements StereotypeFactory<Package, C
 
 	private <T extends AnnotatedElement> Collection<Stereotype> fromAnnotatedElement(AnnotatedElement element) {
 
+		if (element == null) {
+			return Collections.emptyList();
+		}
+
 		var result = new ArrayList<Stereotype>();
 
 		result.addAll(catalog.getAnnotationBasedStereotypes(element, STEREOTYPE_MATCHER));
@@ -191,6 +195,10 @@ public class ReflectionStereotypeFactory implements StereotypeFactory<Package, C
 	}
 
 	private static boolean isAnnotated(AnnotatedElement element, String fqn) {
+
+		if (element == null) {
+			return false;
+		}
 
 		return Stream.of(element.getDeclaredAnnotations())
 				.map(Annotation::annotationType)

@@ -30,6 +30,7 @@ import org.jmolecules.stereotype.catalog.StereotypeDefinition;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment;
 import org.jmolecules.stereotype.catalog.StereotypeDefinitionRegistry;
 import org.jmolecules.stereotype.catalog.StereotypeGroup;
+import org.jmolecules.stereotype.catalog.StereotypeGroups;
 
 /**
  * Base class for {@link StereotypeCatalog} implementations.
@@ -80,8 +81,20 @@ public abstract class AbstractStereotypeCatalog implements StereotypeCatalog, St
 	 * @see org.jmolecules.stereotype.catalog.StereotypeCatalog#getGroups()
 	 */
 	@Override
-	public SortedSet<StereotypeGroup> getGroups() {
-		return Collections.unmodifiableSortedSet(groups);
+	public StereotypeGroups getGroups() {
+		return new StereotypeGroups(Collections.unmodifiableSortedSet(groups));
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.jmolecules.stereotype.catalog.StereotypeCatalog#getGroups(java.lang.String)
+	 */
+	@Override
+	public StereotypeGroups getGroups(String groupIdentifier) {
+
+		return groups.stream()
+				.filter(it -> it.hasIdentifierOrParent(groupIdentifier))
+				.collect(StereotypeGroups.collector());
 	}
 
 	/*
@@ -89,12 +102,12 @@ public abstract class AbstractStereotypeCatalog implements StereotypeCatalog, St
 	 * @see org.jmolecules.stereotype.catalog.StereotypesCatalog#getGroupsFor(java.lang.String)
 	 */
 	@Override
-	public SortedSet<StereotypeGroup> getGroupsFor(String stereoTypeIdentifier) {
+	public StereotypeGroups getGroupsFor(String stereoTypeIdentifier) {
 
 		return definitions.stream()
 				.filter(it -> it.getStereotype().getIdentifier().equals(stereoTypeIdentifier))
 				.flatMap(this::findGroup)
-				.collect(Collectors.toCollection(TreeSet::new));
+				.collect(StereotypeGroups.collector());
 	}
 
 	/*
@@ -102,11 +115,11 @@ public abstract class AbstractStereotypeCatalog implements StereotypeCatalog, St
 	 * @see org.jmolecules.stereotype.catalog.StereotypesCatalog#getGroupsFor(org.jmolecules.stereotype.Stereotype)
 	 */
 	@Override
-	public SortedSet<StereotypeGroup> getGroupsFor(Stereotype stereotype) {
+	public StereotypeGroups getGroupsFor(Stereotype stereotype) {
 
-		return getGroups().stream()
+		return groups.stream()
 				.filter(it -> it.contains(stereotype))
-				.collect(Collectors.toCollection(TreeSet::new));
+				.collect(StereotypeGroups.collector());
 	}
 
 	/*
@@ -130,6 +143,34 @@ public abstract class AbstractStereotypeCatalog implements StereotypeCatalog, St
 				.findFirst()
 				.map(it -> it.verify(stereotype))
 				.orElseGet(() -> add(DefaultStereotypeDefinition.of(stereotype, Set.of(assignment.get()))));
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+
+		var builder = new StringBuilder();
+
+		getGroups().forEach(group -> {
+
+			var headline = group.toString();
+
+			builder.append(headline).append("\n")
+					.append("=".repeat(headline.length())).append("\n");
+
+			getDefinitions(group).forEach(definition -> {
+				builder.append("- ")
+						.append(definition)
+						.append("\n");
+			});
+
+			builder.append("\n");
+		});
+
+		return builder.toString();
 	}
 
 	protected final AugmentableStereotypeDefinition add(AugmentableStereotypeDefinition definition) {

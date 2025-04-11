@@ -19,14 +19,18 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A source of a {@link org.jmolecules.stereotype.catalog.StereotypeCatalog}.
  *
  * @author Oliver Drotbohm
  */
-public interface CatalogSource {
+public interface CatalogSource extends Iterable<URL> {
 
 	static final String DEFAULT_STEREOTYPE_LOCATION = "META-INF/jmolecules-stereotypes.json";
 	static final String DEFAULT_GROUP_LOCATION = "META-INF/jmolecules-stereotype-groups.json";
@@ -50,10 +54,23 @@ public interface CatalogSource {
 			var stereotypes = Collections.list(classLoader.getResources(DEFAULT_STEREOTYPE_LOCATION));
 			var groups = Collections.list(classLoader.getResources(DEFAULT_GROUP_LOCATION));
 
+			Logger LOG = LoggerFactory.getLogger(CatalogSource.class);
+
+			LOG.info("Loading jMolecules stereotypes from {} and {}.", stereotypes, groups);
+
 			return () -> Stream.concat(stereotypes.stream(), groups.stream());
 
 		} catch (IOException o_O) {
 			throw new UncheckedIOException(o_O);
 		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Iterable#iterator()
+	 */
+	@Override
+	default Iterator<URL> iterator() {
+		return getSources().iterator();
 	}
 }

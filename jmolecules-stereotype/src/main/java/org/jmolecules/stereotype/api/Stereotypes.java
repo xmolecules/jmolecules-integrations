@@ -17,6 +17,7 @@ package org.jmolecules.stereotype.api;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -30,6 +31,8 @@ import org.jspecify.annotations.Nullable;
  * @author Oliver Drotbohm
  */
 public class Stereotypes implements Iterable<Stereotype> {
+
+	public static final Stereotypes NONE = new Stereotypes(Collections.emptySet());
 
 	private final SortedSet<Stereotype> stereotypes;
 
