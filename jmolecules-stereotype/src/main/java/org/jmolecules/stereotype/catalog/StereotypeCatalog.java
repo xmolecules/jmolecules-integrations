@@ -36,7 +36,7 @@ public interface StereotypeCatalog extends Iterable<StereotypeDefinition> {
 	 * @param stereotypeIdentifier must not be {@literal null} or empty.
 	 * @return will never be {@literal null}.
 	 */
-	SortedSet<StereotypeGroup> getGroupsFor(String stereotypeIdentifier);
+	StereotypeGroups getGroupsFor(String stereotypeIdentifier);
 
 	/**
 	 * Returns all {@link StereotypeGroup}s that contain the given {@link Stereotype}.
@@ -44,7 +44,7 @@ public interface StereotypeCatalog extends Iterable<StereotypeDefinition> {
 	 * @param stereotype must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	default SortedSet<StereotypeGroup> getGroupsFor(Stereotype stereotype) {
+	default StereotypeGroups getGroupsFor(Stereotype stereotype) {
 		return getGroupsFor(stereotype.getIdentifier());
 	}
 
@@ -55,7 +55,7 @@ public interface StereotypeCatalog extends Iterable<StereotypeDefinition> {
 	 * @param definition must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	default SortedSet<StereotypeGroup> getGroupsFor(StereotypeDefinition definition) {
+	default StereotypeGroups getGroupsFor(StereotypeDefinition definition) {
 		return getGroupsFor(definition.getStereotype());
 	}
 
@@ -71,10 +71,13 @@ public interface StereotypeCatalog extends Iterable<StereotypeDefinition> {
 	 *
 	 * @return will never be {@literal null}.
 	 */
-	SortedSet<StereotypeGroup> getGroups();
+	StereotypeGroups getGroups();
+
+	StereotypeGroups getGroups(String groupIdentifier);
 
 	/**
-	 * Returns all {@link StereotypeDefinition}s for the given {@link StereotypeGroup}.
+	 * Returns all {@link StereotypeDefinition}s for the given {@link StereotypeGroup}. TODO: Refactor to allow different
+	 * lookups (direct, incl. nested)
 	 *
 	 * @param group must not be {@literal null}.
 	 * @return will never be {@literal null}.
