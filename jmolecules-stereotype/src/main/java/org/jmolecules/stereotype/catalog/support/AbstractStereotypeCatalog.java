@@ -86,6 +86,18 @@ public abstract class AbstractStereotypeCatalog implements StereotypeCatalog, St
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.jmolecules.stereotype.catalog.StereotypeCatalog#getGroups(java.lang.String)
+	 */
+	@Override
+	public SortedSet<StereotypeGroup> getGroups(String groupIdentifier) {
+
+		return groups.stream()
+				.filter(it -> it.hasIdentifierOrParent(groupIdentifier))
+				.collect(Collectors.toCollection(TreeSet::new));
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.jmolecules.stereotype.catalog.StereotypesCatalog#getGroupsFor(java.lang.String)
 	 */
 	@Override

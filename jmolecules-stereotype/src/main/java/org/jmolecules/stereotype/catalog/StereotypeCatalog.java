@@ -73,8 +73,11 @@ public interface StereotypeCatalog extends Iterable<StereotypeDefinition> {
 	 */
 	SortedSet<StereotypeGroup> getGroups();
 
+	SortedSet<StereotypeGroup> getGroups(String groupIdentifier);
+
 	/**
-	 * Returns all {@link StereotypeDefinition}s for the given {@link StereotypeGroup}.
+	 * Returns all {@link StereotypeDefinition}s for the given {@link StereotypeGroup}. TODO: Refactor to allow different
+	 * lookups (direct, incl. nested)
 	 *
 	 * @param group must not be {@literal null}.
 	 * @return will never be {@literal null}.

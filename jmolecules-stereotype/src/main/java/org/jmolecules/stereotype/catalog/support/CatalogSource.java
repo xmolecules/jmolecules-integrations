@@ -21,6 +21,9 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * A source of a {@link org.jmolecules.stereotype.catalog.StereotypeCatalog}.
  *
@@ -49,6 +52,10 @@ public interface CatalogSource {
 
 			var stereotypes = Collections.list(classLoader.getResources(DEFAULT_STEREOTYPE_LOCATION));
 			var groups = Collections.list(classLoader.getResources(DEFAULT_GROUP_LOCATION));
+
+			Logger LOG = LoggerFactory.getLogger(CatalogSource.class);
+
+			LOG.info("Loading jMolecules stereotypes from {} and {}.", stereotypes, groups);
 
 			return () -> Stream.concat(stereotypes.stream(), groups.stream());
 

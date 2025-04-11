@@ -10,9 +10,9 @@
 		<version>0.27.0-STEREOTYPE-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>jmolecules-stereotype</artifactId>	
+	<artifactId>jmolecules-stereotype</artifactId>
 	<name>jMolecules - Stereotype</name>
-	
+
 	<properties>
 		<java.version>17</java.version>
 	</properties>
@@ -24,7 +24,7 @@
 			<artifactId>jstereotype</artifactId>
 			<version>${jmolecules-next.version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.jspecify</groupId>
 			<artifactId>jspecify</artifactId>
@@ -37,7 +37,7 @@
 			<version>${jmolecules-next.version}</version>
 			<scope>test</scope>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.jmolecules</groupId>
 			<artifactId>jmolecules-hexagonal-architecture</artifactId>
@@ -50,13 +50,19 @@
 			<artifactId>spring-context</artifactId>
 			<scope>test</scope>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>com.jayway.jsonpath</groupId>
 			<artifactId>json-path</artifactId>
 			<optional>true</optional>
 		</dependency>
 
+		<dependency>
+    <groupId>io.github.classgraph</groupId>
+    <artifactId>classgraph</artifactId>
+    <version>4.8.165</version>
+</dependency>
+
 	</dependencies>
-	
+
 </project>
