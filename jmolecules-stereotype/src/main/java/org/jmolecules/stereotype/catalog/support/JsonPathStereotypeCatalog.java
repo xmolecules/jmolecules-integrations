@@ -42,6 +42,8 @@ import com.jayway.jsonpath.Option;
  */
 public class JsonPathStereotypeCatalog extends AbstractStereotypeCatalog {
 
+	private final CatalogSource source;
+
 	/**
 	 * Creates a new {@link JsonPathStereotypeCatalog} for the given {@link CatalogSource}.
 	 *
@@ -53,7 +55,28 @@ public class JsonPathStereotypeCatalog extends AbstractStereotypeCatalog {
 			throw new IllegalArgumentException("CatalogSource must not be null!");
 		}
 
-		source.getSources().forEach(this::read);
+		this.source = source;
+		this.source.forEach(this::read);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog#toString()
+	 */
+	@Override
+	public String toString() {
+
+		var builder = new StringBuilder(super.toString());
+		var headline = "Catalog sources";
+
+		builder.append(headline).append("\n")
+				.append("=".repeat(headline.length())).append("\n");
+
+		for (URL url : source) {
+			builder.append("- ").append(url).append("\n");
+		}
+
+		return builder.toString();
 	}
 
 	private void read(URL url) {

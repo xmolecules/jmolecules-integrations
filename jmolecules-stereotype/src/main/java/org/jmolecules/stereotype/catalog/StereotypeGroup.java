@@ -42,6 +42,10 @@ public class StereotypeGroup implements Comparable<StereotypeGroup> {
 		this.displayName = displayName;
 	}
 
+	public String getDisplayName() {
+		return displayName;
+	}
+
 	/**
 	 * Returns whether the group contains the given {@link Stereotype}.
 	 *
@@ -49,6 +53,12 @@ public class StereotypeGroup implements Comparable<StereotypeGroup> {
 	 */
 	public boolean contains(Stereotype stereotype) {
 		return stereotype.getGroups().stream().anyMatch(identifiers::contains);
+	}
+
+	public boolean hasIdentifierOrParent(String identifier) {
+
+		return identifiers.stream()
+				.anyMatch(it -> it.equals(identifier) || it.startsWith(identifier + "."));
 	}
 
 	/*
