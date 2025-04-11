@@ -15,11 +15,41 @@
  */
 package example;
 
+import lombok.Value;
+
+import java.util.Objects;
+
 import org.jmolecules.ddd.types.Identifier;
 
 /**
  * @author Oliver Drotbohm
  */
+@Value
 public class SampleAggregateIdentifier implements Identifier {
 	String id;
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(id);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!(obj instanceof SampleAggregateIdentifier)) {
+			return false;
+		}
+		SampleAggregateIdentifier other = (SampleAggregateIdentifier) obj;
+		return Objects.equals(id, other.id);
+	}
 }

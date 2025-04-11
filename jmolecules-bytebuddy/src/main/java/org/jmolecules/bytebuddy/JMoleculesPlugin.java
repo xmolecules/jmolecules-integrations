@@ -156,7 +156,7 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 	private static Stream<LoggingPlugin> springDataJdbcPlugin(ClassWorld world) {
 
 		return world.isAvailable("org.springframework.data.jdbc.core.mapping.AggregateReference") //
-				? Stream.of(new JMoleculesSpringDataJdbcPlugin()) //
+				? Stream.of(new JMoleculesSpringDataJdbcPlugin(), new EntityPlugin("JDBC")) //
 				: Stream.empty();
 	}
 
@@ -171,7 +171,7 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 	private static Stream<LoggingPlugin> springDataMongDbPlugin(ClassWorld world) {
 
 		return world.isAvailable("org.springframework.data.mongodb.core.mapping.Document") //
-				? Stream.of(new JMoleculesSpringDataMongoDbPlugin()) //
+				? Stream.of(new JMoleculesSpringDataMongoDbPlugin(), new EntityPlugin("MongoDB")) //
 				: Stream.empty();
 	}
 

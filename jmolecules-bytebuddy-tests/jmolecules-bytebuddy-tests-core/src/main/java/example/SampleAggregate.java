@@ -16,6 +16,7 @@
 package example;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Collection;
 
@@ -31,7 +32,7 @@ public class SampleAggregate implements AggregateRoot<SampleAggregate, SampleAgg
 	private final SampleAggregateIdentifier id;
 	private SampleOtherIdentifier otherId;
 
-	private SampleEntity entity;
+	private @Setter SampleEntity entity;
 	private Collection<SampleEntity> listOfEntity;
 	private Collection<SampleEntity> anotherListOfEntity;
 

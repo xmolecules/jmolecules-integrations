@@ -87,7 +87,7 @@ public class JMoleculesSpringJpaPlugin implements LoggingPlugin, WithPreprocesso
 		Log log = PluginLogger.INSTANCE.getLog(typeDescription, "Spring JPA");
 
 		return JMoleculesTypeBuilder.of(log, builder)
-				.map(this::addConvertAnnotationIfNeeded)
+				.mapBuilder(this::addConvertAnnotationIfNeeded)
 				.conclude();
 	}
 
@@ -142,11 +142,7 @@ public class JMoleculesSpringJpaPlugin implements LoggingPlugin, WithPreprocesso
 				.subclass(superType)
 				.annotateType(PluginUtils.getAnnotation(jpa.getAnnotation("Converter")));
 
-		if (Types.AT_GENERATED != null) {
-			converterBuilder = converterBuilder.annotateType(PluginUtils.getAnnotation(Types.AT_GENERATED));
-		}
-
-		Unloaded<?> converterType = converterBuilder
+		Unloaded<?> converterType = PluginUtils.markGenerated(converterBuilder, log)
 				.defineConstructor(Visibility.PACKAGE_PRIVATE)
 				.intercept(MethodCall.invoke(getConverterConstructor()).onSuper().with(idType.asErasure()))
 				.make();

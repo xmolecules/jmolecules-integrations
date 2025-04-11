@@ -26,14 +26,18 @@ import net.bytebuddy.description.method.ParameterList;
 import net.bytebuddy.description.type.TypeDefinition;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType.Builder;
+import net.bytebuddy.dynamic.DynamicType.Builder.MethodDefinition;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatcher.Junction;
 import net.bytebuddy.matcher.ElementMatchers;
 
 import java.lang.annotation.Annotation;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -72,7 +76,20 @@ class PluginUtils {
 	 * @return annotation description.
 	 */
 	static AnnotationDescription getAnnotation(Class<? extends Annotation> type) {
-		return AnnotationDescription.Builder.ofType(type).build();
+		return getAnnotation(type, Function.identity());
+	}
+
+	/**
+	 * Returns an {@link AnnotationDescription} for the given annotation type with the given customizing {@link Function}
+	 * applied.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @param customizer must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	static AnnotationDescription getAnnotation(Class<? extends Annotation> type,
+			Function<net.bytebuddy.description.annotation.AnnotationDescription.Builder, net.bytebuddy.description.annotation.AnnotationDescription.Builder> customizer) {
+		return customizer.apply(AnnotationDescription.Builder.ofType(type)).build();
 	}
 
 	/**
@@ -290,6 +307,41 @@ class PluginUtils {
 		return definition.getTypeName().contains("$$");
 	}
 
+	/**
+	 * Marks the given {@link MethodDefinition} as generated.
+	 *
+	 * @param method must not be {@literal null}.
+	 * @return since 0.26
+	 */
+	static MethodDefinition<?> markGenerated(MethodDefinition<?> method) {
+
+		return getGeneratedTypeAnnotation(ElementType.METHOD)
+				.<MethodDefinition<?>> map(method::annotateMethod)
+				.orElse(method);
+	}
+
+	/**
+	 * Marks the type represented by the given {@link Builder} as generated.
+	 *
+	 * @param builder must not be {@literal null}.
+	 * @param log must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 0.26
+	 */
+	static Builder<?> markGenerated(Builder<?> builder, Log log) {
+
+		return getGeneratedTypeAnnotation(ElementType.TYPE)
+				.map(it -> {
+
+					log.info("Adding {} to generated {}.", PluginUtils.abbreviate(it),
+							builder.toTypeDescription().getName());
+
+					return it;
+				})
+				.<Builder<?>> map(builder::annotateType)
+				.orElse(builder);
+	}
+
 	private static Builder<?> addAnnotationIfMissing(Class<? extends Annotation> annotation, Builder<?> builder,
 			TypeDescription type, Log log) {
 
@@ -316,5 +368,23 @@ class PluginUtils {
 
 		return lastDotIndex == -1 ? fullyQualifiedTypeName
 				: fullyQualifiedTypeName.substring(lastDotIndex, fullyQualifiedTypeName.length());
+	}
+
+	private static Optional<AnnotationDescription> getGeneratedTypeAnnotation(ElementType type) {
+
+		return Types.AT_GENERATED.stream()
+				.filter(it -> hasTarget(it, type))
+				.findFirst()
+				.map(it -> getAnnotation(it,
+						builder -> it.getName().startsWith("javax.annotation")
+								? builder.defineArray("value", "jMolecules ByteBuddy Plugin")
+								: builder));
+	}
+
+	private static boolean hasTarget(Class<? extends Annotation> type, ElementType target) {
+
+		Target annotation = type.getAnnotation(Target.class);
+
+		return annotation != null && Arrays.asList(annotation.value()).contains(target);
 	}
 }

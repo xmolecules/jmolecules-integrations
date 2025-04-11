@@ -19,6 +19,8 @@ import static org.assertj.core.api.Assertions.*;
 
 import example.SampleAggregate;
 import example.SampleAggregateIdentifier;
+import example.SampleEntity;
+import example.SampleRecord;
 
 import org.jmolecules.spring.data.MutablePersistable;
 import org.junit.jupiter.api.Test;
@@ -33,7 +35,7 @@ import org.springframework.util.ReflectionUtils;
  */
 class JMoleculesSpringDataJdbcTests {
 
-	SampleAggregateIdentifier id = new SampleAggregateIdentifier();
+	SampleAggregateIdentifier id = new SampleAggregateIdentifier("id");
 	Persistable<?> persistable = (Persistable<?>) new SampleAggregate(id);
 
 	@Test // #28
@@ -50,8 +52,8 @@ class JMoleculesSpringDataJdbcTests {
 	@Test // #28
 	void generatesEqualsAndHashCodeBasedOnId() {
 
-		var id = new SampleAggregateIdentifier();
-		var anotherId = new SampleAggregateIdentifier();
+		var id = new SampleAggregateIdentifier("first");
+		var anotherId = new SampleAggregateIdentifier("second");
 		var left = new SampleAggregate(id);
 		var right = new SampleAggregate(id);
 		var other = new SampleAggregate(anotherId);
@@ -88,12 +90,29 @@ class JMoleculesSpringDataJdbcTests {
 		var isNewField = ReflectionUtils.findField(SampleAggregate.class, PersistableImplementor.IS_NEW_FIELD);
 		ReflectionUtils.makeAccessible(isNewField);
 
-		var aggregate = new SampleAggregate(new SampleAggregateIdentifier());
+		var aggregate = new SampleAggregate(new SampleAggregateIdentifier("id"));
 		ReflectionUtils.setField(isNewField, aggregate, false);
 
 		var result = aggregate.wither();
 
 		assertThat(result).isNotSameAs(aggregate);
 		assertThat(ReflectionUtils.getField(isNewField, result)).isEqualTo(false);
+	}
+
+	@Test // GH-315
+	void generatesEqualsAndHashCodeForEntities() throws Exception {
+
+		// equals(…) and hashCode()
+		assertThat(SampleEntity.class.getMethod("equals", Object.class).getDeclaringClass())
+				.isEqualTo(SampleEntity.class);
+		assertThat(SampleEntity.class.getMethod("hashCode").getDeclaringClass())
+				.isEqualTo(SampleEntity.class);
+
+		var first = new SampleEntity(1L);
+
+		var second = new SampleEntity(1L);
+		second.setSampleRecord(new SampleRecord("First", "Last"));
+
+		assertThat(first).isEqualTo(second);
 	}
 }

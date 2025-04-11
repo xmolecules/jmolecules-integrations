@@ -104,7 +104,7 @@ class JMoleculesTypeBuilder extends JMoleculesType {
 		logger.info("{} - Implement {}.", PluginUtils.abbreviate(type),
 				PluginUtils.abbreviate(interfaze));
 
-		return map((it, log) -> it.implement(interfaze));
+		return mapBuilder((it, log) -> it.implement(interfaze));
 	}
 
 	public JMoleculesTypeBuilder implement(Class<?> interfaze, TypeDefinition... generics) {
@@ -136,7 +136,7 @@ class JMoleculesTypeBuilder extends JMoleculesType {
 	}
 
 	public JMoleculesTypeBuilder implementPersistable(PersistableOptions options) {
-		return PersistableImplementor.of(options).implementPersistable(this);
+		return PersistableImplementor.of(options).implementPersistable(this, logger);
 	}
 
 	@SafeVarargs
@@ -192,16 +192,20 @@ class JMoleculesTypeBuilder extends JMoleculesType {
 		return annotateFieldWith(annotation, isAnnotatedWith(Identity.class), filterAnnotations);
 	}
 
-	public JMoleculesTypeBuilder map(BiFunction<Builder<?>, Log, Builder<?>> mapper) {
-		return JMoleculesTypeBuilder.of(logger, mapper.apply(builder, logger));
-	}
-
 	public JMoleculesTypeBuilder map(Function<JMoleculesTypeBuilder, JMoleculesTypeBuilder> function) {
 		return function.apply(this);
 	}
 
+	public JMoleculesTypeBuilder map(BiFunction<JMoleculesTypeBuilder, Log, JMoleculesTypeBuilder> mapper) {
+		return mapper.apply(this, logger);
+	}
+
 	public JMoleculesTypeBuilder mapBuilder(Function<Builder<?>, Builder<?>> mapper) {
 		return JMoleculesTypeBuilder.of(logger, mapper.apply(builder));
+	}
+
+	public JMoleculesTypeBuilder mapBuilder(BiFunction<Builder<?>, Log, Builder<?>> mapper) {
+		return JMoleculesTypeBuilder.of(logger, mapper.apply(builder, logger));
 	}
 
 	public JMoleculesTypeBuilder mapBuilder(Predicate<JMoleculesTypeBuilder> filter,
@@ -220,13 +224,21 @@ class JMoleculesTypeBuilder extends JMoleculesType {
 				: this;
 	}
 
+	public JMoleculesTypeBuilder mapLogged(Predicate<JMoleculesTypeBuilder> filter,
+			BiFunction<JMoleculesTypeBuilder, Log, JMoleculesTypeBuilder> mapper) {
+
+		return filter.test(this)
+				? mapper.apply(this, logger)
+				: this;
+	}
+
 	public JMoleculesType mapIdField(BiFunction<InDefinedShape, JMoleculesTypeBuilder, JMoleculesTypeBuilder> mapper) {
 		return findIdField().map(it -> mapper.apply(it, this)).orElse(this);
 	}
 
 	public JMoleculesTypeBuilder addDefaultConstructorIfMissing() {
 
-		return map((builder, logger) -> {
+		return mapBuilder((builder, logger) -> {
 
 			boolean hasDefaultConstructor = !type.getDeclaredMethods()
 					.filter(it -> it.isConstructor())

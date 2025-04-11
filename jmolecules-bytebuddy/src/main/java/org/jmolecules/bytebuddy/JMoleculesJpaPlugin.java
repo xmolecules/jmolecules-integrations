@@ -58,6 +58,7 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 
 	static final String NULLABILITY_METHOD_NAME = "__verifyNullability";
 	private static final Set<TypeDescription> EMBEDDABLE_RECORDS = new HashSet<>();
+	private static final EntityImplementor ENTITY_IMPLEMENTOR = new EntityImplementor();
 
 	private Jpa jpa;
 	private Class<? extends Annotation> embeddableInstantiatorAnnotationType;
@@ -146,7 +147,7 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 				.map(JMoleculesTypeBuilder::isValueObject, this::handleValueObject)
 				.map(it -> EMBEDDABLE_RECORDS.contains(it.getTypeDescription()),
 						it -> it.annotateTypeIfMissing(jpa.getAnnotation("Embeddable")))
-				.map(this::applyRecordInstantiator)
+				.mapBuilder(this::applyRecordInstantiator)
 				.conclude();
 	}
 
@@ -180,9 +181,10 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 				.annotateTypedIdentifierWith(embeddedId, id)
 				.annotateAnnotatedIdentifierWith(id, embeddedId)
 				.annotateTypeIfMissing(selector, jpa.getAnnotation("Entity"), jpa.getAnnotation("MappedSuperclass"))
-				.map(this::declareNullVerificationMethod)
+				.map(ENTITY_IMPLEMENTOR::implementEntity)
 				.map(this::defaultToEntityAssociations)
-				.map(this::defaultCollectionOfValueObjects);
+				.map(this::defaultCollectionOfValueObjects)
+				.mapBuilder(this::declareNullVerificationMethod);
 	}
 
 	private JMoleculesTypeBuilder defaultToEntityAssociations(JMoleculesTypeBuilder type) {
@@ -335,15 +337,8 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 				.defineConstructor(Visibility.PACKAGE_PRIVATE)
 				.intercept(MethodCall.invoke(constructor).onSuper().with(description));
 
-		if (Types.AT_GENERATED != null) {
+		Unloaded<?> instantiatorType = PluginUtils.markGenerated(subclass, logger).make();
 
-			logger.info("Adding {} to generated {}.", PluginUtils.abbreviate(Types.AT_GENERATED),
-					subclass.toTypeDescription().getName());
-
-			subclass = subclass.annotateType(PluginUtils.getAnnotation(Types.AT_GENERATED));
-		}
-
-		Unloaded<?> instantiatorType = subclass.make();
 		logger.info("Adding @EmbeddableInstantiator({}) for record.", subclass.toTypeDescription().getName());
 
 		builder = builder.require(instantiatorType);

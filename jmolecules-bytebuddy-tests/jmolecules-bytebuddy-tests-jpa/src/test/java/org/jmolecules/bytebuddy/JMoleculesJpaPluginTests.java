@@ -101,6 +101,12 @@ class JMoleculesJpaPluginTests {
 		assertThat(annotation)
 				.isNotNull()
 				.satisfies(it -> assertThat(it.fetch()).isEqualTo(FetchType.EAGER));
+
+		// equals(…) and hashCode() - GH-315
+		assertThat(SampleEntity.class.getMethod("equals", Object.class).getDeclaringClass())
+				.isEqualTo(SampleEntity.class);
+		assertThat(SampleEntity.class.getMethod("hashCode").getDeclaringClass())
+				.isEqualTo(SampleEntity.class);
 	}
 
 	@Test

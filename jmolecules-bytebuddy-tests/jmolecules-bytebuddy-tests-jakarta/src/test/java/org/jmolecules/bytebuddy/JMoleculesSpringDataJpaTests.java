@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.*;
 
 import example.SampleAggregate;
 import example.SampleAggregateIdentifier;
+import example.SampleEntity;
 import jakarta.persistence.PostLoad;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Transient;
@@ -39,7 +40,7 @@ import org.springframework.util.ReflectionUtils;
  */
 class JMoleculesSpringDataJpaTests {
 
-	SampleAggregateIdentifier id = new SampleAggregateIdentifier();
+	SampleAggregateIdentifier id = new SampleAggregateIdentifier("id");
 	Persistable<?> persistable = (Persistable<?>) new SampleAggregate(id);
 
 	@Test // #28
@@ -52,10 +53,11 @@ class JMoleculesSpringDataJpaTests {
 	@Test // #28
 	void generatesEqualsAndHashCodeBasedOnId() {
 
-		var id = new SampleAggregateIdentifier();
-		var anotherId = new SampleAggregateIdentifier();
+		var id = new SampleAggregateIdentifier("first");
+		var anotherId = new SampleAggregateIdentifier("second");
 		var left = new SampleAggregate(id);
 		var right = new SampleAggregate(id);
+		right.setEntity(new SampleEntity());
 		var other = new SampleAggregate(anotherId);
 
 		assertThat(left).isEqualTo(right);
@@ -92,7 +94,7 @@ class JMoleculesSpringDataJpaTests {
 								.isNotEmpty()
 								.allSatisfy(it -> {
 
-									var id = new SampleAggregateIdentifier();
+									var id = new SampleAggregateIdentifier("id");
 									var persistable = (Persistable<?>) new SampleAggregate(id);
 
 									assertThat(persistable.isNew()).isTrue();
@@ -110,7 +112,7 @@ class JMoleculesSpringDataJpaTests {
 		var isNewField = ReflectionUtils.findField(SampleAggregate.class, PersistableImplementor.IS_NEW_FIELD);
 		ReflectionUtils.makeAccessible(isNewField);
 
-		var aggregate = new SampleAggregate(new SampleAggregateIdentifier());
+		var aggregate = new SampleAggregate(new SampleAggregateIdentifier("id"));
 		ReflectionUtils.setField(isNewField, aggregate, false);
 
 		var result = aggregate.wither();

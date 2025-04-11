@@ -33,15 +33,13 @@ import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.description.type.TypeDescription.Generic;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.DynamicType.Builder;
-import net.bytebuddy.implementation.EqualsMethod;
 import net.bytebuddy.implementation.FieldAccessor;
-import net.bytebuddy.implementation.HashCodeMethod;
-import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatcher.Junction;
 import net.bytebuddy.matcher.ElementMatchers;
 
 import java.lang.reflect.Field;
 
+import org.jmolecules.bytebuddy.PluginLogger.Log;
 import org.jmolecules.spring.data.MutablePersistable;
 import org.springframework.data.domain.Persistable;
 import org.springframework.stereotype.Component;
@@ -51,7 +49,7 @@ import org.springframework.util.ReflectionUtils;
  * @author Oliver Drotbohm
  */
 @RequiredArgsConstructor(staticName = "of")
-class PersistableImplementor {
+class PersistableImplementor extends EntityImplementor {
 
 	static final String GET_ID_METHOD = "getId";
 	static final String IS_NEW_METHOD = "isNew";
@@ -60,24 +58,18 @@ class PersistableImplementor {
 
 	private final PersistableOptions options;
 
-	JMoleculesTypeBuilder implementPersistable(JMoleculesTypeBuilder type) {
+	JMoleculesTypeBuilder implementPersistable(JMoleculesTypeBuilder type, Log log) {
 
 		if (type.isAssignableTo(Persistable.class)) {
 			return type;
-
 		}
 
-		return type.findIdField()
+		return implementEntity(type, log)
+				.findIdField()
 				.map(field -> {
 
-					// Select only identifier field
-					ElementMatcher<? super InDefinedShape> isIdField = candidate -> !candidate.getName()
-							.equals(field.getName());
-
 					return type.map(it -> implementPersistable(it, field))
-							.mapBuilder(__ -> options.hasCallbackAnnotations(), this::generateAnnotationCallbacks)
-							.mapBuilder(it -> !it.hasMethod(isEquals()), it -> generateEquals(it, isIdField))
-							.mapBuilder(it -> !it.hasMethod(isHashCode()), it -> generateHashCode(it, isIdField));
+							.mapBuilder(__ -> options.hasCallbackAnnotations(), this::generateAnnotationCallbacks);
 
 				}).orElse(type);
 	}
@@ -144,19 +136,6 @@ class PersistableImplementor {
 
 		return builder.defineMethod(IS_NEW_METHOD, boolean.class, Visibility.PUBLIC)
 				.intercept(FieldAccessor.ofField(IS_NEW_FIELD));
-	}
-
-	private Builder<?> generateEquals(Builder<?> builder, ElementMatcher<? super InDefinedShape> idField) {
-
-		return builder.defineMethod("equals", boolean.class, Visibility.PUBLIC)
-				.withParameter(Object.class)
-				.intercept(EqualsMethod.isolated().withIgnoredFields(idField));
-	}
-
-	private Builder<?> generateHashCode(Builder<?> builder, ElementMatcher<? super InDefinedShape> idField) {
-
-		return builder.defineMethod("hashCode", int.class, Visibility.PUBLIC)
-				.intercept(HashCodeMethod.usingDefaultOffset().withIgnoredFields(idField));
 	}
 
 	private DynamicType createCallbackComponent(TypeDescription typeDescription) {

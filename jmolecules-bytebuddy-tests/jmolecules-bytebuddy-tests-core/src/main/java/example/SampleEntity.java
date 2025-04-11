@@ -16,6 +16,8 @@
 package example;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.List;
 
@@ -25,6 +27,8 @@ import org.jmolecules.ddd.types.Entity;
  * @author Oliver Drotbohm
  */
 @Getter
+@Setter
+@NoArgsConstructor
 public class SampleEntity implements Entity<SampleAggregate, Long> {
 
 	private Long id;
@@ -33,4 +37,8 @@ public class SampleEntity implements Entity<SampleAggregate, Long> {
 	private List<SampleEntity> nestedEntities;
 	private List<SampleValueObject> valueObjects;
 	private SampleRecord sampleRecord;
+
+	public SampleEntity(Long id) {
+		this.id = id;
+	}
 }
