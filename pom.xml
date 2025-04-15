@@ -26,7 +26,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<aptk-tools.version>0.30.1</aptk-tools.version>
 		<archunit.version>1.4.0</archunit.version>
-		<bytebuddy.version>1.17.3</bytebuddy.version>
+		<bytebuddy.version>1.17.5</bytebuddy.version>
 		<hibernate.version>6.6.2.Final</hibernate.version>
 		<jmolecules.version>1.10.0</jmolecules.version>
 		<module.name>org.jmolecules.integrations</module.name>
