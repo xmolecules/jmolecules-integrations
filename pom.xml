@@ -32,7 +32,7 @@
 		<module.name>org.jmolecules.integrations</module.name>
 		<spring-boot.version>2.7.18</spring-boot.version>
 		<spring-boot3.version>3.3.6</spring-boot3.version>
-		<axon.version>4.10.4</axon.version>
+		<axon.version>4.11.1</axon.version>
 	</properties>
 
 	<licenses>
