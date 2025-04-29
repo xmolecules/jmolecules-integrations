@@ -205,6 +205,7 @@ public class JMoleculesProcessor implements Processor {
 
 		private final TypeMirror AGGREGATE_TYPE = getTypeMirror(PACKAGE + ".types.AggregateRoot");
 		private final TypeMirror AGGREGATE_ANNOTATION = getTypeMirror(PACKAGE + ".annotation.AggregateRoot");
+		private final TypeMirror ASSOCIATION = getTypeMirror(PACKAGE + ".types.Association");
 		private final TypeMirror ENTITY_ANNOTATION = getTypeMirror("org.jmolecules.ddd.annotation.Entity");
 		private final TypeMirror IDENTIFIABLE_TYPE = getTypeMirror(PACKAGE + ".types.Identifiable");
 		private final TypeMirror IDENTIFIER_TYPE = getTypeMirror(PACKAGE + ".types.Identifier");
@@ -233,7 +234,7 @@ public class JMoleculesProcessor implements Processor {
 			}
 
 			if (isValueObjectOrIdentifier(element)) {
-				verifyFields(element, it -> !isIdentifiable(it),
+				verifyFields(element, it -> isAssociation(it) || !isIdentifiable(it),
 						"Value object or identifier must not refer to identifiables!");
 			}
 		}
@@ -281,6 +282,10 @@ public class JMoleculesProcessor implements Processor {
 
 			return mirror.isAssignableTo(AGGREGATE_TYPE)
 					|| hasMetaAnnotation(mirror, AGGREGATE_ANNOTATION);
+		}
+
+		private boolean isAssociation(TypeMirrorWrapper mirror) {
+			return mirror.isAssignableTo(ASSOCIATION);
 		}
 
 		private boolean isIdentifiable(TypeMirrorWrapper mirror) {
