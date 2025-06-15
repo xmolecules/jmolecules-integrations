@@ -22,10 +22,17 @@ import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.DynamicType.Builder;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -38,6 +45,11 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 
 	private final Map<ClassFileLocator, List<LoggingPlugin>> globalPlugins = new HashMap<>();
 	private final Map<TypeDescription, List<? extends LoggingPlugin>> delegates = new HashMap<>();
+	private final JMoleculesConfiguration configuration;
+
+	public JMoleculesPlugin(File outputFolder) {
+		this.configuration = new JMoleculesConfiguration(outputFolder);
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -46,6 +58,10 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 	@Override
 	public void onPreprocess(TypeDescription typeDescription,
 			ClassFileLocator classFileLocator) {
+
+		if (!configuration.include(typeDescription)) {
+			return;
+		}
 
 		if (PluginUtils.isCglibProxyType(typeDescription)) {
 			return;
@@ -66,7 +82,7 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 					springDataPlugin(world), //
 					springDataJdbcPlugin(world), //
 					springDataJpaPlugin(world, jpa), //
-					springDataMongDbPlugin(world))
+					springDataMongoDbPlugin(world))
 					.flatMap(it -> it)
 					.collect(Collectors.toList());
 		});
@@ -114,9 +130,13 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 						(left, right) -> right);
 	}
 
-	private static Stream<? extends LoggingPlugin> jpaPlugin(ClassWorld world, Optional<Jpa> jpa) {
+	private Stream<? extends LoggingPlugin> jpaPlugin(ClassWorld world, Optional<Jpa> jpa) {
 
 		return jpa.filter(__ -> {
+
+			if (!configuration.supportsPersistence("jpa")) {
+				return false;
+			}
 
 			boolean jMoleculesJpaAvailable = world.isAvailable("org.jmolecules.jpa.JMoleculesJpa");
 
@@ -145,30 +165,41 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 				: Stream.empty();
 	}
 
-	private static Stream<? extends LoggingPlugin> springJpaPlugin(ClassWorld world, Optional<Jpa> jpa) {
+	private Stream<? extends LoggingPlugin> springJpaPlugin(ClassWorld world, Optional<Jpa> jpa) {
 
-		return jpa.filter(__ -> world.isAvailable("org.springframework.stereotype.Component")) //
+		return jpa.filter(__ -> configuration.supportsPersistence("jpa"))
+				.filter(__ -> world.isAvailable("org.springframework.stereotype.Component")) //
 				.filter(__ -> world.isAvailable("org.jmolecules.spring.jpa.AssociationAttributeConverter")) //
 				.map(it -> new JMoleculesSpringJpaPlugin(it)) //
-				.map(Stream::of).orElseGet(Stream::empty);
+				.map(Stream::of) //
+				.orElseGet(Stream::empty);
 	}
 
-	private static Stream<LoggingPlugin> springDataJdbcPlugin(ClassWorld world) {
+	private Stream<LoggingPlugin> springDataJdbcPlugin(ClassWorld world) {
+
+		if (!configuration.supportsPersistence("jdbc")) {
+			return Stream.empty();
+		}
 
 		return world.isAvailable("org.springframework.data.jdbc.core.mapping.AggregateReference") //
 				? Stream.of(new JMoleculesSpringDataJdbcPlugin(), new EntityPlugin("JDBC")) //
 				: Stream.empty();
 	}
 
-	private static Stream<? extends LoggingPlugin> springDataJpaPlugin(ClassWorld world, Optional<Jpa> jpa) {
+	private Stream<? extends LoggingPlugin> springDataJpaPlugin(ClassWorld world, Optional<Jpa> jpa) {
 
-		return jpa.filter(__ -> world.isAvailable("org.springframework.data.jpa.repository.JpaRepository")) //
+		return jpa.filter(__ -> configuration.supportsPersistence("jpa"))
+				.filter(__ -> world.isAvailable("org.springframework.data.jpa.repository.JpaRepository")) //
 				.map(JMoleculesSpringDataJpaPlugin::new) //
 				.map(Stream::of) //
 				.orElseGet(Stream::empty);
 	}
 
-	private static Stream<LoggingPlugin> springDataMongDbPlugin(ClassWorld world) {
+	private Stream<LoggingPlugin> springDataMongoDbPlugin(ClassWorld world) {
+
+		if (!configuration.supportsPersistence("mongodb")) {
+			return Stream.empty();
+		}
 
 		return world.isAvailable("org.springframework.data.mongodb.core.mapping.Document") //
 				? Stream.of(new JMoleculesSpringDataMongoDbPlugin(), new EntityPlugin("MongoDB")) //
@@ -187,5 +218,124 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 		return world.isAvailable("org.axonframework.spring.stereotype.Aggregate") //
 				? Stream.of(new JMoleculesAxonSpringPlugin()) //
 				: Stream.empty();
+	}
+
+	@Slf4j
+	static class JMoleculesConfiguration {
+
+		private final Properties properties;
+
+		public JMoleculesConfiguration(File outputFolder) {
+
+			this.properties = new Properties();
+
+			Path projectRoot = detectProjectRoot(outputFolder);
+			loadProperties(detectConfiguration(projectRoot), outputFolder);
+
+			String toInclude = getPackagesToInclude();
+
+			if (toInclude != null) {
+				log.info("Applying code generation to types located in package(s): {}.", toInclude);
+			}
+		}
+
+		String getProperty(String key) {
+			return properties.getProperty(key);
+		}
+
+		private void loadProperties(File configuration, File outputFolder) {
+
+			if (configuration == null) {
+
+				logNoConfigFound(outputFolder);
+				return;
+			}
+
+			try {
+
+				this.properties.load(new FileInputStream(configuration));
+
+			} catch (FileNotFoundException o_O) {
+
+				logNoConfigFound(outputFolder);
+				return;
+
+			} catch (IOException o_O) {
+				throw new UncheckedIOException(o_O);
+			}
+		}
+
+		public void logNoConfigFound(File outputFolder) {
+
+			log.info("No jmolecules.config found traversing {}", outputFolder.getAbsolutePath());
+			return;
+		}
+
+		public boolean include(TypeDescription description) {
+
+			String value = properties.getProperty("bytebuddy.include", "");
+
+			if (value.trim().isEmpty()) {
+				return true;
+			}
+
+			String[] parts = value.split("\\,");
+
+			return Stream.of(parts)
+					.map(String::trim)
+					.map(it -> it.concat("."))
+					.anyMatch(description.getName()::startsWith);
+		}
+
+		public boolean supportsPersistence(String persistence) {
+
+			String value = properties.getProperty("bytebuddy.persistence");
+
+			if (value == null || value.trim().isEmpty()) {
+				return true;
+			}
+
+			return Stream.of(value.split("\\,")).map(String::trim).anyMatch(persistence::equals);
+		}
+
+		private String getPackagesToInclude() {
+			return properties.getProperty("bytebuddy.include");
+		}
+
+		private static Path detectProjectRoot(File file) {
+
+			String path = file.getAbsolutePath();
+
+			return Stream.of("target/classes", "build/classes")
+					.filter(path::contains)
+					.map(it -> new File(path.substring(0, path.indexOf(it) - 1)))
+					.map(File::toPath)
+					.findFirst()
+					.orElseGet(file::toPath);
+		}
+
+		private static File detectConfiguration(Path folder) {
+
+			if (!hasBuildFile(folder)) {
+				return null;
+			}
+
+			File candidate = folder.resolve("jmolecules.config").toFile();
+
+			if (candidate.exists()) {
+
+				log.info("Found jmolecules.configuration at {}", candidate.getAbsolutePath());
+				return candidate;
+			}
+
+			return detectConfiguration(folder.getParent());
+		}
+	}
+
+	private static boolean hasBuildFile(Path folder) {
+
+		return Stream.of("pom.xml", "build.gradle", "build.gradle.kts")
+				.map(folder::resolve)
+				.anyMatch(it -> it.toFile().exists());
 	}
 }
