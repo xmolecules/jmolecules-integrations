@@ -24,4 +24,7 @@ jobs:
         cache: 'maven'
 
     - name: Build and deploy snapshot
-      run: ./mvnw -B deploy --file pom.xml -s settings.xml -DcentralOssrhUsername=${{ secrets.CENTRAL_OSSRH_USERNAME }} -DcentralOssrhPassword=${{ secrets.CENTRAL_OSSRH_PASSWORD }}
+      env:
+        CENTRAL_OSSRH_USERNAME: ${{ secrets.CENTRAL_OSSRH_USERNAME }}
+        CENTRAL_OSSRH_PASSWORD: ${{ secrets.CENTRAL_OSSRH_PASSWORD }}
+      run: ./mvnw -B deploy -s settings.xml
