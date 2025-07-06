@@ -168,6 +168,7 @@ public class PrimitivesToIdentifierConverter implements ConditionalGenericConver
 
 		return Arrays.stream(type.getDeclaredConstructors())
 				.filter(it -> it.getParameterCount() == 1)
+				.filter(it -> primitives.contains(it.getParameterTypes()[0]))
 				.filter(it -> isAssignableOrConvertable(parameterType, it.getParameterTypes()[0]))
 				.peek(ReflectionUtils::makeAccessible)
 				.findFirst()
