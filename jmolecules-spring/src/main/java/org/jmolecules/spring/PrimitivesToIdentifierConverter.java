@@ -52,7 +52,7 @@ public class PrimitivesToIdentifierConverter implements ConditionalGenericConver
 
 	private static final Map<Class<?>, Optional<Instantiator>> CREATORS = new ConcurrentReferenceHashMap<>();
 
-	private static final Set<Class<?>> DEFAULT_PRIMITIVES = new HashSet<>(Arrays.asList(String.class, UUID.class));
+	private static final Set<Class<?>> DEFAULT_PRIMITIVES = new HashSet<>(Arrays.asList(String.class, UUID.class, Long.class, long.class, Integer.class, int.class));
 	private static final Set<String> DEFAULT_FACTORY_METHOD_NAMES = new HashSet<>(Arrays.asList("of"));
 
 	private final Supplier<? extends ConversionService> conversionService;

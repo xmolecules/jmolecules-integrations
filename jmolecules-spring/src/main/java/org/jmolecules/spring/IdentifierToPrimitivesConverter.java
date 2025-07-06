@@ -45,7 +45,7 @@ import org.springframework.util.ReflectionUtils;
 public class IdentifierToPrimitivesConverter implements ConditionalGenericConverter {
 
 	private static final Map<Class<?>, Optional<Field>> CACHE = new ConcurrentReferenceHashMap<>();
-	private static final List<Class<?>> DEFAULT_PRIMITIVES = Arrays.asList(UUID.class, String.class);
+	private static final List<Class<?>> DEFAULT_PRIMITIVES = Arrays.asList(UUID.class, String.class, Long.class, long.class, Integer.class, int.class);
 
 	private final Supplier<? extends ConversionService> conversionService;
 	private Set<Class<?>> primitives;
