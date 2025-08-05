@@ -20,7 +20,10 @@ import static org.assertj.core.api.Assertions.*;
 import example.SampleAggregate;
 import example.SampleAggregateIdentifier;
 import jakarta.persistence.Convert;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embeddable;
+
+import java.util.stream.Stream;
 
 import org.hibernate.annotations.EmbeddableInstantiator;
 import org.jmolecules.hibernate.RecordInstantiator;
@@ -39,21 +42,26 @@ class JMoleculesSpringJpaPluginTests {
 	@Test // #27, #36, #71
 	void registersAssociationAttributeConverter() {
 
-		var field = ReflectionUtils.findField(SampleAggregate.class, "association");
-		var annotation = field.getDeclaredAnnotation(Convert.class);
+		var association = ReflectionUtils.findField(SampleAggregate.class, "association");
+		var associations = ReflectionUtils.findField(SampleAggregate.class, "associations");
 
-		var converterType = annotation.converter();
+		Stream.of(association, associations).forEach(it -> {
 
-		assertThat(converterType.getPackage().getName())
-				.isEqualTo(SampleAggregate.class.getPackage().getName());
-		assertThat(JakartaPersistenceAssociationAttributeConverter.class).isAssignableFrom(converterType);
+			var annotation = it.getDeclaredAnnotation(Convert.class);
 
-		var boundGenerics = ResolvableType.forClass(converterType)
-				.as(JakartaPersistenceAssociationAttributeConverter.class);
+			var converterType = annotation.converter();
 
-		assertThat(boundGenerics.getGeneric(0).getRawClass()).isEqualTo(SampleAggregate.class);
-		assertThat(boundGenerics.getGeneric(1).getRawClass()).isEqualTo(SampleAggregateIdentifier.class);
-		assertThat(boundGenerics.getGeneric(2).getRawClass()).isEqualTo(String.class);
+			assertThat(converterType.getPackage().getName())
+					.isEqualTo(SampleAggregate.class.getPackage().getName());
+			assertThat(JakartaPersistenceAssociationAttributeConverter.class).isAssignableFrom(converterType);
+
+			var boundGenerics = ResolvableType.forClass(converterType)
+					.as(JakartaPersistenceAssociationAttributeConverter.class);
+
+			assertThat(boundGenerics.getGeneric(0).getRawClass()).isEqualTo(SampleAggregate.class);
+			assertThat(boundGenerics.getGeneric(1).getRawClass()).isEqualTo(SampleAggregateIdentifier.class);
+			assertThat(boundGenerics.getGeneric(2).getRawClass()).isEqualTo(String.class);
+		});
 	}
 
 	@Test // #98
@@ -64,5 +72,13 @@ class JMoleculesSpringJpaPluginTests {
 		var annotation = example.SampleRecord.class.getAnnotation(EmbeddableInstantiator.class);
 
 		assertThat(RecordInstantiator.class).isAssignableFrom(annotation.value());
+	}
+
+	@Test // #335
+	void annotatesCollectionOfAssociationsWithElementCollection() {
+
+		var field = ReflectionUtils.findField(SampleAggregate.class, "associations");
+
+		assertThat(field.getDeclaredAnnotation(ElementCollection.class)).isNotNull();
 	}
 }

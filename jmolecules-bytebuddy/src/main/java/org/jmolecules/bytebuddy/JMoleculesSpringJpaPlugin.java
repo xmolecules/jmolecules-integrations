@@ -21,6 +21,7 @@ import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.ClassFileVersion;
 import net.bytebuddy.build.Plugin.WithPreprocessor;
 import net.bytebuddy.description.annotation.AnnotationDescription;
+import net.bytebuddy.description.field.FieldDescription;
 import net.bytebuddy.description.field.FieldDescription.InDefinedShape;
 import net.bytebuddy.description.field.FieldDescription.InGenericShape;
 import net.bytebuddy.description.modifier.Visibility;
@@ -35,8 +36,12 @@ import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.matcher.ElementMatchers;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.jmolecules.bytebuddy.PluginLogger.Log;
@@ -94,7 +99,7 @@ public class JMoleculesSpringJpaPlugin implements LoggingPlugin, WithPreprocesso
 	private Builder<?> addConvertAnnotationIfNeeded(Builder<?> builder, Log logger) {
 
 		List<InDefinedShape> associationFields = builder.toTypeDescription().getDeclaredFields().stream()
-				.filter(field -> field.getType().asErasure().represents(Association.class))
+				.filter(isAssociationOrCollectionThereof())
 				.collect(Collectors.toList());
 
 		for (InDefinedShape field : associationFields) {
@@ -121,7 +126,10 @@ public class JMoleculesSpringJpaPlugin implements LoggingPlugin, WithPreprocesso
 
 	private Builder<?> createConvertAnnotation(InDefinedShape field, Builder<?> builder, Log log) {
 
-		TypeList.Generic generic = field.getType().asGenericType().getTypeArguments();
+		boolean isCollection = field.getType().asErasure().isAssignableTo(Collection.class);
+		Generic associationType = isCollection ? field.getType().getTypeArguments().get(0) : field.getType();
+
+		TypeList.Generic generic = associationType.asGenericType().getTypeArguments();
 		Generic aggregateType = generic.get(0);
 		Generic idType = generic.get(1);
 		Generic idPrimitiveType = getIdPrimitiveType(idType);
@@ -149,13 +157,27 @@ public class JMoleculesSpringJpaPlugin implements LoggingPlugin, WithPreprocesso
 
 		builder = builder.require(converterType);
 
-		log.info("{} - Adding @j.p.Convert(converter={}).", field.getName(),
+		Junction<FieldDescription> fieldMatcher = ElementMatchers.is(field);
+		String logMessage = String.format("%s - Adding @j.p.Convert(converter=%s)", field.getName(),
 				PluginUtils.abbreviate(converterType.getTypeDescription()));
 
-		return builder.field(ElementMatchers.is(field))
-				.annotateField(AnnotationDescription.Builder.ofType(jpa.getAnnotation("Convert"))
-						.define("converter", converterType.getTypeDescription())
-						.build());
+		List<AnnotationDescription> annotations = new ArrayList<>();
+
+		if (isCollection) {
+
+			Class<Annotation> elementCollectionAnnotation = jpa.getAnnotation("ElementCollection");
+			logMessage += " and " + PluginUtils.abbreviate(elementCollectionAnnotation);
+
+			annotations.add(PluginUtils.getAnnotation(elementCollectionAnnotation));
+		}
+
+		log.info(logMessage + ".", field.getName(), PluginUtils.abbreviate(converterType.getTypeDescription()));
+
+		annotations.add(AnnotationDescription.Builder.ofType(jpa.getAnnotation("Convert"))
+				.define("converter", converterType.getTypeDescription())
+				.build());
+
+		return builder.field(fieldMatcher).annotateField(annotations);
 	}
 
 	private static TypeDescription.Generic getIdPrimitiveType(Generic idType) {
@@ -180,5 +202,26 @@ public class JMoleculesSpringJpaPlugin implements LoggingPlugin, WithPreprocesso
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private static Predicate<? super InDefinedShape> isAssociationOrCollectionThereof() {
+
+		return it -> {
+
+			Generic type = it.getType();
+			TypeDescription rawType = type.asErasure();
+
+			if (rawType.represents(Association.class)) {
+				return true;
+			}
+
+			if (!rawType.isAssignableTo(Collection.class)) {
+				return false;
+			}
+
+			TypeList.Generic arguments = type.getTypeArguments();
+
+			return !arguments.isEmpty() && arguments.get(0).asErasure().represents(Association.class);
+		};
 	}
 }

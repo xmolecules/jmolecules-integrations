@@ -19,6 +19,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Collection;
+import java.util.List;
 
 import org.jmolecules.ddd.types.AggregateRoot;
 import org.jmolecules.ddd.types.Association;
@@ -37,6 +38,7 @@ public class SampleAggregate implements AggregateRoot<SampleAggregate, SampleAgg
 	private Collection<SampleEntity> anotherListOfEntity;
 
 	private Association<SampleAggregate, SampleAggregateIdentifier> association;
+	private List<Association<SampleAggregate, SampleAggregateIdentifier>> associations;
 
 	public SampleAggregate(SampleAggregateIdentifier id) {
 		this.id = id;
