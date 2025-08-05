@@ -2,8 +2,8 @@
 
 This module contains a ByteBuddy plugin implementation that will generate technology specific boilerplate code based on concepts expressed via jMolecules DDD building block interfaces.
 
-* It will transparently add `Persistable` implementations for `AggregateRoot` types for JPA, JDBC and MongoDB.
-* It automatically adds default mapping annotations to make aggregates work with persistence implementations out of the box.
+* Adds Spring-specific stereotype annotations (such as `@Service` etc.) to types annotated with jMolecules stereotype annotations (see <<annotation-translation>>).
+* It automatically adds default mapping annotations to make aggregates work with persistence implementations out of the box and transparently add `Persistable` implementations for `AggregateRoot` types for JPA, JDBC and MongoDB if Spring Data is used in the project (see <<jpa-aggregates>> and <<persistable-implementation>>).
 
 [[quickstart]]
 == Quickstart
@@ -18,7 +18,59 @@ For details, see https://www.jetbrains.com/help/idea/work-with-maven-goals.html#
 [[quickstart.maven]]
 === Maven
 
-In the `build/plugins` section of your Maven POM add:
+NOTE: Find complete examples of the setup using different sets of technology in the https://github.com/xmolecules/jmolecules-examples[jMolecules Examples repository].
+
+First of all, make sure you use the jMolecules BOM to avoid having to deal with version numbers. Find the most recent version number https://github.com/xmolecules/jmolecules-bom?tab=readme-ov-file#jmolecules-bom[here].
+
+[source, xml]
+----
+<dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>org.jmolecules</groupId>
+      <artifactId>jmolecules-bom</artifactId>
+      <version>${jmolecules.version}</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+  </dependencies>
+</dependencyManagement>
+----
+
+Next, add the `jmolecules-bytebuddy-nodep` dependency and declare it in `provided` scope, so that its not packaged in your runtime application.
+
+[source, xml]
+----
+<dependencies>
+  <dependency>
+    <groupId>org.jmolecules.integrations</groupId>
+    <artifactId>jmolecules-bytebuddy-nodep</artifactId>
+    <scope>provided</scope>
+  </dependency>
+</dependencies>
+----
+
+Now add jMolecules integration JARs to your project, depending on the technology stack you're using. They can usually be declared in `runtime` scope, unless you need to directly interact with APIs exposed.
+
+[cols="1,1,1", options="header"]
+|===
+|Technology
+|Artifact ID
+|Description
+
+|Spring Data
+|`jmolecules-spring`
+|Contains code needed by Spring Data-related code generation and other runtime artifacts.
+
+|JPA
+|`jmolecules-jpa`
+|(Spring Data) JPA-specific code needed by the code generation.
+
+|===
+
+NOTE: There are other technology integration artifacts available, but the ones listed above are the ones needed to get the code generation working.
+
+Finally, declare the `byte-buddy-maven-plugin` in the `<plugins>` section of your `pom.xml`
 
 [source, xml]
 ----
@@ -29,21 +81,21 @@ In the `build/plugins` section of your Maven POM add:
   <executions>
     <execution>
       <goals>
-        <goal>transform</goal> <!-- Enable the source code transformation -->
+        <goal>transform-extended</goal> <1>
       </goals>
     </execution>
   </executions>
-  <dependencies>
-    <dependency> <!-- Apply jMolecules transformations -->
-      <groupId>org.jmolecules.integrations</groupId>
-      <artifactId>jmolecules-bytebuddy-nodep</artifactId>
-      <version>${jmolecules-integrations.version}</version>
-    </dependency>
-  </dependencies>
+  <configuration>
+    <classPathDiscovery>true</classPathDiscovery> <2>
+  </configuration>
 </plugin>
 ----
+<1> The `transform-extended` goal makes sure the plugin runs with the `runtime` classpath and thus discovers the integration artifacts declared in that scope, too.
+<2> The `classPathDiscovery` flag causes the ByteBuddy build plugin to autmatically discover the jMolecules extension in `jmolecules-bytebuddy-nodep`.
 
 === Gradle
+
+NOTE: Using Gradle, ByteBuddy and Kotlin in combination is currently not possible due to incompatibilities between the ByteBuddy Gradle plugin and Kotlin. Find more information https://github.com/raphw/byte-buddy/issues/1284#issuecomment-1191991216[here].
 
 [source, groovy]
 ----
@@ -52,7 +104,7 @@ buildscript {
     mavenCentral()
   }
   dependencies {
-    classpath platform('org.jmolecules:jmolecules-bom:2021.0.2')
+    classpath platform("org.jmolecules:jmolecules-bom:$jMoleculesBomVersion")
     classpath 'org.jmolecules.integrations:jmolecules-bytebuddy'
   }
 }
