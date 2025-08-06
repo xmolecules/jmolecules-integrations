@@ -30,6 +30,7 @@ import org.jmolecules.ddd.types.Identifier;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.kotlin.KotlinModule;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
@@ -85,6 +86,20 @@ class JMoleculesModuleUnitTests {
 		Wrapper wrapper = mapper.readValue("{ \"first\" : 42 }", Wrapper.class);
 
 		assertThat(wrapper.first).isEqualTo(new First(42L));
+	}
+
+	@Test // GH-336
+	void instantiatesKotlinDataClass() throws Exception {
+
+		ObjectMapper mapper = this.mapper.copy()
+				.registerModule(new KotlinModule.Builder().build());
+
+		UUID uuid = UUID.randomUUID();
+		String source = String.format("{ \"id\" : \"%s\", \"anotherId\" : \"%s\" }", uuid, uuid);
+
+		KotlinWrapper wrapper = mapper.readValue(source, KotlinWrapper.class);
+
+		assertThat(wrapper.getId()).isNotNull();
 	}
 
 	@Data
