@@ -93,6 +93,40 @@ Finally, declare the `byte-buddy-maven-plugin` in the `<plugins>` section of you
 <1> The `transform-extended` goal makes sure the plugin runs with the `runtime` classpath and thus discovers the integration artifacts declared in that scope, too.
 <2> The `classPathDiscovery` flag causes the ByteBuddy build plugin to autmatically discover the jMolecules extension in `jmolecules-bytebuddy-nodep`.
 
+[[quickstart.kotlin]]
+==== Kotlin specialties
+If you use jMolecules stereotype annotations with Kotlin, you will need to make sure that the Kotlin compiler opens up the types annotated with those. To achieve that, you usually use the `kotlin-allopen` or `kotlin-spring` plugins. To get the plugins consider jMolecules annotations as well, you need to declare them in the plugin configuration like this:
+
+[source, xml]
+----
+<pluginOptions>
+  <option>all-open:annotation=org.jmolecules.ddd.annotation.Service</option> <1>
+</pluginOptions>
+----
+<1>
+
+Furthermore, the setup of the ByteBuddy Maven Plugin will need to get an additional configuration applied to skip the parameter name validation:
+
+[source, xml]
+----
+
+<plugin>
+  <groupId>net.bytebuddy</groupId>
+  <artifactId>byte-buddy-maven-plugin</artifactId>
+  <version>${bytebuddy.version}</version>
+  …
+  <configuration>
+    <initialization> <1>
+      <classPathDiscovery>true</classPathDiscovery>
+      <validated>false</validated>
+    </initialization>
+  </configuration>
+</plugin>
+----
+<1> The validation on initialization has to be disabled.
+
+For more information, see https://github.com/raphw/byte-buddy/issues/843[this ByteBuddy ticket] and https://youtrack.jetbrains.com/issue/KT-38547/Generated-setter-parameter-name-has-invalid-symbols-with-javap[this Kotlin ticket].
+
 === Gradle
 
 NOTE: Using Gradle, ByteBuddy and Kotlin in combination is currently not possible due to incompatibilities between the ByteBuddy Gradle plugin and Kotlin. Find more information https://github.com/raphw/byte-buddy/issues/1284#issuecomment-1191991216[here].
