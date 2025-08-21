@@ -1,0 +1,40 @@
+= jMolecules Jackson integration
+
+This module contains a Jackson module implementation that registers a serializer and deserializer for jMolecules `Identifier` and `@ValueObject` types that expose exactly *one* property.
+They tweak the serialization to unwrap that singluar value and use a static factory method named `….of(…)` to construct instances:
+
+== An example
+
+[source, java]
+----
+class SomeIdentifier implements Identifier {
+
+  private final UUID id;
+
+  @Override
+  UUID getId() {
+    return this.id;
+  }
+
+  public static SomeIdentifier of(UUID source) {
+    return new SomeIdentifier(source);
+  }
+}
+
+class SomeWrapper {
+  SomeIdentifier identifier;
+}
+----
+
+This structure will serialize as follows:
+
+[source, json]
+----
+{ "identifier" : "161cb524-a7cb-4272-a0b3-1b63711c9c60" }
+----
+
+Note, how the `UUID` is unwrapped from the `SomeIdentifier`.
+When deserializing the representation, the raw value (the `UUID` string) will be deserialized into the parameter type of the factory method first to eventually invoke the factory method using the result of the intermediate conversion.
+In short, the payload will deserialize into a `SomeWrapper` instance and the `identifier` property will be populated properly.
+
+The same works with classes annotated with `@ValueObject` as long as they expose exactly *one* property to Jackson (which depends on the Jackson property detection settings).
