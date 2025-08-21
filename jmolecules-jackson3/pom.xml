@@ -8,12 +8,14 @@
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
-	<name>jMolecules - Jackson 2 runtime integration</name>
-	<artifactId>jmolecules-jackson</artifactId>
+	<name>jMolecules - Jackson 3 runtime integration</name>
+	<artifactId>jmolecules-jackson3</artifactId>
 
 	<properties>
+		<java.version>17</java.version>
 		<kotlin.version>2.2.0</kotlin.version>
-		<module.name>org.jmolecules.integrations.jackson</module.name>
+		<module.name>org.jmolecules.integrations.jackson3</module.name>
+		<jackson.version>3.0.0-rc8</jackson.version>
 	</properties>
 
 	<dependencies>
@@ -30,8 +32,9 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
+			<groupId>tools.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
+			<version>${jackson.version}</version>
 		</dependency>
 
 		<dependency>
@@ -62,6 +65,20 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-json</artifactId>
 			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>*</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.fasterxml.jackson.datatype</groupId>
+					<artifactId>*</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.fasterxml.jackson.module</groupId>
+					<artifactId>*</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
@@ -85,18 +102,6 @@
 		<dependency>
 			<groupId>org.jetbrains.kotlin</groupId>
 			<artifactId>kotlin-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>com.fasterxml.jackson.module</groupId>
-			<artifactId>jackson-module-parameter-names</artifactId>
-			<scope>test</scope>
-		</dependency>
-		
-		<dependency>
-			<groupId>com.fasterxml.jackson.module</groupId>
-			<artifactId>jackson-module-kotlin</artifactId>
 			<scope>test</scope>
 		</dependency>
 
