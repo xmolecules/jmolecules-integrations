@@ -31,8 +31,8 @@ class StringBasedStereotypeUnitTests {
 		var type = AggregateRoot.class;
 		var stereotype = StringBasedStereotype.of(type.getName());
 
-		assertThat(stereotype.getIdentifier()).isEqualTo("org.jmolecules.ddd.AggregateRoot");
-		assertThat(stereotype.getGroups()).containsExactlyInAnyOrder("org.jmolecules.ddd");
+		assertThat(stereotype.getIdentifier()).isEqualTo("ddd.AggregateRoot");
+		assertThat(stereotype.getGroups()).containsExactlyInAnyOrder("ddd");
 		assertThat(stereotype.getDisplayName()).isEqualTo("Aggregate Root");
 
 		assertThat(AnnotationConfiguredStereotype.of(type)).isEqualTo(stereotype);
@@ -44,8 +44,8 @@ class StringBasedStereotypeUnitTests {
 		var type = org.jmolecules.ddd.types.AggregateRoot.class;
 		var stereotype = StringBasedStereotype.of(type.getName());
 
-		assertThat(stereotype.getIdentifier()).isEqualTo("org.jmolecules.ddd.AggregateRoot");
-		assertThat(stereotype.getGroups()).containsExactlyInAnyOrder("org.jmolecules.ddd");
+		assertThat(stereotype.getIdentifier()).isEqualTo("ddd.AggregateRoot");
+		assertThat(stereotype.getGroups()).containsExactlyInAnyOrder("ddd");
 		assertThat(stereotype.getDisplayName()).isEqualTo("Aggregate Root");
 
 		assertThat(AnnotationConfiguredStereotype.of(type)).isEqualTo(stereotype);

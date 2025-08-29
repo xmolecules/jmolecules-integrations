@@ -69,8 +69,8 @@ class ReflectionStereotypeFactoryUnitTests {
 		assertThat(metadata).hasSize(2)
 				.extracting(Stereotype::getIdentifier)
 				.containsExactly(
-						"org.jmolecules.ddd.AggregateRoot",
-						"org.jmolecules.ddd.Entity");
+						"ddd.AggregateRoot",
+						"ddd.Entity");
 	}
 
 	@Test
@@ -81,9 +81,9 @@ class ReflectionStereotypeFactoryUnitTests {
 		assertThat(metadata).hasSize(3)
 				.extracting(Stereotype::getIdentifier)
 				.containsExactly(
-						"org.jmolecules.ddd.AggregateRoot",
-						"org.jmolecules.ddd.Entity",
-						"org.jmolecules.ddd.Identifiable");
+						"ddd.AggregateRoot",
+						"ddd.Entity",
+						"ddd.Identifiable");
 	}
 
 	@Test
@@ -95,25 +95,25 @@ class ReflectionStereotypeFactoryUnitTests {
 				.hasSize(1)
 				.extracting(Stereotype::getIdentifier)
 				.containsExactly(
-						"org.jmolecules.ddd.Entity");
+						"ddd.Entity");
 	}
 
 	@Test
 	void detectsPackageStereotype() {
 
-		Package pkg = SomePrimaryPort.class.getPackage();
+		var pkg = SomePrimaryPort.class.getPackage();
 
 		assertThat(factory.fromPackage(pkg))
 				.hasSize(1)
 				.extracting(Stereotype::getIdentifier)
-				.containsExactly("org.jmolecules.architecture.hexagonal.Application");
+				.containsExactly("architecture.hexagonal.Application");
 
 		assertThat(factory.fromType(SomePrimaryPort.class))
 				.hasSize(2)
 				.extracting(Stereotype::getIdentifier)
 				.containsExactly(
-						"org.jmolecules.ddd.ValueObject",
-						"org.jmolecules.architecture.hexagonal.Application");
+						"ddd.ValueObject",
+						"architecture.hexagonal.Application");
 
 	}
 

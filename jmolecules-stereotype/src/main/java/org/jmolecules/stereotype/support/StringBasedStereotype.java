@@ -109,7 +109,9 @@ public class StringBasedStereotype extends AbstractStereotype {
 
 		if (fullyQualifiedName.startsWith("org.jmolecules")) {
 
-			return Stream.of(fullyQualifiedName.split("\\."))
+			var withoutBase = fullyQualifiedName.substring("org.jmolecules".length() + 1);
+
+			return Stream.of(withoutBase.split("\\."))
 					.filter(it -> !it.equals("annotation"))
 					.filter(it -> !it.equals("types"))
 					.collect(Collectors.joining("."));
