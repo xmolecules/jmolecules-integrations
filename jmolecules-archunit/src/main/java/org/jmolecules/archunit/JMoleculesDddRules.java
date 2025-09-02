@@ -24,6 +24,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.jmolecules.ddd.annotation.Identity;
 import org.jmolecules.ddd.types.AggregateRoot;
@@ -326,10 +327,25 @@ public class JMoleculesDddRules {
 
 			JavaParameterizedType parameterizedType = (JavaParameterizedType) input.getType();
 
-			return parameterizedType.getActualTypeArguments()
-					.stream()
+			return flattenCollections(parameterizedType)
 					.map(JavaType::toErasure)
 					.anyMatch(isAnnotatedWith);
+		}
+
+		private static Stream<JavaType> flattenCollections(JavaType type) {
+
+			if (!(type instanceof JavaParameterizedType)) {
+				return Stream.of(type);
+			}
+
+			JavaClass rawType = type.toErasure();
+
+			return ((JavaParameterizedType) type).getActualTypeArguments().stream()
+					.flatMap(it -> {
+						return rawType.isAssignableFrom(Collection.class) || rawType.isAssignableTo(Map.class)
+								? flattenCollections(it)
+								: Stream.of(it);
+					});
 		}
 	}
 
@@ -361,11 +377,11 @@ public class JMoleculesDddRules {
 		private static ResolvableType unwrapDomainType(ResolvableType fieldType) {
 
 			if (COLLECTION_TYPE.isAssignableFrom(fieldType)) {
-				return fieldType.as(Collection.class).getGeneric(0);
+				return unwrapDomainType(fieldType.as(Collection.class).getGeneric(0));
 			}
 
 			if (MAP_TYPE.isAssignableFrom(fieldType)) {
-				return fieldType.as(Map.class).getGeneric(1);
+				return unwrapDomainType(fieldType.as(Map.class).getGeneric(1));
 			}
 
 			return fieldType;

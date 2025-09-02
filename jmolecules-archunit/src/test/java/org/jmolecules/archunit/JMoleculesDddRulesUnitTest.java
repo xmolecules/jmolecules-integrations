@@ -50,7 +50,7 @@ class JMoleculesDddRulesUnitTest {
 
 	SampleAggregate reference;
 
-	@ArchTest
+	@ArchTest // GH-61, GH-253, GH-337
 	void detectsViolations(JavaClasses classes) {
 
 		EvaluationResult result = JMoleculesDddRules.all().evaluate(classes);
@@ -60,7 +60,9 @@ class JMoleculesDddRulesUnitTest {
 						violation(SampleAggregate.class, "invalid", OtherEntity.class, OtherAggregate.class),
 						violation(SampleAggregate.class, "invalidAggregate", OtherAggregate.class, Association.class), //
 						violation(SampleAggregate.class, "invalidAggregateInCollection", Collection.class, Association.class), //
+						violation(SampleAggregate.class, "invalidAggregateInNestedCollection", Collection.class, Association.class), //
 						violation(SampleAggregate.class, "invalidAggregateInMap", Map.class, Association.class), //
+						violation(SampleAggregate.class, "invalidAggregateInCollectionInMap", Map.class, Association.class), //
 						violation(SampleAggregate.class, "invalidAnnotatedAggregate", AnnotatedAggregate.class, Association.class), //
 						violation(SampleAggregate.class, "invalidInCollection", Collection.class, OtherAggregate.class), //
 						violation(SampleAggregate.class, "invalidInMap", Map.class, OtherAggregate.class), //
@@ -73,7 +75,11 @@ class JMoleculesDddRulesUnitTest {
 						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedAggregate", AnnotatedAggregate.class, null), //
 						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedAggregateInCollection", Collection.class,
 								Association.class), //
-						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedAggregateInMap", Map.class, Association.class) //
+						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedAggregateInNestedCollection", Collection.class,
+								Association.class), //
+						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedAggregateInMap", Map.class, Association.class), //
+						violation(OtherAnnotatedAggregate.class, "invalidAnnotatedAggregateInCollectionInMap", Map.class,
+								Association.class) //
 				);
 	}
 
@@ -99,6 +105,8 @@ class JMoleculesDddRulesUnitTest {
 		OtherAggregate invalidAggregate;
 		Collection<OtherAggregate> invalidAggregateInCollection;
 		Map<String, OtherAggregate> invalidAggregateInMap;
+		Collection<Collection<OtherAggregate>> invalidAggregateInNestedCollection;
+		Map<String, List<OtherAggregate>> invalidAggregateInCollectionInMap;
 
 		AnnotatedAggregate invalidAnnotatedAggregate;
 
@@ -146,8 +154,12 @@ class JMoleculesDddRulesUnitTest {
 
 		@org.jmolecules.ddd.annotation.Identity Long id;
 		AnnotatedAggregate invalidAnnotatedAggregate;
+
 		Collection<AnnotatedAggregate> invalidAnnotatedAggregateInCollection;
+		Collection<Collection<AnnotatedAggregate>> invalidAnnotatedAggregateInNestedCollection;
+
 		Map<String, AnnotatedAggregate> invalidAnnotatedAggregateInMap;
+		Map<String, Collection<AnnotatedAggregate>> invalidAnnotatedAggregateInCollectionInMap;
 	}
 
 	@org.jmolecules.ddd.annotation.AggregateRoot
