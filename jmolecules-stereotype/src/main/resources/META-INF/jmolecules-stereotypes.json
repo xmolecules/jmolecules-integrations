@@ -1,17 +1,17 @@
 {
-	"stereotypes" : [
-		{
-			"id": "java.Exception",
+	"stereotypes" : {
+		"java.Exception" : {
 			"assignments": [
 				"java.lang.Exception"
 			],
 			"groups": [ "java" ]
 		}
-	],
-	"groups" : [
-		{
-			"ids" : [ "java" ],
-			"displayName" : "Java"
+	},
+	"groups" : {
+		"java" : {
+			"displayName" : "Java",
+			"type" : "technology",
+			"priority" : 20
 		}
-	]
+	}
 }

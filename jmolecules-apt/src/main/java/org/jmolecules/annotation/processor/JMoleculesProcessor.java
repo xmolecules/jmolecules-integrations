@@ -238,7 +238,9 @@ public class JMoleculesProcessor implements Processor {
 			return;
 		}
 
-		var stereotypes = definitions.stream().map(JMoleculesProcessor::toMap).toList();
+		var stereotypes = definitions.stream()
+				.collect(Collectors.toMap(it -> it.getStereotype().getIdentifier(), JMoleculesProcessor::toMap));
+
 		var content = JSONObject.toJSONString(Map.of("stereotypes", stereotypes));
 		var tooling = ToolingProvider.getTooling();
 
@@ -262,7 +264,6 @@ public class JMoleculesProcessor implements Processor {
 		var stereotype = definition.getStereotype();
 		var result = new LinkedHashMap<String, Object>();
 
-		result.put("id", stereotype.getIdentifier());
 		result.put("targets", definition.getAssignments().stream().map(Assignment::getTarget).toArray());
 		result.put("groups", stereotype.getGroups());
 		result.put("priority", stereotype.getPriority());

@@ -21,6 +21,7 @@ import net.minidev.json.JSONObject;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -86,26 +87,16 @@ public class JsonPathStereotypeCatalog extends AbstractStereotypeCatalog {
 			var configuration = Configuration.defaultConfiguration().addOptions(Option.SUPPRESS_EXCEPTIONS);
 			var context = JsonPath.parse(in, configuration);
 
-			var stereotypes = context.read("$.stereotypes", JSONObject[].class);
+			var stereotypes = context.read("$.stereotypes", JSONObject.class);
 
 			if (stereotypes != null) {
-
-				for (var source : stereotypes) {
-
-					var definition = fromJson(source);
-
-					if (definition != null) {
-						add(definition);
-					}
-				}
+				definitionsFromJson(stereotypes).forEach(this::add);
 			}
 
-			var groups = context.read("$.groups", JSONArray.class);
+			var groups = context.read("$.groups", JSONObject.class);
 
 			if (groups != null) {
-				Stream.of(groups)
-						.flatMap(JsonPathStereotypeCatalog::groupFromJson)
-						.forEach(this::add);
+				JsonPathStereotypeCatalog.groupsFromJson(groups).forEach(this::add);
 			}
 
 		} catch (IOException o_O) {
@@ -115,13 +106,11 @@ public class JsonPathStereotypeCatalog extends AbstractStereotypeCatalog {
 		}
 	}
 
-	private static @Nullable AugmentableStereotypeDefinition fromJson(JSONObject json) {
+	private static Stream<AugmentableStereotypeDefinition> definitionsFromJson(JSONObject json) {
+		return json.entrySet().stream().map(it -> fromJson(it.getKey(), (JSONObject) it.getValue()));
+	}
 
-		var identifier = json.getAsString("id");
-
-		if (identifier == null) {
-			return null;
-		}
+	private static @Nullable AugmentableStereotypeDefinition fromJson(String identifier, JSONObject json) {
 
 		var definition = DefaultStereotypeDefinition.forIdentifier(identifier)
 				.andDisplayName(json.getAsString("displayName"));
@@ -157,16 +146,24 @@ public class JsonPathStereotypeCatalog extends AbstractStereotypeCatalog {
 		return definition.build();
 	}
 
-	private static Stream<StereotypeGroup> groupFromJson(JSONArray groups) {
+	private static Stream<StereotypeGroup> groupsFromJson(JSONObject groups) {
 
-		return groups.stream()
-				.map(Map.class::cast)
-				.map(group -> {
+		return groups.entrySet().stream()
+				.map(it -> groupFromJson(it.getKey(), (Map<String, Object>) it.getValue()));
+	}
 
-					var identifier = (JSONArray) group.get("ids");
-					var displayName = group.get("displayName").toString();
+	private static StereotypeGroup groupFromJson(String identifier, Map<String, Object> map) {
 
-					return new StereotypeGroup(identifier.stream().map(Object::toString).toList(), displayName);
-				});
+		return new StereotypeGroup(identifier,
+				(String) map.get("displayName"),
+				parseType(map.get("type")),
+				(Integer) map.get("priority"));
+	}
+
+	private static org.jmolecules.stereotype.catalog.StereotypeGroup.@Nullable Type parseType(Object type) {
+
+		return type == null
+				? null
+				: org.jmolecules.stereotype.catalog.StereotypeGroup.Type.valueOf(type.toString().toUpperCase(Locale.ENGLISH));
 	}
 }

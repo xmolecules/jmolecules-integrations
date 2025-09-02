@@ -167,13 +167,17 @@ class JMoleculesProcessorUnitTests {
 					var content = file.get().getContent();
 					var context = JsonPath.parse(content);
 
-					assertThat(context.read("$.stereotypes[0].id", String.class))
-							.isEqualTo("example.stereotype.AssignableStereotype");
-					assertThat((JSONArray) context.read("$.stereotypes[0].targets"))
-							.containsExactly("example.stereotype.AssignableStereotype");
-					assertThat((JSONArray) context.read("$.stereotypes[0].groups"))
-							.containsExactly("example.stereotype");
-					assertThat(context.read("$.stereotypes[0].priority", Integer.class)).isEqualTo(0);
+					assertThat(context.read("$.stereotypes['example.stereotype.AssignableStereotype']", Object.class))
+							.isNotNull()
+							.satisfies(it -> {
+
+								var nested = JsonPath.parse(it);
+
+								assertThat(nested.read("$.targets", JSONArray.class))
+										.containsExactly("example.stereotype.AssignableStereotype");
+								assertThat(nested.read("$.groups", JSONArray.class)).containsExactly("example.stereotype");
+								assertThat(nested.read("$.priority", Integer.class)).isEqualTo(0);
+							});
 				});
 	}
 

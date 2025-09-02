@@ -68,7 +68,7 @@ public class DefaultStereotypeDefinition implements AugmentableStereotypeDefinit
 		return new DefaultStereotypeDefinition(stereotype, assignments);
 	}
 
-	public static Builder forIdentifier(String identifier) {
+	static Builder forIdentifier(String identifier) {
 		return new Builder(identifier);
 	}
 
@@ -141,7 +141,7 @@ public class DefaultStereotypeDefinition implements AugmentableStereotypeDefinit
 		return Objects.hash(stereotype, assignments);
 	}
 
-	public static class Builder {
+	static class Builder {
 
 		private final Set<Assignment> assignments;
 		private final List<String> group;
@@ -150,6 +150,7 @@ public class DefaultStereotypeDefinition implements AugmentableStereotypeDefinit
 		private Integer priority;
 
 		private Builder(String identifier) {
+
 			this.identifier = identifier;
 			this.assignments = new HashSet<>();
 			this.group = new ArrayList<>();

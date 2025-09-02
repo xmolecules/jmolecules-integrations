@@ -1,21 +1,18 @@
 {
-	"stereotypes" : [
-		{
-			"id" : "jackson.Module",
+	"stereotypes" : {
+		"jackson.Module" : {
 			"assignments" : [ "com.fasterxml.jackson.databind.module.SimpleModule" ],
 			"displayName" : "Jackson Module",
 			"groups" : [ "jackson" ]
 		},
-		{
-			"id" : "jackson.Serializer",
+		"jackson.Serializer" : {
 			"assignments" : [ "com.fasterxml.jackson.databind.JsonSerializer" ],
 			"groups" : [ "jackson" ]
 		}
-	],
-	"groups" : [
-		{
-			"ids" : [ "jackson"],
+	},
+	"groups" : {
+		"jackson" : {
 			"displayName" : "Jackson"
 		}
-	]
+	}
 }

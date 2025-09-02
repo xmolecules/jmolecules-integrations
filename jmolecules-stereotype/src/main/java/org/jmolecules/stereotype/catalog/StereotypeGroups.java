@@ -22,6 +22,9 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.jmolecules.stereotype.catalog.StereotypeGroup.Type;
+import org.springframework.util.Assert;
+
 /**
  * @author Oliver Drotbohm
  */
@@ -46,6 +49,21 @@ public class StereotypeGroups implements Iterable<StereotypeGroup> {
 
 	public Stream<StereotypeGroup> stream() {
 		return groups.stream();
+	}
+
+	/**
+	 * Returns a {@link Stream} of {@link StereotypeGroup} for the given {@link Type} ordered by their priority.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	public Stream<StereotypeGroup> streamByType(Type type) {
+
+		Assert.notNull(type, "Type must not be null!");
+
+		return stream()
+				.filter(it -> it.hasType(type))
+				.sorted(StereotypeGroup.prioritized());
 	}
 
 	/*

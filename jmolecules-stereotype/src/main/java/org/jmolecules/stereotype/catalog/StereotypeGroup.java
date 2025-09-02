@@ -15,10 +15,11 @@
  */
 package org.jmolecules.stereotype.catalog;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Comparator;
 
 import org.jmolecules.stereotype.api.Stereotype;
+import org.jspecify.annotations.Nullable;
+import org.springframework.util.Assert;
 
 /**
  * A group of {@link Stereotype}s.
@@ -27,19 +28,31 @@ import org.jmolecules.stereotype.api.Stereotype;
  */
 public class StereotypeGroup implements Comparable<StereotypeGroup> {
 
-	private final List<String> identifiers;
+	private final String identifier;
 	private final String displayName;
+	private final Type type;
+	private final int priority;
 
 	/**
 	 * Creates a new {@link StereotypeGroup} with the given identifiers and display name.
 	 *
 	 * @param identifiers must not be {@literal null}.
 	 * @param displayName must not be {@literal null}.
+	 * @param type can be {@literal null}.
+	 * @param priority can be {@literal null}.
 	 */
-	public StereotypeGroup(List<String> identifiers, String displayName) {
+	public StereotypeGroup(String identifier, String displayName, @Nullable Type type, @Nullable Integer priority) {
 
-		this.identifiers = identifiers;
+		Assert.notNull(identifier, "Identifier must not be null!");
+
+		this.identifier = identifier;
 		this.displayName = displayName;
+		this.priority = priority == null ? Integer.MAX_VALUE : priority.intValue();
+		this.type = type == null ? Type.DESIGN : type;
+	}
+
+	public String getIdentifier() {
+		return identifier;
 	}
 
 	public String getDisplayName() {
@@ -52,13 +65,17 @@ public class StereotypeGroup implements Comparable<StereotypeGroup> {
 	 * @param stereotype must not be {@literal null}.
 	 */
 	public boolean contains(Stereotype stereotype) {
-		return stereotype.getGroups().stream().anyMatch(identifiers::contains);
+		return stereotype.getGroups().stream().anyMatch(identifier::equals);
 	}
 
 	public boolean hasIdentifierOrParent(String identifier) {
 
-		return identifiers.stream()
-				.anyMatch(it -> it.equals(identifier) || it.startsWith(identifier + "."));
+		return this.identifier.equals(identifier)
+				|| this.identifier.startsWith(identifier + ".");
+	}
+
+	public boolean hasType(Type type) {
+		return this.type == type;
 	}
 
 	/*
@@ -76,6 +93,17 @@ public class StereotypeGroup implements Comparable<StereotypeGroup> {
 	 */
 	@Override
 	public String toString() {
-		return displayName + " (" + identifiers.stream().collect(Collectors.joining(",")) + ")";
+		return displayName + " (" + identifier + ")";
+	}
+
+	static Comparator<StereotypeGroup> prioritized() {
+
+		return Comparator.comparing((StereotypeGroup it) -> it.type)
+				.thenComparing(it -> it.priority)
+				.thenComparing(StereotypeGroup::getDisplayName);
+	}
+
+	public enum Type {
+		ARCHITECTURE, DESIGN, TECHNOLOGY;
 	}
 }

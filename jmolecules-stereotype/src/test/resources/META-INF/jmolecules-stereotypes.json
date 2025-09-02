@@ -1,39 +1,32 @@
 {
-	"stereotypes" : [
-		{
-			"id" : "org.springframework.stereotype.Controller",
+	"stereotypes" : {
+		"org.springframework.stereotype.Controller" : {
 			"assignments" : [ "@org.springframework.stereotype.Controller" ],
 			"groups" : [ "spring.web" ],
 			"priority" : 10
 		},
-		{
-			"id" : "org.springframework.boot.jackson.JsonMixin",
+		"org.springframework.boot.jackson.JsonMixin" : {
 			"assignments" : [ "@org.springframework.boot.jackson.JsonMixin" ],
 			"displayName" : "JSON Mixin",
 			"groups" : [ "spring.web.rest" ],
 			"priority" : 10
 		},
-		{
-			"id" : "example.application.DescribedStereotype",
+		"example.application.DescribedStereotype" : {
 			"assignments" : [ "example.application.DescribedStereotype" ],
 			"displayName" : "Some Described Stereotype",
 			"groups" : [ "custom.group" ],
 			"priority" : 5
 		}
-		
-	],
-	"groups" : [
-		{
-			"ids" : [ "spring.web" ],
+	},
+	"groups" : {
+		"spring.web" : {
 			"displayName" : "Web"
 		},
-		{
-			"ids" : [ "spring.web.rest" ],
+		"spring.web.rest" : {
 			"displayName" : "REST"
 		},
-		{
-			"ids" : [ "custom.group" ],
+		"custom.group" : {
 			"displayName" : "My Custom Stereotype Group"
 		}
-	]
+	}
 }

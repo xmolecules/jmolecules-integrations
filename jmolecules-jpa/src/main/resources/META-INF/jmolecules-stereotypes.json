@@ -1,15 +1,15 @@
 {
-	"stereotypes" : [
-		{
-			"id" : "jakarta.persistence.AttributeConverter",
+	"stereotypes" : {
+		"jakarta.persistence.AttributeConverter" : {
 			"assignments" : [ "jakarta.persistence.AttributeConverter" ],
 			"groups" : [ "jpa" ]
 		}
-	],
-	"groups" : [
-		{
-			"ids" : [ "jpa" ],
-			"displayName" : "JPA"
+	},
+	"groups" : {
+		"jpa" : {
+			"displayName" : "JPA",
+			"type" : "technology",
+			"priority" : 10
 		}
-	]
+	}
 }
