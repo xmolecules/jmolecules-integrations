@@ -25,7 +25,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<aptk-tools.version>0.30.2</aptk-tools.version>
+		<aptk-tools.version>0.30.3</aptk-tools.version>
 		<archunit.version>1.4.1</archunit.version>
 		<bytebuddy.version>1.17.5</bytebuddy.version>
 		<hibernate.version>6.6.18.Final</hibernate.version>
