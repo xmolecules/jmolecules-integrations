@@ -28,7 +28,7 @@
 		<aptk-tools.version>0.30.3</aptk-tools.version>
 		<archunit.version>1.4.1</archunit.version>
 		<bytebuddy.version>1.17.7</bytebuddy.version>
-		<hibernate.version>6.6.18.Final</hibernate.version>
+		<hibernate.version>6.6.28.Final</hibernate.version>
 		<java.version>1.8</java.version>
 		<jmolecules.version>1.10.0</jmolecules.version>
 		<module.name>org.jmolecules.integrations</module.name>
