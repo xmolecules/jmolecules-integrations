@@ -27,8 +27,4 @@ public interface NodeContext {
 	static NodeContext of(Object element, Collection<?> collection) {
 		return () -> collection.toArray()[collection.size() - 1] == element;
 	}
-
-	// enum Type {
-	// APPLICATION, PACKAGE, TYPE, METHOD, CUSTOM;
-	// }
 }

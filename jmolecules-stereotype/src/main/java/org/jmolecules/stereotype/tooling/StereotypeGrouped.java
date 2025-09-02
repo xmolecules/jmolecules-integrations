@@ -16,6 +16,7 @@
 package org.jmolecules.stereotype.tooling;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Map;
 
 import org.jmolecules.stereotype.api.Stereotype;
@@ -23,8 +24,21 @@ import org.jmolecules.stereotype.tooling.StereotypeGrouper.OtherStereotype;
 
 class StereotypeGrouped<T> extends Grouped<Stereotype, T> {
 
+	private static final Comparator<Stereotype> BY_NAME_WITH_OTHER_LAST = (left, right) -> {
+
+		if (left.equals(OtherStereotype.INSTANCE)) {
+			return 1;
+		}
+
+		if (right.equals(OtherStereotype.INSTANCE)) {
+			return -1;
+		}
+
+		return Comparator.comparing(Stereotype::getDisplayName).compare(left, right);
+	};
+
 	StereotypeGrouped(Map<Stereotype, Collection<T>> groups) {
-		super(groups);
+		super(groups, BY_NAME_WITH_OTHER_LAST);
 	}
 
 	StereotypeGrouped(Collection<T> elements) {

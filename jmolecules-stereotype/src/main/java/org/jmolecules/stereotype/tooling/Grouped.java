@@ -16,25 +16,33 @@
 package org.jmolecules.stereotype.tooling;
 
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.jspecify.annotations.Nullable;
+
 public class Grouped<K, T> implements Iterable<Entry<K, Collection<T>>> {
 
-	protected final Map<K, Collection<T>> groups;
+	private final Map<K, Collection<T>> groups;
 
-	/**
-	 * @param groups
-	 */
 	public Grouped(Map<K, Collection<T>> groups) {
-		this.groups = groups;
+		this(groups, null);
+	}
+
+	Grouped(Map<K, Collection<T>> groups, @Nullable Comparator<K> comparator) {
+
+		this.groups = comparator == null ? new HashMap<>() : new TreeMap<>(comparator);
+		this.groups.putAll(groups);
 	}
 
 	protected Set<K> getKeys() {
@@ -58,7 +66,7 @@ public class Grouped<K, T> implements Iterable<Entry<K, Collection<T>>> {
 
 		return new Grouped<>(groups.entrySet().stream()
 				.filter(it -> predicate.test(it.getValue()))
-				.collect(Collectors.toMap(Entry::getKey, Entry::getValue, (l, r) -> r, LinkedHashMap::new)));
+				.collect(Collectors.toMap(Entry::getKey, Entry::getValue, (l, r) -> r, LinkedHashMap::new)), null);
 	}
 
 	NodeContext getContext(K key) {

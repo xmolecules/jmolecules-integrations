@@ -29,7 +29,7 @@
 			],
 			"groups" : [ "spring" ]
 		},
-		"spring.Repository" : {
+		"spring.data.Repository" : {
 			"assignments" : [
 				"@org.springframework.stereotype.Repository",
 				"org.springframework.data.repository.Repository",

@@ -20,7 +20,6 @@ import lombok.Builder;
 import lombok.With;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -148,8 +147,19 @@ public class ProjectTree<A, P, T, M, C> {
 	 * @return will never be {@literal null}.
 	 */
 	public ProjectTree<A, P, T, M, C> withGrouper(String... stereotypeGroupIds) {
+		return withGrouper(List.of(stereotypeGroupIds));
+	}
 
-		var definitions = Arrays.stream(stereotypeGroupIds)
+	/**
+	 * Registers the given stereotype group identifiers as grouping targets. Multiple invocations of the method will cause
+	 * additional layers of grouping.
+	 *
+	 * @param stereotypeGroupIds must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	public ProjectTree<A, P, T, M, C> withGrouper(Collection<String> stereotypeGroupIds) {
+
+		var definitions = stereotypeGroupIds.stream()
 				.flatMap(it -> catalog.getGroups(it).stream())
 				.flatMap(it -> catalog.getDefinitions(it).stream())
 				.toList();
