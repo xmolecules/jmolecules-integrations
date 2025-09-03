@@ -27,11 +27,11 @@ class StereotypeGrouped<T> extends Grouped<Stereotype, T> {
 	private static final Comparator<Stereotype> BY_NAME_WITH_OTHER_LAST = (left, right) -> {
 
 		if (left.equals(OtherStereotype.INSTANCE)) {
-			return 1;
+			return right.equals(OtherStereotype.INSTANCE) ? 0 : 1;
 		}
 
 		if (right.equals(OtherStereotype.INSTANCE)) {
-			return -1;
+			return left.equals(OtherStereotype.INSTANCE) ? 0 : -1;
 		}
 
 		return Comparator.comparing(Stereotype::getDisplayName).compare(left, right);
