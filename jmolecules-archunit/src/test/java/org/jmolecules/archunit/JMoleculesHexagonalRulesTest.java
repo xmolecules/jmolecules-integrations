@@ -18,16 +18,19 @@ package org.jmolecules.archunit;
 import static org.assertj.core.api.Assertions.*;
 import static org.jmolecules.archunit.JMoleculesArchitectureRules.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.jmolecules.archunit.JMoleculesArchitectureRules.StereotypeLookup;
 import org.jmolecules.archunit.JMoleculesArchitectureRules.VerificationDepth;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
+import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.EvaluationResult;
 import com.tngtech.archunit.thirdparty.com.google.common.base.Predicate;
 
@@ -104,6 +107,18 @@ class JMoleculesHexagonalRulesTest {
 		void verifiesHexagonalArchitecture(JavaClasses classes) {
 			assertExpectedViolations(ensureHexagonal(VerificationDepth.LENIENT).evaluate(classes), expected,
 					it -> !it.endsWith("application"));
+		}
+
+		@ArchTest // GH-346
+		void verifiesHexagonalArchitectureWithNestedPackageAssignment(JavaClasses classes) {
+
+			ArchRule rule = ensureHexagonal(VerificationDepth.LENIENT,
+					StereotypeLookup.defaultLookup().withParentPackageTraversal());
+
+			List<String> altered = new ArrayList<>(expected);
+			altered.add("application.nested.SampleInNestedPackage.samplePrimaryAdapter");
+
+			assertExpectedViolations(rule.evaluate(classes), altered, it -> !it.endsWith("application"));
 		}
 	}
 

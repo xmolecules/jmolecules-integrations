@@ -27,8 +27,10 @@ import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -309,7 +311,7 @@ public class JMoleculesArchitectureRules {
 								HEXAGONAL_SECONDARY_ADAPTER))
 
 				.whereLayer(HEXAGONAL_PRIMARY_ADAPTER)
-				.mayOnlyBeAccessedByLayers(HEXAGONAL_ADAPTER_UNQUALIFIED)
+				.mayOnlyBeAccessedByLayers(HEXAGONAL_ADAPTER_UNQUALIFIED, UNANNOTATED)
 
 				.whereLayer(HEXAGONAL_PRIMARY_ADAPTER)
 				.mayOnlyAccessLayers(
@@ -317,7 +319,7 @@ public class JMoleculesArchitectureRules {
 								HEXAGONAL_ADAPTER_UNQUALIFIED))
 
 				.whereLayer(HEXAGONAL_SECONDARY_ADAPTER)
-				.mayOnlyBeAccessedByLayers(HEXAGONAL_ADAPTER_UNQUALIFIED)
+				.mayOnlyBeAccessedByLayers(HEXAGONAL_ADAPTER_UNQUALIFIED, UNANNOTATED)
 
 				.whereLayer(HEXAGONAL_SECONDARY_ADAPTER)
 				.mayOnlyAccessLayers(
@@ -459,25 +461,20 @@ public class JMoleculesArchitectureRules {
 	public static class StereotypeLookup {
 
 		private static final String DEFAULT_DESCRIPTION = "(meta-)annotated with %s or residing in package (meta-)annotated with %s";
-		private static final StereotypeLookup DEFAULT_LOOKUP = new StereotypeLookup(IsStereotype.DEFAULT_MARKER_LOOKUP) {
-
-			@Override
-			IsStereotype forAnnotation(Class<? extends Annotation> annotation) {
-				return new IsStereotype(annotation);
-			}
-
-			@Override
-			IsStereotype forAnnotation(Class<? extends Annotation> annotation,
-					Collection<Class<? extends Annotation>> exclusions) {
-				return new IsStereotype(annotation, allBut(exclusions, annotation));
-			}
-		};
+		private static final Function<JavaClass, Stream<JavaClass>> DEFAULT_MARKER_LOOKUP = it -> Stream.of(it);
+		private static final StereotypeLookup DEFAULT_LOOKUP = new StereotypeLookup(DEFAULT_MARKER_LOOKUP, false);
 
 		private final Function<JavaClass, Stream<JavaClass>> markerLookup;
+		private final boolean traverseParentPackages;
 
 		private StereotypeLookup(String name) {
+			this(name, false);
+		}
+
+		private StereotypeLookup(String name, boolean traverseParentPackages) {
 
 			this.markerLookup = type -> markerTypes(type.getPackage(), name);
+			this.traverseParentPackages = traverseParentPackages;
 		}
 
 		/**
@@ -515,6 +512,17 @@ public class JMoleculesArchitectureRules {
 			return onMarkerType(type.getSimpleName());
 		}
 
+		/**
+		 * Configures the {@link StereotypeLookup} to also look for package-based stereotypes in parent packages. Defaults
+		 * to {@literal false} to be able to freely reassign stereotypes to types in nested packages.
+		 *
+		 * @return will never be {@literal null}.
+		 * @since 0.30
+		 */
+		public StereotypeLookup withParentPackageTraversal() {
+			return new StereotypeLookup(markerLookup, true);
+		}
+
 		IsStereotype forAnnotation(Class<? extends Annotation> annotations) {
 			return forAnnotation(annotations, Collections.emptySet());
 		}
@@ -522,7 +530,7 @@ public class JMoleculesArchitectureRules {
 		IsStereotype forAnnotation(Class<? extends Annotation> annotation,
 				Collection<Class<? extends Annotation>> exclusions) {
 
-			return new IsStereotype(annotation, markerLookup, allBut(exclusions, annotation));
+			return new IsStereotype(annotation, markerLookup, allBut(exclusions, annotation), traverseParentPackages);
 		}
 
 		DescribedPredicate<JavaClass> hasAnnotationFromPackageOnItselfOrPackage(String name) {
@@ -629,27 +637,16 @@ public class JMoleculesArchitectureRules {
 	 */
 	static class IsStereotype extends DescribedPredicate<JavaClass> {
 
-		static final Function<JavaClass, Stream<JavaClass>> DEFAULT_MARKER_LOOKUP = it -> Stream.of(it);
-
 		private final Class<? extends Annotation> annotation;
 		private final String description;
 		private final Function<JavaClass, Stream<JavaClass>> markerLookup;
 		private final BiPredicate<Class<? extends Annotation>, JavaClass> filter = (it,
 				type) -> type.isMetaAnnotatedWith(it) || hasAnnotationOnPackageOrParent(type.getPackage());
 		private final Collection<Class<? extends Annotation>> exclusions;
+		private final boolean traverseParentPackages;
 
-		public IsStereotype(Class<? extends Annotation> annotation) {
-			this(annotation, Collections.emptySet());
-		}
-
-		public IsStereotype(Class<? extends Annotation> annotation,
-				Collection<Class<? extends Annotation>> exclusions) {
-
-			this(annotation, DEFAULT_MARKER_LOOKUP, exclusions);
-		}
-
-		private IsStereotype(Class<? extends Annotation> annotation, Function<JavaClass, Stream<JavaClass>> markerLookup,
-				Collection<Class<? extends Annotation>> exclusions) {
+		IsStereotype(Class<? extends Annotation> annotation, Function<JavaClass, Stream<JavaClass>> markerLookup,
+				Collection<Class<? extends Annotation>> exclusions, boolean traverseParentPackages) {
 
 			super("");
 
@@ -665,6 +662,7 @@ public class JMoleculesArchitectureRules {
 			this.description = description;
 			this.exclusions = exclusions;
 			this.markerLookup = it -> Stream.concat(Stream.of(it), markerLookup.apply(it));
+			this.traverseParentPackages = traverseParentPackages;
 		}
 
 		/*
@@ -682,7 +680,7 @@ public class JMoleculesArchitectureRules {
 			Collection<Class<? extends Annotation>> newExclusions = new HashSet<>(this.exclusions);
 			newExclusions.addAll(Arrays.asList(exclusions));
 
-			return new IsStereotype(annotation, markerLookup, newExclusions);
+			return new IsStereotype(annotation, markerLookup, newExclusions, traverseParentPackages);
 		}
 
 		public final IsStereotype withoutExclusion(Class<? extends Annotation> exclusion) {
@@ -690,7 +688,7 @@ public class JMoleculesArchitectureRules {
 			Collection<Class<? extends Annotation>> newExclusions = new HashSet<>(this.exclusions);
 			newExclusions.remove(exclusion);
 
-			return new IsStereotype(annotation, markerLookup, newExclusions);
+			return new IsStereotype(annotation, markerLookup, newExclusions, traverseParentPackages);
 		}
 
 		/*
@@ -717,7 +715,7 @@ public class JMoleculesArchitectureRules {
 				return true;
 			}
 
-			return javaPackage.getParent()
+			return traverseParentPackages && javaPackage.getParent()
 					.map(this::hasAnnotationOnPackageOrParent)
 					.orElse(false);
 		}
@@ -750,6 +748,8 @@ public class JMoleculesArchitectureRules {
 
 		return new DescribedPredicate<JavaClass>("has annotation from package %s", name) {
 
+			private final Map<HasAnnotations<?>, Boolean> CACHE = new HashMap<>();
+
 			/*
 			 * (non-Javadoc)
 			 * @see java.util.function.Predicate#test(java.lang.Object)
@@ -764,10 +764,12 @@ public class JMoleculesArchitectureRules {
 
 			private boolean hasAnnotationFromPackage(HasAnnotations<?> target, String name) {
 
-				return target.getAnnotations().stream()
-						.map(JavaAnnotation::getType)
-						.map(JavaType::getName)
-						.anyMatch(it -> it.startsWith(name + "."));
+				return CACHE.computeIfAbsent(target, it -> {
+					return it.getAnnotations().stream()
+							.map(JavaAnnotation::getType)
+							.map(JavaType::getName)
+							.anyMatch(candidate -> candidate.startsWith(name + "."));
+				});
 			}
 		};
 	}
