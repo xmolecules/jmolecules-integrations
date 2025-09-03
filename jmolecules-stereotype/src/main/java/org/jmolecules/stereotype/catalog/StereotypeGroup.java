@@ -28,6 +28,9 @@ import org.springframework.util.Assert;
  */
 public class StereotypeGroup implements Comparable<StereotypeGroup> {
 
+	private static final Comparator<StereotypeGroup> PARENT_FIRST = (left, right) -> left.isChildOf(right) ? 1
+			: right.isChildOf(left) ? -1 : 0;
+
 	private final String identifier;
 	private final String displayName;
 	private final Type type;
@@ -69,13 +72,7 @@ public class StereotypeGroup implements Comparable<StereotypeGroup> {
 	}
 
 	public boolean hasIdentifierOrParent(String identifier) {
-
-		return this.identifier.equals(identifier)
-				|| this.identifier.startsWith(identifier + ".");
-	}
-
-	public boolean hasType(Type type) {
-		return this.type == type;
+		return this.identifier.equals(identifier) || isChildOf(identifier);
 	}
 
 	/*
@@ -96,9 +93,22 @@ public class StereotypeGroup implements Comparable<StereotypeGroup> {
 		return displayName + " (" + identifier + ")";
 	}
 
+	boolean hasType(Type type) {
+		return this.type == type;
+	}
+
+	private boolean isChildOf(String identifier) {
+		return this.identifier.startsWith(identifier + ".");
+	}
+
+	private boolean isChildOf(StereotypeGroup group) {
+		return isChildOf(group.identifier);
+	}
+
 	static Comparator<StereotypeGroup> prioritized() {
 
 		return Comparator.comparing((StereotypeGroup it) -> it.type)
+				.thenComparing(PARENT_FIRST)
 				.thenComparing(it -> it.priority)
 				.thenComparing(StereotypeGroup::getDisplayName);
 	}

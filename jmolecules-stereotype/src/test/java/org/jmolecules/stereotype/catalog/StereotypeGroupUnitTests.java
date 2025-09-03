@@ -17,29 +17,32 @@ package org.jmolecules.stereotype.catalog;
 
 import static org.assertj.core.api.Assertions.*;
 
-import java.util.List;
-import java.util.TreeSet;
-
 import org.jmolecules.stereotype.catalog.StereotypeGroup.Type;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for {@link StereotypeGroups}.
+ * Unit tests for {@link StereotypeGroup}.
  *
  * @author Oliver Drotbohm
  */
-public class StereotypeGroupsUnitTests {
+class StereotypeGroupUnitTests {
 
 	@Test
-	void returnsGroupsByType() {
+	void ordersParentFirst() {
 
-		var first = new StereotypeGroup("foo", "Foo", Type.ARCHITECTURE, 10);
-		var second = new StereotypeGroup("bar", "Bar", Type.ARCHITECTURE, 20);
-		var third = new StereotypeGroup("fooBar", "FooBar", Type.DESIGN, 10);
+		var first = new StereotypeGroup("foo", "Foo", Type.TECHNOLOGY, 20);
+		var second = new StereotypeGroup("foo.bar", "Foo", Type.TECHNOLOGY, 10);
 
-		var groups = new StereotypeGroups(new TreeSet<>(List.of(third, second, first)));
+		assertOrdering(first, second);
+	}
 
-		assertThat(groups.streamByType(Type.ARCHITECTURE)).containsExactly(first, second);
-		assertThat(groups.streamByType(Type.DESIGN)).containsExactly(third);
+	private static void assertOrdering(StereotypeGroup first, StereotypeGroup second) {
+
+		var comparator = StereotypeGroup.prioritized();
+
+		assertThat(comparator.compare(first, second)).isLessThan(0);
+		assertThat(comparator.compare(second, first)).isGreaterThan(0);
+		assertThat(comparator.compare(first, first)).isEqualTo(0);
+		assertThat(comparator.compare(second, second)).isEqualTo(0);
 	}
 }
