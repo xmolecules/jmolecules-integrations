@@ -23,8 +23,8 @@
 		},
 		"jpa.MappedSuperclass" : {
 			"assignments" : [
-				"jakarta.persistence.MappedSuperclass",
-				"javax.persistence.MappedSuperclass"
+				"@jakarta.persistence.MappedSuperclass",
+				"@javax.persistence.MappedSuperclass"
 			],
 			"groups" : [ "jpa" ]
 		}
