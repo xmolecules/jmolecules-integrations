@@ -185,16 +185,21 @@ public class ProjectTree<A, P, T, M, C> {
 		handler.handleApplication(application);
 
 		var packages = extractor.packages.apply(application);
+		var skipPackagesNode = packages.size() == 1;
 
 		for (var pkg : packages) {
 
-			handler.handlePackage(pkg, NodeContext.of(pkg, packages));
+			if (!skipPackagesNode) {
+				handler.handlePackage(pkg, NodeContext.of(pkg, packages));
+			}
 
 			extractor.types.group(pkg, (t) -> {
 				render(t, grouper);
 			});
 
-			handler.postGroup();
+			if (!skipPackagesNode) {
+				handler.postGroup();
+			}
 		}
 
 		handler.postGroup();
