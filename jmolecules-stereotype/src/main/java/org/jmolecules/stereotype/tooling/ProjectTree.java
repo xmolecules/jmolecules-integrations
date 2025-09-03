@@ -17,6 +17,7 @@ package org.jmolecules.stereotype.tooling;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.With;
 
 import java.util.ArrayList;
@@ -182,10 +183,12 @@ public class ProjectTree<A, P, T, M, C> {
 			throw new IllegalArgumentException("Application abstraction must not be null!");
 		}
 
-		handler.handleApplication(application);
+		if (!config.skipApplicationNode) {
+			handler.handleApplication(application);
+		}
 
 		var packages = extractor.packages.apply(application);
-		var skipPackagesNode = packages.size() == 1;
+		var skipPackagesNode = config.skipSinglePackageNode && packages.size() == 1;
 
 		for (var pkg : packages) {
 
@@ -202,7 +205,9 @@ public class ProjectTree<A, P, T, M, C> {
 			}
 		}
 
-		handler.postGroup();
+		if (!config.skipApplicationNode) {
+			handler.postGroup();
+		}
 	}
 
 	/**
@@ -364,25 +369,26 @@ public class ProjectTree<A, P, T, M, C> {
 	@Builder
 	public static class TreeConfig {
 
+		private static final @Default TreeConfig DEFAULT = TreeConfig.defaults();
+
 		final boolean omitSingleGroupingNodes;
 		final boolean showNonStereotypedTypes;
 		final boolean elevateMethodLevelStereotypes;
+		final boolean skipSinglePackageNode;
+		final boolean skipApplicationNode;
 
-		/**
-		 * @param omitSingleGroupingNodes
-		 * @param showNonStereotypedTypes
-		 * @param elevateMethodLevelStereotypes
-		 */
 		private TreeConfig(boolean omitSingleGroupingNodes, boolean showNonStereotypedTypes,
-				boolean elevateMethodLevelStereotypes) {
+				boolean elevateMethodLevelStereotypes, boolean skipSinglePackageNode, boolean skipApplicationNode) {
 
 			this.omitSingleGroupingNodes = omitSingleGroupingNodes;
 			this.showNonStereotypedTypes = showNonStereotypedTypes;
 			this.elevateMethodLevelStereotypes = elevateMethodLevelStereotypes;
+			this.skipSinglePackageNode = skipSinglePackageNode;
+			this.skipApplicationNode = skipApplicationNode;
 		}
 
 		public static TreeConfig defaults() {
-			return new TreeConfig(false, true, true);
+			return new TreeConfig(false, true, true, false, false);
 		}
 	}
 
