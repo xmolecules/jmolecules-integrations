@@ -21,6 +21,7 @@ import org.jmolecules.archunit.hexagonal.pkg.adapter.SamplePrimaryAdapter;
 import org.jmolecules.archunit.hexagonal.pkg.adapter.SampleSecondaryAdapter;
 import org.jmolecules.archunit.hexagonal.pkg.adapter.primary.SamplePrimaryAdapterPackage;
 import org.jmolecules.archunit.hexagonal.pkg.adapter.secondary.SampleSecondaryAdapterPackage;
+import org.jmolecules.archunit.hexagonal.pkg.application.SampleApplication;
 import org.jmolecules.archunit.hexagonal.pkg.port.primary.SamplePrimaryPortPackage;
 import org.jmolecules.archunit.hexagonal.pkg.port.secondary.SampleSecondaryPortPackage;
 
@@ -32,26 +33,28 @@ public interface SampleSecondaryPort {
 
 	// Valid
 
-	SamplePort samplePort();
+	SamplePort port();
 
-	SampleSecondaryPort sampleSecondaryPort();
+	SampleSecondaryPort secondaryPort();
 
-	SampleSecondaryPortPackage sampleSecondaryPortPackage();
+	SampleSecondaryPortPackage secondaryPortPackage();
 
 	// Invalid
 
-	SamplePrimaryPort samplePrimaryPort();
+	SampleApplication application();
 
-	SamplePrimaryPortPackage samplePrimaryPortPackage();
+	SamplePrimaryPort primaryPort();
 
-	SampleAdapter sampleAdapter();
+	SamplePrimaryPortPackage primaryPortPackage();
 
-	SamplePrimaryAdapter samplePrimaryAdapter();
+	SampleAdapter adapter();
 
-	SamplePrimaryAdapterPackage samplePrimaryAdapterPackage();
+	SamplePrimaryAdapter primaryAdapter();
 
-	SampleSecondaryAdapter sampleSecondaryAdapter();
+	SamplePrimaryAdapterPackage primaryAdapterPackage();
 
-	SampleSecondaryAdapterPackage sampleSecondaryAdapterPackage();
+	SampleSecondaryAdapter secondaryAdapter();
+
+	SampleSecondaryAdapterPackage secondaryAdapterPackage();
 
 }

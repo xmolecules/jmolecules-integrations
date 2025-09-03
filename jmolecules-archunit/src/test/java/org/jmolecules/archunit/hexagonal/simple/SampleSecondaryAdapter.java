@@ -21,7 +21,7 @@ import org.jmolecules.architecture.hexagonal.SecondaryAdapter;
  * @author Oliver Drotbohm
  */
 @SecondaryAdapter
-class SampleSecondaryAdapter implements SampleSecondaryPort {
+class SampleSecondaryAdapter extends SampleSecondaryPort {
 
 	// Valid
 	SamplePort port;

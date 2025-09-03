@@ -32,25 +32,25 @@ public interface SamplePrimaryPort {
 
 	// Valid
 
-	SamplePort samplePort();
+	SamplePort port();
 
-	SamplePrimaryPort samplePrimaryPort();
+	SamplePrimaryPort primaryPort();
 
-	SamplePrimaryPortPackage samplePrimaryPortPackage();
+	SamplePrimaryPortPackage primaryPortPackage();
 
-	SampleSecondaryPort sampleSecondaryPort();
+	SampleSecondaryPort secondaryPort();
 
-	SampleSecondaryPortPackage sampleSecondaryPortPackage();
+	SampleSecondaryPortPackage secondaryPortPackage();
 
 	// Invalid
 
-	SampleAdapter sampleAdapter();
+	SampleAdapter adapter();
 
-	SamplePrimaryAdapter samplePrimaryAdapter();
+	SamplePrimaryAdapter primaryAdapter();
 
-	SamplePrimaryAdapterPackage samplePrimaryAdapterPackage();
+	SamplePrimaryAdapterPackage primaryAdapterPackage();
 
-	SampleSecondaryAdapter sampleSecondaryAdapter();
+	SampleSecondaryAdapter secondaryAdapter();
 
-	SampleSecondaryAdapterPackage sampleSecondaryAdapterPackage();
+	SampleSecondaryAdapterPackage secondaryAdapterPackage();
 }

@@ -24,6 +24,7 @@ import static org.jmolecules.archunit.JMoleculesArchitectureRules.JMoleculesOnio
 import lombok.RequiredArgsConstructor;
 
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -307,7 +308,7 @@ public class JMoleculesArchitectureRules {
 
 				.whereLayer(HEXAGONAL_ADAPTER_UNQUALIFIED)
 				.mayOnlyAccessLayers(
-						depth.augmentPrimaryAdapters(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PORT, HEXAGONAL_PRIMARY_ADAPTER,
+						depth.augmentPrimary(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PORT, HEXAGONAL_PRIMARY_ADAPTER,
 								HEXAGONAL_SECONDARY_ADAPTER))
 
 				.whereLayer(HEXAGONAL_PRIMARY_ADAPTER)
@@ -315,7 +316,7 @@ public class JMoleculesArchitectureRules {
 
 				.whereLayer(HEXAGONAL_PRIMARY_ADAPTER)
 				.mayOnlyAccessLayers(
-						depth.augmentPrimaryAdapters(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PRIMARY_PORT, HEXAGONAL_PORT_UNQUALIFIED,
+						depth.augmentPrimary(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PRIMARY_PORT, HEXAGONAL_PORT_UNQUALIFIED,
 								HEXAGONAL_ADAPTER_UNQUALIFIED))
 
 				.whereLayer(HEXAGONAL_SECONDARY_ADAPTER)
@@ -323,9 +324,8 @@ public class JMoleculesArchitectureRules {
 
 				.whereLayer(HEXAGONAL_SECONDARY_ADAPTER)
 				.mayOnlyAccessLayers(
-						depth.augmentSecondaryAdapters(ANNOTATIONS, UNANNOTATED, HEXAGONAL_SECONDARY_PORT,
-								HEXAGONAL_PORT_UNQUALIFIED,
-								HEXAGONAL_ADAPTER_UNQUALIFIED))
+						depth.augmentSecondary(ANNOTATIONS, UNANNOTATED, HEXAGONAL_SECONDARY_PORT,
+								HEXAGONAL_PORT_UNQUALIFIED, HEXAGONAL_ADAPTER_UNQUALIFIED))
 
 				// Ports
 
@@ -333,10 +333,12 @@ public class JMoleculesArchitectureRules {
 				.mayOnlyAccessLayers(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PORT)
 
 				.whereLayer(HEXAGONAL_PRIMARY_PORT)
-				.mayOnlyAccessLayers(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PORT_UNQUALIFIED, HEXAGONAL_SECONDARY_PORT)
+				.mayOnlyAccessLayers(
+						depth.augmentPrimary(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PORT_UNQUALIFIED,
+								HEXAGONAL_SECONDARY_PORT))
 
 				.whereLayer(HEXAGONAL_SECONDARY_PORT)
-				.mayOnlyAccessLayers(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PORT_UNQUALIFIED)
+				.mayOnlyAccessLayers(depth.augmentSecondary(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PORT_UNQUALIFIED))
 
 				.whereLayer(HEXAGONAL_PORT_UNQUALIFIED)
 				.mayOnlyAccessLayers(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PRIMARY_PORT, HEXAGONAL_SECONDARY_PORT)
@@ -585,12 +587,13 @@ public class JMoleculesArchitectureRules {
 	public enum VerificationDepth {
 
 		/**
-		 * Allows access to non-port application code from primary and secondary adapters.
+		 * Allows access to non-port application code from primary and secondary adapters and ports. Also, primary adapters
+		 * are allowed to refer to secondary ports directly.
 		 */
 		LENIENT,
 
 		/**
-		 * Allows access to non-port application code from secondary but not primary adapters.
+		 * Allows access to non-port application code from secondary but not primary adapters and ports.
 		 */
 		SEMI_STRICT,
 
@@ -599,34 +602,38 @@ public class JMoleculesArchitectureRules {
 		 */
 		STRICT;
 
-		String[] augmentPrimaryAdapters(String... allowed) {
+		String[] augmentPrimary(String... allowed) {
 
 			switch (this) {
 				case LENIENT:
-					return augmentAdapterAccess(allowed);
+					return augmentAccess(allowed);
 				case SEMI_STRICT:
 				default:
 					return allowed;
 			}
 		}
 
-		String[] augmentSecondaryAdapters(String... allowed) {
+		String[] augmentSecondary(String... allowed) {
 
 			switch (this) {
 				case LENIENT:
 				case SEMI_STRICT:
-					return augmentAdapterAccess(allowed);
+					return augmentAccess(allowed);
 				default:
 					return allowed;
 			}
 		}
 
-		private static String[] augmentAdapterAccess(String... abstractions) {
+		private static String[] augmentAccess(String... abstractions) {
 
-			String[] result = Arrays.copyOf(abstractions, abstractions.length + 1);
-			result[abstractions.length] = HEXAGONAL_APPLICATION;
+			List<String> result = new ArrayList<>(Arrays.asList(abstractions));
+			result.add(HEXAGONAL_APPLICATION);
 
-			return result;
+			if (result.contains(HEXAGONAL_PRIMARY_PORT)) {
+				result.add(HEXAGONAL_SECONDARY_PORT);
+			}
+
+			return result.toArray(new String[result.size()]);
 		}
 	}
 

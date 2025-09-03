@@ -18,5 +18,5 @@ package org.jmolecules.archunit.hexagonal.pkg.application.nested;
 import org.jmolecules.archunit.hexagonal.pkg.adapter.SamplePrimaryAdapter;
 
 public class SampleInNestedPackage {
-	SamplePrimaryAdapter samplePrimaryAdapter;
+	SamplePrimaryAdapter primaryAdapter;
 }

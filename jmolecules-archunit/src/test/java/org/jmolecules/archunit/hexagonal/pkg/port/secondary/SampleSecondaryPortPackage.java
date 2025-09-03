@@ -15,10 +15,11 @@
  */
 package org.jmolecules.archunit.hexagonal.pkg.port.secondary;
 
+import org.jmolecules.archunit.hexagonal.pkg.application.SampleApplication;
+
 /**
- *
  * @author Oliver Drotbohm
  */
 public interface SampleSecondaryPortPackage {
-
+	SampleApplication application();
 }

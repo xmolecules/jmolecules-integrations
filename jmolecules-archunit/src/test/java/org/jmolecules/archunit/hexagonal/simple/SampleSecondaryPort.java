@@ -21,6 +21,6 @@ import org.jmolecules.architecture.hexagonal.SecondaryPort;
  * @author Oliver Drotbohm
  */
 @SecondaryPort
-interface SampleSecondaryPort {
-
+class SampleSecondaryPort {
+	SampleApplication application;
 }
