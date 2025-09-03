@@ -14,13 +14,6 @@
 			"assignments" : [ "@org.springframework.context.annotation.Configuration" ],
 			"groups" : [ "spring" ]
 		},
-		"spring.web.Controller" : {
-			"assignments" : [
-				"@org.springframework.stereotype.Controller",
-				"@org.springframework.data.rest.webmvc.BasePathAwareController"
-			],
-			"groups" : [ "spring.web" ]
-		},
 		"spring.EventListener" : {
 			"assignments" : [
 				"@org.springframework.context.event.EventListener",
@@ -72,6 +65,14 @@
 				"@org.springframework.messaging.handler.annotation.MessageMapping"
 			],
 			"groups" : [ "spring.messaging" ]
+		},
+		"spring.web.Controller" : {
+			"assignments" : [
+				"@org.springframework.data.rest.webmvc.BasePathAwareController",
+				"@org.springframework.stereotype.Controller",
+				"@org.springframework.web.bind.annotation.RestController"
+			],
+			"groups" : [ "spring.web" ]
 		},
 		"spring.web.RequestMapping" : {
 			"assignments" : [ "@org.springframework.web.bind.annotation.RequestMapping" ],
