@@ -15,7 +15,9 @@
  */
 package org.jmolecules.stereotype.catalog;
 
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collector;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jmolecules.stereotype.catalog.StereotypeGroup.Type;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -35,12 +38,20 @@ public class StereotypeGroups implements Iterable<StereotypeGroup> {
 	/**
 	 * @param groups
 	 */
-	public StereotypeGroups(SortedSet<StereotypeGroup> groups) {
-		this.groups = groups;
+	public StereotypeGroups(Set<StereotypeGroup> groups) {
+		this.groups = new TreeSet<>(groups);
 	}
 
-	public StereotypeGroup getPrimary() {
-		return groups.isEmpty() ? null : groups.first();
+	public StereotypeGroups and(StereotypeGroups groups) {
+
+		var result = new HashSet<>(this.groups);
+		result.addAll(groups.groups);
+
+		return new StereotypeGroups(result);
+	}
+
+	public @Nullable StereotypeGroup getPrimary() {
+		return streamPrioritized().findFirst().orElse(null);
 	}
 
 	public boolean isEmpty() {
@@ -49,6 +60,10 @@ public class StereotypeGroups implements Iterable<StereotypeGroup> {
 
 	public Stream<StereotypeGroup> stream() {
 		return groups.stream();
+	}
+
+	public Stream<StereotypeGroup> streamPrioritized() {
+		return groups.stream().sorted(StereotypeGroup.prioritized());
 	}
 
 	/**
@@ -73,6 +88,15 @@ public class StereotypeGroups implements Iterable<StereotypeGroup> {
 	@Override
 	public Iterator<StereotypeGroup> iterator() {
 		return groups.iterator();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return groups.toString();
 	}
 
 	public static Collector<StereotypeGroup, ?, StereotypeGroups> collector() {

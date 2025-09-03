@@ -1,7 +1,15 @@
 {
 	"stereotypes" : {
+		"jackson.Deserializer" : {
+			"assignments" : [ "com.fasterxml.jackson.databind.JsonDeserializer" ],
+			"groups" : [ "jackson" ]
+		},
+		"jackson.Instantiator" : {
+			"assignments" : [ "com.fasterxml.jackson.databind.deser.ValueInstantiator" ],
+			"groups" : [ "jackson" ]
+		},
 		"jackson.Module" : {
-			"assignments" : [ "com.fasterxml.jackson.databind.module.SimpleModule" ],
+			"assignments" : [ "com.fasterxml.jackson.databind.Module" ],
 			"displayName" : "Jackson Module",
 			"groups" : [ "jackson" ]
 		},
@@ -12,7 +20,8 @@
 	},
 	"groups" : {
 		"jackson" : {
-			"displayName" : "Jackson"
+			"displayName" : "Jackson",
+			"type" : "technology"
 		}
 	}
 }

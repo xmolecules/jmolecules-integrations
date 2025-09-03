@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
  *
  * @author Oliver Drotbohm
  */
-public class StereotypeGroupsUnitTests {
+class StereotypeGroupsUnitTests {
 
 	@Test
 	void returnsGroupsByType() {

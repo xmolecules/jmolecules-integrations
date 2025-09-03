@@ -15,6 +15,10 @@
  */
 package org.jmolecules.stereotype.catalog.support;
 
+import static org.assertj.core.api.Assertions.*;
+
+import org.jmolecules.stereotype.catalog.StereotypeGroup;
+import org.jmolecules.stereotype.catalog.StereotypeGroup.Type;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -37,5 +41,13 @@ public class JsonPathStereotypesCatalogUnitTests {
 
 		System.out.println();
 		catalog.asMap().entrySet().forEach(System.out::println);
+
+		assertThat(catalog.getGroups().streamByType(Type.TECHNOLOGY))
+				.extracting(StereotypeGroup::getIdentifier)
+				.containsExactly("custom.group", "spring.web", "spring.web.rest", "java", "java.jaxb");
+
+		assertThat(catalog.getGroups("java").and(catalog.getGroups("spring")).streamPrioritized())
+				.extracting(StereotypeGroup::getIdentifier)
+				.containsExactly("spring.web", "spring.web.rest", "java", "java.jaxb");
 	}
 }

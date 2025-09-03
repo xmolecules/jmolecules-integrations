@@ -21,7 +21,8 @@
 			"priority" : 1000
 		},
 		"java.jaxb" : {
-			"displayName" : "JAXB"
+			"displayName" : "JAXB",
+			"type" : "technology"
 		}
 	}
 }

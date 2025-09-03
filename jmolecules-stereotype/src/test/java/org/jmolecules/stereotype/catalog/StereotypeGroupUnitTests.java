@@ -28,6 +28,15 @@ import org.junit.jupiter.api.Test;
 class StereotypeGroupUnitTests {
 
 	@Test
+	void defaultsTypeAndPriority() {
+
+		var group = new StereotypeGroup("id", "Display Name", null, null);
+
+		assertThat(group.hasType(Type.TECHNOLOGY)).isTrue();
+		assertThat(group.getPriority()).isEqualTo(0);
+	}
+
+	@Test
 	void ordersParentFirst() {
 
 		var first = new StereotypeGroup("foo", "Foo", Type.TECHNOLOGY, 20);

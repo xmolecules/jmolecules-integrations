@@ -50,8 +50,8 @@ public class StereotypeGroup implements Comparable<StereotypeGroup> {
 
 		this.identifier = identifier;
 		this.displayName = displayName;
-		this.priority = priority == null ? Integer.MAX_VALUE : priority.intValue();
-		this.type = type == null ? Type.DESIGN : type;
+		this.priority = priority == null ? 0 : priority.intValue();
+		this.type = type == null ? Type.TECHNOLOGY : type;
 	}
 
 	public String getIdentifier() {
@@ -90,11 +90,15 @@ public class StereotypeGroup implements Comparable<StereotypeGroup> {
 	 */
 	@Override
 	public String toString() {
-		return displayName + " (" + identifier + ")";
+		return displayName + " (" + identifier + ", " + type + ", " + priority + ")";
 	}
 
 	boolean hasType(Type type) {
 		return this.type == type;
+	}
+
+	int getPriority() {
+		return priority;
 	}
 
 	private boolean isChildOf(String identifier) {
