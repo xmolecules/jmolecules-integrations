@@ -93,7 +93,7 @@ public class StereotypeGroup implements Comparable<StereotypeGroup> {
 		return displayName + " (" + identifier + ", " + type + ", " + priority + ")";
 	}
 
-	boolean hasType(Type type) {
+	public boolean hasType(Type type) {
 		return this.type == type;
 	}
 

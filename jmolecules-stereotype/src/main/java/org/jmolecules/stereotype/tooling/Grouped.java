@@ -17,7 +17,6 @@ package org.jmolecules.stereotype.tooling;
 
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -36,13 +35,16 @@ public class Grouped<K, T> implements Iterable<Entry<K, Collection<T>>> {
 	private final Map<K, Collection<T>> groups;
 
 	public Grouped(Map<K, Collection<T>> groups) {
-		this(groups, null);
+		this.groups = groups;
 	}
 
 	Grouped(Map<K, Collection<T>> groups, @Nullable Comparator<K> comparator) {
 
-		this.groups = comparator == null ? new HashMap<>() : new TreeMap<>(comparator);
-		this.groups.putAll(groups);
+		this.groups = comparator == null ? groups : new TreeMap<>(comparator);
+
+		if (comparator != null) {
+			this.groups.putAll(groups);
+		}
 	}
 
 	protected Set<K> getKeys() {
