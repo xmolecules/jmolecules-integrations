@@ -15,19 +15,26 @@
  */
 package org.jmolecules.stereotype.tooling;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.With;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import org.jmolecules.stereotype.api.Stereotype;
+import org.springframework.lang.Nullable;
+
 /**
  * @author Oliver Drotbohm
  */
 @With
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class SimpleLabelProvider<A, P, T, M, C> implements LabelProvider<A, P, T, M, C> {
 
 	private final Function<A, String> applicationLabel;
 	private final Function<P, String> packageLabel;
+	private final @Nullable Function<Stereotype, String> stereotypeLabel;
 	private final Function<T, String> typeLabel;
 	private final BiFunction<M, T, String> methodLabel;
 	private final Function<C, String> customLabel;
@@ -45,6 +52,7 @@ public class SimpleLabelProvider<A, P, T, M, C> implements LabelProvider<A, P, T
 		this.typeLabel = typeLabel;
 		this.methodLabel = methodLabel;
 		this.customLabel = customLabel;
+		this.stereotypeLabel = null;
 	}
 
 	public static <P, T, M, C> LabelProvider<P, P, T, M, C> forPackage(Function<P, String> packageLabel,
@@ -100,5 +108,17 @@ public class SimpleLabelProvider<A, P, T, M, C> implements LabelProvider<A, P, T
 	@Override
 	public String getCustomLabel(C custom) {
 		return customLabel.apply(custom);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.jmolecules.stereotype.tooling.LabelProvider#getSterotypeLabel(org.jmolecules.stereotype.api.Stereotype)
+	 */
+	@Override
+	public String getStereotypeLabel(Stereotype stereotype) {
+
+		return stereotypeLabel != null
+				? stereotypeLabel.apply(stereotype)
+				: LabelProvider.super.getStereotypeLabel(stereotype);
 	}
 }

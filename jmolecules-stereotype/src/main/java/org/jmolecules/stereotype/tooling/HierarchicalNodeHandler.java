@@ -76,7 +76,7 @@ public class HierarchicalNodeHandler<A, P, T, M, C> implements NodeHandler<A, P,
 	public void handleStereotype(Stereotype stereotype, NodeContext context) {
 
 		addChild(node -> node.withAttribute(ICON, "fa-stereotype")
-				.withAttribute(TEXT, labels.getSterotypeLabel(stereotype)));
+				.withAttribute(TEXT, labels.getStereotypeLabel(stereotype)));
 	}
 
 	/*

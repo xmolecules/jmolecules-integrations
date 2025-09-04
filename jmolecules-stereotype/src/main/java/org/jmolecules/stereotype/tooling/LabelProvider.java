@@ -32,7 +32,7 @@ public interface LabelProvider<A, P, T, M, C> {
 
 	String getCustomLabel(C custom);
 
-	default String getSterotypeLabel(Stereotype stereotype) {
+	default String getStereotypeLabel(Stereotype stereotype) {
 		return stereotype.getDisplayName();
 	}
 }

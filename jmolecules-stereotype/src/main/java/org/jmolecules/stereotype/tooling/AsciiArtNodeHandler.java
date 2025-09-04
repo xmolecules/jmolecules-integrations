@@ -109,7 +109,7 @@ public class AsciiArtNodeHandler<A, P, T, M, C> implements NodeHandler<A, P, T, 
 	 */
 	@Override
 	public void handleStereotype(Stereotype stereotype, NodeContext context) {
-		renderAndNest("┬⊙ ", labelProvider.getSterotypeLabel(stereotype), context);
+		renderAndNest("┬⊙ ", labelProvider.getStereotypeLabel(stereotype), context);
 	}
 
 	/*
