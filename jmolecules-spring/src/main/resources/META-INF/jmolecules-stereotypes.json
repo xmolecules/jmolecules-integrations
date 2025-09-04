@@ -76,7 +76,7 @@
 		},
 		"spring.web.RequestMapping" : {
 			"assignments" : [ "@org.springframework.web.bind.annotation.RequestMapping" ],
-			"displayName" : "Request mappings",
+			"displayName" : "Request Mappings",
 			"groups" : [ "spring.web" ]
 		}
 	},
