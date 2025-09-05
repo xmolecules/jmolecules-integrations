@@ -15,7 +15,6 @@
  */
 package org.jmolecules.stereotype.catalog;
 
-import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.function.Function;
@@ -83,40 +82,6 @@ public interface StereotypeCatalog extends Iterable<StereotypeDefinition> {
 	 * @return will never be {@literal null}.
 	 */
 	SortedSet<StereotypeDefinition> getDefinitions(StereotypeGroup group);
-
-	/**
-	 * Returns all type-based {@link Stereotype}s selected by the given {@link StereotypeMatcher}.
-	 *
-	 * @param <T> the type abstraction
-	 * @param <A> the annotation abstraction
-	 * @param type must not be {@literal null}.
-	 * @param filter must not be {@literal null}.
-	 * @return will never be {@literal null}.
-	 */
-	default <T, A> List<Stereotype> getTypeBasedStereotypes(T type, StereotypeMatcher<T, A> filter) {
-
-		return getDefinitions().stream()
-				.filter(it -> filter.hasImplementingStereotype(type, it))
-				.map(StereotypeDefinition::getStereotype)
-				.toList();
-	}
-
-	/**
-	 * Returns all annotation based {@link Stereotype}s selected by the given {@link StereotypeMatcher}.
-	 *
-	 * @param <T> the type abstraction
-	 * @param <A> the annotation abstraction
-	 * @param type must not be {@literal null}.
-	 * @param filter must not be {@literal null}.
-	 * @return will never be {@literal null}.
-	 */
-	default <T, A> List<Stereotype> getAnnotationBasedStereotypes(A type, StereotypeMatcher<T, A> filter) {
-
-		return getDefinitions().stream()
-				.filter(it -> filter.hasAnnotatedStereotype(type, it))
-				.map(StereotypeDefinition::getStereotype)
-				.toList();
-	}
 
 	/**
 	 * Returns all {@link StereotypeDefinition}s keyed by their {@link StereotypeGroup}.

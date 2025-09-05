@@ -41,7 +41,7 @@ import com.jayway.jsonpath.Option;
  *
  * @author Oliver Drotbohm
  */
-public class JsonPathStereotypeCatalog extends AbstractStereotypeCatalog {
+public class JsonPathStereotypeCatalog extends AbstractStereotypeCatalog implements StereotypeDetector {
 
 	private final CatalogSource source;
 
@@ -133,6 +133,12 @@ public class JsonPathStereotypeCatalog extends AbstractStereotypeCatalog {
 
 		if (priority != null) {
 			definition.andPriority(priority.intValue());
+		}
+
+		var inherited = json.getAsString("inherited");
+
+		if (inherited != null) {
+			definition.andInherited(Boolean.parseBoolean(inherited));
 		}
 
 		var groups = (JSONArray) json.get("groups");

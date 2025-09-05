@@ -35,6 +35,7 @@ class CachingStereotype extends AbstractStereotype {
 	private String identifier, displayName;
 	private List<String> groups;
 	private Integer priority;
+	private Boolean inherited;
 
 	private CachingStereotype(Stereotype delegate) {
 		this.delegate = delegate;
@@ -98,6 +99,20 @@ class CachingStereotype extends AbstractStereotype {
 		}
 
 		return priority;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.jmolecules.stereotype.api.Stereotype#isInherited()
+	 */
+	@Override
+	public boolean isInherited() {
+
+		if (inherited == null) {
+			this.inherited = delegate.isInherited();
+		}
+
+		return inherited;
 	}
 
 	/*

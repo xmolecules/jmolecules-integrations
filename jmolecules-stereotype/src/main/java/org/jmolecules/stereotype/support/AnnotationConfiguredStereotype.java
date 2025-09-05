@@ -129,7 +129,15 @@ public class AnnotationConfiguredStereotype extends AbstractStereotype {
 		}
 
 		return defaults.getPriority();
+	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.jmolecules.stereotype.api.Stereotype#isInherited()
+	 */
+	@Override
+	public boolean isInherited() {
+		return annotation.inherited();
 	}
 
 	private <T> boolean isNotEmpty(Function<Stereotype, String> extractor) {

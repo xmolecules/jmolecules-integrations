@@ -24,6 +24,7 @@ import example.application.SomePrimaryPort;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
+import org.jmolecules.architecture.hexagonal.PrimaryPort;
 import org.jmolecules.ddd.annotation.AggregateRoot;
 import org.jmolecules.ddd.types.Identifier;
 import org.jmolecules.stereotype.api.Stereotype;
@@ -40,7 +41,7 @@ class ReflectionStereotypeFactoryUnitTests {
 
 	JsonPathStereotypeCatalog catalog = new JsonPathStereotypeCatalog(
 			CatalogSource.ofClassLoader(ReflectionStereotypeFactoryUnitTests.class.getClassLoader()));
-	ReflectionStereotypeFactory factory = new ReflectionStereotypeFactory(catalog);
+	ReflectionStereotypeFactory factory = new ReflectionStereotypeFactory(catalog).enableLocalStereotypeDetection();
 
 	@Test
 	void detectsInterfaceBasedStereotype() {
@@ -131,6 +132,18 @@ class ReflectionStereotypeFactoryUnitTests {
 		fromType.stream().map(catalog::getGroupsFor).forEach(System.out::println);
 	}
 
+	@Test
+	void doesNotDetectNonInheritedStereotypeOnImplementation() {
+
+		System.out.println(catalog);
+
+		var stereotypes = factory.fromType(MyPortImplementation.class);
+
+		assertThat(stereotypes)
+				.extracting(Stereotype::getIdentifier)
+				.doesNotContain("architecture.hexagonal.PrimaryPort");
+	}
+
 	@org.jmolecules.stereotype.Stereotype
 	interface MyStereotype {}
 
@@ -158,4 +171,11 @@ class ReflectionStereotypeFactoryUnitTests {
 	static class MyAggregateIdentifier implements Identifier {}
 
 	static class MyDescribedStereotype implements DescribedStereotype {}
+
+	@PrimaryPort
+	interface MyPort {
+
+	}
+
+	static class MyPortImplementation implements MyPort {}
 }

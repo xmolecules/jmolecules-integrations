@@ -36,6 +36,7 @@ public class StringBasedStereotype extends AbstractStereotype {
 	private final int priority;
 	private @Nullable String displayName;
 	private @Nullable List<String> groups;
+	private final boolean inherited;
 
 	/**
 	 * Creates a new {@link StringBasedStereotype} for the given fully-qualified name, priority, groups and display name.
@@ -46,7 +47,7 @@ public class StringBasedStereotype extends AbstractStereotype {
 	 * @param displayName can be {@literal null}.
 	 */
 	private StringBasedStereotype(String fullyQualifiedName, int priority, @Nullable List<String> groups,
-			@Nullable String displayName) {
+			@Nullable String displayName, @Nullable Boolean inherited) {
 
 		if (fullyQualifiedName == null || fullyQualifiedName.trim().isEmpty()) {
 			throw new IllegalArgumentException("Name must not be null or empty!");
@@ -56,6 +57,7 @@ public class StringBasedStereotype extends AbstractStereotype {
 		this.priority = priority;
 		this.groups = groups;
 		this.displayName = displayName;
+		this.inherited = inherited == null ? true : inherited;
 	}
 
 	/**
@@ -76,7 +78,7 @@ public class StringBasedStereotype extends AbstractStereotype {
 	 * @return will never be {@literal null}.
 	 */
 	public static StringBasedStereotype of(String fullyQualifiedName, int priority) {
-		return new StringBasedStereotype(fullyQualifiedName, priority, null, null);
+		return new StringBasedStereotype(fullyQualifiedName, priority, null, null, null);
 	}
 
 	public StringBasedStereotype addGroup(String group) {
@@ -89,15 +91,19 @@ public class StringBasedStereotype extends AbstractStereotype {
 
 		groups.add(group);
 
-		return new StringBasedStereotype(fullyQualifiedName, priority, groups, displayName);
+		return new StringBasedStereotype(fullyQualifiedName, priority, groups, displayName, inherited);
 	}
 
 	public StringBasedStereotype withPriority(int priority) {
-		return new StringBasedStereotype(fullyQualifiedName, priority, groups, displayName);
+		return new StringBasedStereotype(fullyQualifiedName, priority, groups, displayName, inherited);
+	}
+
+	public StringBasedStereotype withInherited(boolean inherited) {
+		return new StringBasedStereotype(fullyQualifiedName, priority, groups, displayName, inherited);
 	}
 
 	public StringBasedStereotype withDisplayName(String displayName) {
-		return new StringBasedStereotype(fullyQualifiedName, priority, groups, displayName);
+		return new StringBasedStereotype(fullyQualifiedName, priority, groups, displayName, inherited);
 	}
 
 	/*
@@ -167,5 +173,14 @@ public class StringBasedStereotype extends AbstractStereotype {
 	@Override
 	public int getPriority() {
 		return priority;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.jmolecules.stereotype.api.Stereotype#isInherited()
+	 */
+	@Override
+	public boolean isInherited() {
+		return inherited;
 	}
 }

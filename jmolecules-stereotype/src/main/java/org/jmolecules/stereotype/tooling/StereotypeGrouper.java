@@ -116,5 +116,14 @@ class StereotypeGrouper<T> {
 		public String toString() {
 			return getDisplayName();
 		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.jmolecules.stereotype.api.Stereotype#isInherited()
+		 */
+		@Override
+		public boolean isInherited() {
+			return false;
+		}
 	}
 }

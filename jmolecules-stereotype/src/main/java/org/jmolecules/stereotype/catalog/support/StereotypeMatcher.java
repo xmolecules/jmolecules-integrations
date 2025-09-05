@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmolecules.stereotype.catalog;
+package org.jmolecules.stereotype.catalog.support;
 
 import java.util.function.BiPredicate;
 
+import org.jmolecules.stereotype.catalog.StereotypeDefinition;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment.Type;
 
 /**

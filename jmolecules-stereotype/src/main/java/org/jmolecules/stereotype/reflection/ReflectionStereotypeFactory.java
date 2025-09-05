@@ -30,12 +30,13 @@ import java.util.stream.Stream;
 import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.api.StereotypeFactory;
 import org.jmolecules.stereotype.api.Stereotypes;
-import org.jmolecules.stereotype.catalog.StereotypeCatalog;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment.Type;
 import org.jmolecules.stereotype.catalog.StereotypeDefinitionRegistry;
-import org.jmolecules.stereotype.catalog.StereotypeMatcher;
 import org.jmolecules.stereotype.catalog.support.DefaultStereotypeDefinition;
+import org.jmolecules.stereotype.catalog.support.StereotypeDetector;
+import org.jmolecules.stereotype.catalog.support.StereotypeDetector.AnalysisLevel;
+import org.jmolecules.stereotype.catalog.support.StereotypeMatcher;
 import org.jmolecules.stereotype.support.AnnotationConfiguredStereotype;
 
 /**
@@ -50,8 +51,9 @@ public class ReflectionStereotypeFactory implements StereotypeFactory<Package, C
 			.<Class<?>, AnnotatedElement> isAnnotatedWith((element, fqn) -> isAnnotated(element, fqn))
 			.orImplements((type, fqn) -> doesImplement(type, fqn));
 
-	private final StereotypeCatalog catalog;
+	private final StereotypeDetector detector;
 	private final StereotypeDefinitionRegistry registry;
+	private boolean detectLocalStereotypes;
 
 	/**
 	 * Creates a new {@link ReflectionStereotypeFactory} for the given {@link StereotypeCatalog} and
@@ -60,7 +62,7 @@ public class ReflectionStereotypeFactory implements StereotypeFactory<Package, C
 	 * @param catalog must not be {@literal null}.
 	 * @param registry must not be {@literal null}.
 	 */
-	private ReflectionStereotypeFactory(StereotypeCatalog catalog, StereotypeDefinitionRegistry registry) {
+	private ReflectionStereotypeFactory(StereotypeDetector catalog, StereotypeDefinitionRegistry registry) {
 
 		if (catalog == null) {
 			throw new IllegalArgumentException("StereotypeCatalog must not be null!");
@@ -70,27 +72,33 @@ public class ReflectionStereotypeFactory implements StereotypeFactory<Package, C
 			throw new IllegalArgumentException("StereotypeRegistry must not be null!");
 		}
 
-		this.catalog = catalog;
+		this.detector = catalog;
 		this.registry = registry;
+		this.detectLocalStereotypes = false;
 	}
 
 	/**
-	 * Creates a new {@link ReflectionStereotypeFactory} for the given {@link StereotypeCatalog} that's also a
+	 * Creates a new {@link ReflectionStereotypeFactory} for the given {@link StereotypeDetector} that's also a
 	 * {@link StereotypeRegistry}.
 	 *
 	 * @param registry must not be {@literal null}.
 	 */
-	public <T extends StereotypeDefinitionRegistry & StereotypeCatalog> ReflectionStereotypeFactory(T registry) {
+	public <T extends StereotypeDefinitionRegistry & StereotypeDetector> ReflectionStereotypeFactory(T registry) {
 		this(registry, registry);
 	}
 
 	/**
-	 * Creates a new {@link ReflectionStereotypeFactory} from a sole {@link StereotypeCatalog}.
+	 * Creates a new {@link ReflectionStereotypeFactory} from a sole {@link StereotypeDetector}.
 	 *
 	 * @param catalog must not be {@literal null}.
 	 */
-	public ReflectionStereotypeFactory(StereotypeCatalog catalog) {
+	public ReflectionStereotypeFactory(StereotypeDetector catalog) {
 		this(catalog, (sterotype, assignment) -> DefaultStereotypeDefinition.of(sterotype, Set.of(assignment.get())));
+	}
+
+	public ReflectionStereotypeFactory enableLocalStereotypeDetection() {
+		this.detectLocalStereotypes = true;
+		return this;
 	}
 
 	/*
@@ -103,7 +111,7 @@ public class ReflectionStereotypeFactory implements StereotypeFactory<Package, C
 		List<Stereotype> result = new ArrayList<>();
 
 		for (Annotation annotation : method.getAnnotations()) {
-			result.addAll(fromAnnotatedElement(annotation.annotationType()));
+			result.addAll(fromAnnotatedElement(annotation.annotationType(), AnalysisLevel.DIRECT));
 		}
 
 		return new Stereotypes(result);
@@ -126,32 +134,38 @@ public class ReflectionStereotypeFactory implements StereotypeFactory<Package, C
 	 */
 	@Override
 	public Stereotypes fromPackage(Package pkg) {
-		return new Stereotypes(fromAnnotatedElement(pkg));
+		return new Stereotypes(fromAnnotatedElement(pkg, AnalysisLevel.DIRECT));
 	}
 
 	private Collection<Stereotype> fromTypeInternal(Class<?> type) {
+		return this.fromTypeInternal(type, AnalysisLevel.DIRECT);
+	}
+
+	private Collection<Stereotype> fromTypeInternal(Class<?> type, AnalysisLevel level) {
 
 		var result = new TreeSet<Stereotype>();
 
-		result.addAll(catalog.getTypeBasedStereotypes(type, STEREOTYPE_MATCHER));
+		result.addAll(detector.getTypeBasedStereotypes(type, level, STEREOTYPE_MATCHER));
 
 		if (type.isAnnotation()) {
 
-			result.addAll(fromAnnotatedElement(type));
+			result.addAll(fromAnnotatedElement(type, level));
 
 			return result;
 		}
 
 		var candidates = type.getInterfaces();
 
-		for (Class<?> candidate : candidates) {
-			if (candidate.getAnnotation(STEREOTYPE_ANNOTATION) != null) {
-				result.add(registerStereotypeDefinition(candidate, Type.IS_ANNOTATED));
+		if (detectLocalStereotypes) {
+			for (Class<?> candidate : candidates) {
+				if (candidate.getAnnotation(STEREOTYPE_ANNOTATION) != null) {
+					result.add(registerStereotypeDefinition(candidate, Type.IS_ANNOTATED));
+				}
 			}
 		}
 
 		for (Class<?> candidate : candidates) {
-			result.addAll(fromTypeInternal(candidate));
+			result.addAll(fromTypeInternal(candidate, AnalysisLevel.INHERITED));
 		}
 
 		var superType = type.getSuperclass();
@@ -161,13 +175,14 @@ public class ReflectionStereotypeFactory implements StereotypeFactory<Package, C
 		}
 
 		if (!type.isAnnotation()) {
-			result.addAll(fromAnnotatedElement(type));
+			result.addAll(fromAnnotatedElement(type, level));
 		}
 
 		return result;
 	}
 
-	private <T extends AnnotatedElement> Collection<Stereotype> fromAnnotatedElement(AnnotatedElement element) {
+	private <T extends AnnotatedElement> Collection<Stereotype> fromAnnotatedElement(AnnotatedElement element,
+			AnalysisLevel level) {
 
 		if (element == null) {
 			return Collections.emptyList();
@@ -175,11 +190,21 @@ public class ReflectionStereotypeFactory implements StereotypeFactory<Package, C
 
 		var result = new ArrayList<Stereotype>();
 
-		result.addAll(catalog.getAnnotationBasedStereotypes(element, STEREOTYPE_MATCHER));
+		result.addAll(detector.getAnnotationBasedStereotypes(element, level, STEREOTYPE_MATCHER));
+
+		if (!detectLocalStereotypes) {
+			return result;
+		}
 
 		for (Annotation annotation : element.getAnnotations()) {
+
 			for (Class<?> type : fromAnnotation(annotation)) {
-				result.add(registerStereotypeDefinition(type, Type.IS_ANNOTATED));
+
+				var stereotype = registerStereotypeDefinition(type, Type.IS_ANNOTATED);
+
+				if (level.supports(stereotype)) {
+					result.add(stereotype);
+				}
 			}
 		}
 

@@ -31,7 +31,8 @@ abstract class AbstractStereotype implements Stereotype {
 	 * @see org.jmolecules.stereotype.api.Stereotype#toDetailedString()
 	 */
 	public String toDetailedString() {
-		return "%s - %s(%s) - %s".formatted(getIdentifier(), getDisplayName(), getPriority(), getGroups());
+		return "%s - %s (%s, %s) - %s".formatted(getIdentifier(), getDisplayName(), getPriority(),
+				isInherited() ? "inherited" : "not inherited", getGroups());
 	}
 
 	/*
@@ -54,7 +55,8 @@ abstract class AbstractStereotype implements Stereotype {
 		return Objects.equals(this.getIdentifier(), that.getIdentifier())
 				&& Objects.equals(this.getGroups(), that.getGroups())
 				&& Objects.equals(this.getDisplayName(), that.getDisplayName())
-				&& Objects.equals(this.getPriority(), that.getPriority());
+				&& Objects.equals(this.getPriority(), that.getPriority())
+				&& this.isInherited() == that.isInherited();
 	}
 
 	/*
@@ -63,7 +65,7 @@ abstract class AbstractStereotype implements Stereotype {
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash(getIdentifier(), getGroups(), getDisplayName(), getPriority());
+		return Objects.hash(getIdentifier(), getGroups(), getDisplayName(), getPriority(), isInherited());
 	}
 
 	/*

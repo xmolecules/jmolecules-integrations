@@ -60,6 +60,8 @@ public interface Stereotype extends Comparable<Stereotype> {
 	 */
 	int getPriority();
 
+	boolean isInherited();
+
 	/**
 	 * Returns a detailed {@link String} representation in contrast to a rather brief {@link #toString()}.
 	 *

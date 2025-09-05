@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.support.StringBasedStereotype;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Default {@link StereotypeDefinition}.
@@ -108,9 +109,11 @@ public class DefaultStereotypeDefinition implements AugmentableStereotypeDefinit
 	@Override
 	public String toString() {
 
-		return stereotype.toString() + " ("
-				+ assignments.stream().map(Assignment::toString).collect(Collectors.joining(" or "))
-				+ ", priority " + stereotype.getPriority() + ")";
+		return stereotype.toString()
+				+ " (" + assignments.stream().map(Assignment::toString).collect(Collectors.joining(" or "))
+				+ ", priority " + stereotype.getPriority()
+				+ (stereotype.isInherited() ? ", inherited" : ", not inherited")
+				+ ")";
 	}
 
 	/*
@@ -148,6 +151,7 @@ public class DefaultStereotypeDefinition implements AugmentableStereotypeDefinit
 		private final String identifier;
 		private String displayName;
 		private Integer priority;
+		private @Nullable Boolean inherited;
 
 		private Builder(String identifier) {
 
@@ -171,6 +175,11 @@ public class DefaultStereotypeDefinition implements AugmentableStereotypeDefinit
 			return this;
 		}
 
+		public Builder andInherited(boolean inherited) {
+			this.inherited = inherited;
+			return this;
+		}
+
 		public Builder andDisplayName(String displayName) {
 			this.displayName = displayName;
 			return this;
@@ -191,6 +200,10 @@ public class DefaultStereotypeDefinition implements AugmentableStereotypeDefinit
 
 			if (displayName != null) {
 				stereotype = stereotype.withDisplayName(displayName);
+			}
+
+			if (inherited != null) {
+				stereotype = stereotype.withInherited(inherited);
 			}
 
 			return DefaultStereotypeDefinition.of(stereotype, assignments);

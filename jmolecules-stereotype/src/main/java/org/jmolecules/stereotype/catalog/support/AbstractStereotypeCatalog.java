@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jmolecules.stereotype.api.Stereotype;
-import org.jmolecules.stereotype.catalog.StereotypeCatalog;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment;
 import org.jmolecules.stereotype.catalog.StereotypeDefinitionRegistry;
@@ -37,7 +36,7 @@ import org.jmolecules.stereotype.catalog.StereotypeGroups;
  *
  * @author Oliver Drotbohm
  */
-public abstract class AbstractStereotypeCatalog implements StereotypeCatalog, StereotypeDefinitionRegistry {
+public abstract class AbstractStereotypeCatalog implements StereotypeDetector, StereotypeDefinitionRegistry {
 
 	private final SortedSet<AugmentableStereotypeDefinition> definitions;
 	private final SortedSet<StereotypeGroup> groups;
