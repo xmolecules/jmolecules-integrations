@@ -21,6 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Value;
+import tools.jackson.databind.JacksonModule;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -102,6 +103,18 @@ class JMoleculesModuleUnitTests {
 		KotlinWrapper wrapper = mapper.readValue(source, KotlinWrapper.class);
 
 		assertThat(wrapper.getId()).isNotNull();
+	}
+
+	@Test // GH-347
+	void canBeFoundAndAddedDynamically() {
+
+		ObjectMapper mapper = JsonMapper.builder()
+				.findAndAddModules()
+				.build();
+
+		assertThat(mapper.getRegisteredModules())
+				.extracting(JacksonModule::getModuleName)
+				.contains("jmolecules-module");
 	}
 
 	@Data

@@ -102,6 +102,14 @@ class JMoleculesModuleUnitTests {
 		assertThat(wrapper.getId()).isNotNull();
 	}
 
+	@Test // GH-347
+	void canBeFoundAndRegisteredDynamically() {
+
+		ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
+
+		assertThat(mapper.getRegisteredModuleIds()).contains("jmolecules-module");
+	}
+
 	@Data
 	@NoArgsConstructor
 	@AllArgsConstructor
