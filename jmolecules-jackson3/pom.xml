@@ -13,7 +13,6 @@
 
 	<properties>
 		<java.version>17</java.version>
-		<kotlin.version>2.2.0</kotlin.version>
 		<module.name>org.jmolecules.integrations.jackson3</module.name>
 		<jackson.version>3.0.0-rc8</jackson.version>
 	</properties>
@@ -92,7 +91,13 @@
 			<artifactId>json-path</artifactId>
 			<scope>test</scope>
 		</dependency>
-		
+
+		<dependency>
+			<groupId>org.jetbrains.kotlin</groupId>
+			<artifactId>kotlin-reflect</artifactId>
+			<scope>test</scope>
+		</dependency>
+
 		<dependency>
 			<groupId>org.jetbrains.kotlin</groupId>
 			<artifactId>kotlin-stdlib-jdk8</artifactId>
