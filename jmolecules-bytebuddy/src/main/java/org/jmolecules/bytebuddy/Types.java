@@ -18,6 +18,7 @@ package org.jmolecules.bytebuddy;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.stream.Collectors;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.springframework.lang.Nullable;
@@ -39,6 +40,7 @@ class Types {
 				"javax.annotation.processing.Generated",
 				"javax.annotation.Generated")
 				.<Class<? extends Annotation>> map(Types::loadIfPresent)
+				.filter(Objects::nonNull)
 				.collect(Collectors.toList());
 	}
 
