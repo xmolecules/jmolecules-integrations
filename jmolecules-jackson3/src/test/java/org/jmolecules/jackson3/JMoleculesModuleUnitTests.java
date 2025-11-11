@@ -32,7 +32,6 @@ import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Identifier;
 import org.junit.jupiter.api.Test;
 
-import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
 class JMoleculesModuleUnitTests {
@@ -44,17 +43,17 @@ class JMoleculesModuleUnitTests {
 	@Test // #19, #79, #78
 	void serialize() throws Exception {
 
-		SampleIdentifier identifier = SampleIdentifier.of(UUID.randomUUID());
-		SampleIdentifierWithConstructor identifierWithConstructor = new SampleIdentifierWithConstructor(UUID.randomUUID());
-		SampleValueObject valueObject = SampleValueObject.of(42L);
-		ImplementingValueObject implementingValueObject = ImplementingValueObject.of(27L);
+		var identifier = SampleIdentifier.of(UUID.randomUUID());
+		var identifierWithConstructor = new SampleIdentifierWithConstructor(UUID.randomUUID());
+		var valueObject = SampleValueObject.of(42L);
+		var implementingValueObject = ImplementingValueObject.of(27L);
 
-		Document source = new Document(identifier, identifierWithConstructor, valueObject, implementingValueObject,
+		var source = new Document(identifier, identifierWithConstructor, valueObject, implementingValueObject,
 				Association.forId(identifier));
 
-		String result = mapper.writeValueAsString(source);
+		var result = mapper.writeValueAsString(source);
 
-		DocumentContext document = JsonPath.parse(result);
+		var document = JsonPath.parse(result);
 
 		assertThat(document.read("$.identifier", String.class)).isEqualTo(identifier.getId().toString());
 		assertThat(document.read("$.identifierWithConstructor", String.class))
@@ -67,10 +66,10 @@ class JMoleculesModuleUnitTests {
 	@Test // #19, #79, #78
 	void deserialize() throws Exception {
 
-		String uuidSource = "fe6f3370-5551-4251-86d3-b4db049a7ddd";
-		UUID uuid = UUID.fromString(uuidSource);
+		var uuidSource = "fe6f3370-5551-4251-86d3-b4db049a7ddd";
+		var uuid = UUID.fromString(uuidSource);
 
-		Document document = mapper.readValue("{ \"identifier\" : \"" + uuidSource + "\","
+		var document = mapper.readValue("{ \"identifier\" : \"" + uuidSource + "\","
 				+ " \"identifierWithConstructor\" : \"" + uuidSource + "\","
 				+ " \"valueObject\" : 42,"
 				+ " \"implementingValueObject\" : 27,"
@@ -86,7 +85,7 @@ class JMoleculesModuleUnitTests {
 	@Test // GH-191
 	void doesNotUseSupertypeFactory() throws Exception {
 
-		Wrapper wrapper = mapper.readValue("{ \"first\" : 42 }", Wrapper.class);
+		var wrapper = mapper.readValue("{ \"first\" : 42 }", Wrapper.class);
 
 		assertThat(wrapper.first).isEqualTo(new First(42L));
 	}
@@ -94,11 +93,8 @@ class JMoleculesModuleUnitTests {
 	@Test // GH-336
 	void instantiatesKotlinDataClass() throws Exception {
 
-		// ObjectMapper mapper = this.mapper.rebuild()
-		// .addModule(new KotlinModule.Builder().build());
-
-		UUID uuid = UUID.randomUUID();
-		String source = String.format("{ \"id\" : \"%s\", \"anotherId\" : \"%s\" }", uuid, uuid);
+		var uuid = UUID.randomUUID();
+		var source = String.format("{ \"id\" : \"%s\", \"anotherId\" : \"%s\" }", uuid, uuid);
 
 		KotlinWrapper wrapper = mapper.readValue(source, KotlinWrapper.class);
 
@@ -108,11 +104,11 @@ class JMoleculesModuleUnitTests {
 	@Test // GH-347
 	void canBeFoundAndAddedDynamically() {
 
-		ObjectMapper mapper = JsonMapper.builder()
+		var mapper = JsonMapper.builder()
 				.findAndAddModules()
 				.build();
 
-		assertThat(mapper.getRegisteredModules())
+		assertThat(mapper.registeredModules())
 				.extracting(JacksonModule::getModuleName)
 				.contains("jmolecules-module");
 	}

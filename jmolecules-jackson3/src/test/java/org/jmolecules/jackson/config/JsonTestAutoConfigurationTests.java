@@ -41,7 +41,7 @@ class JsonTestAutoConfigurationTests {
 	@Test // #161
 	void registersJMoleculesModuleForAtJsonTest() throws Exception {
 
-		assertThat(mapper.getRegisteredModules())
+		assertThat(mapper.registeredModules())
 				.extracting(JacksonModule::getModuleName)
 				.contains("jmolecules-module");
 	}

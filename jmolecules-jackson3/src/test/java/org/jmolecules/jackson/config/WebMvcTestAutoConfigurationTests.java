@@ -18,13 +18,13 @@ package org.jmolecules.jackson.config;
 import static org.assertj.core.api.Assertions.*;
 
 import tools.jackson.databind.JacksonModule;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 
 /**
  * @author Oliver Drotbohm
@@ -33,7 +33,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 @Disabled
 class WebMvcTestAutoConfigurationTests {
 
-	@Autowired ObjectMapper mapper;
+	@Autowired JsonMapper mapper;
 
 	@SpringBootApplication
 	static class Sample {}
@@ -41,7 +41,7 @@ class WebMvcTestAutoConfigurationTests {
 	@Test // #209
 	void registersJMoleculesModuleForAtJsonTest() throws Exception {
 
-		assertThat(mapper.getRegisteredModules())
+		assertThat(mapper.registeredModules())
 				.extracting(JacksonModule::getModuleName)
 				.contains("jmolecules-module");
 	}
