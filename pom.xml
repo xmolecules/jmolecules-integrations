@@ -35,8 +35,7 @@
 		<jmolecules-next.version>2.0.0-RC2</jmolecules-next.version>
 		<kotlin.version>2.2.10</kotlin.version>
 		<module.name>org.jmolecules.integrations</module.name>
-		<spring-boot.version>2.7.18</spring-boot.version>
-		<spring-boot3.version>3.5.6</spring-boot3.version>
+		<spring-boot.version>3.5.6</spring-boot.version>
 		<spring-boot4.version>4.0.0-M3</spring-boot4.version>
 		<axon.version>4.12.1</axon.version>
 	</properties>

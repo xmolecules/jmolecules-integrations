@@ -56,6 +56,12 @@
 		</dependency>
 
 		<dependency>
+			<groupId>net.minidev</groupId>
+			<artifactId>json-smart</artifactId>
+			<optional>true</optional>
+		</dependency>
+
+		<dependency>
 			<groupId>io.github.classgraph</groupId>
 			<artifactId>classgraph</artifactId>
 			<version>4.8.165</version>

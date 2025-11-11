@@ -11,10 +11,6 @@
 	<artifactId>jmolecules-bytebuddy-tests-jakarta</artifactId>
 	<name>jMolecules - ByteBuddy - Tests - Jakarta Persistence</name>
 
-	<properties>
-		<spring-boot.version>${spring-boot3.version}</spring-boot.version>
-	</properties>
-
 	<dependencies>
 
 		<dependency>
