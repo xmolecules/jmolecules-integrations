@@ -14,7 +14,7 @@
 	<properties>
 		<java.version>17</java.version>
 		<module.name>org.jmolecules.integrations.jackson3</module.name>
-		<jackson.version>3.0.0-rc9</jackson.version>
+		<jackson.version>3.0.2</jackson.version>
 		<spring-boot.version>${spring-boot4.version}</spring-boot.version>
 	</properties>
 
