@@ -147,6 +147,8 @@ class JMoleculesDddRulesUnitTest {
 
 		SampleAggregate aggregate;
 		AnnotatedAggregate annotatedAggregate;
+
+		static SampleAggregate staticAggregate;
 	}
 
 	@org.jmolecules.ddd.annotation.AggregateRoot
