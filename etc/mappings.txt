@@ -3,3 +3,4 @@ archunit=ArchUnit
 axon=Axon
 bytebuddy=ByteBuddy
 hibernate=Hibernate
+kotlin=Kotlin
