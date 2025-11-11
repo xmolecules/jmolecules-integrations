@@ -329,9 +329,6 @@ public class JMoleculesArchitectureRules {
 
 				// Ports
 
-				.whereLayer(HEXAGONAL_PORT_UNQUALIFIED)
-				.mayOnlyAccessLayers(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PORT)
-
 				.whereLayer(HEXAGONAL_PRIMARY_PORT)
 				.mayOnlyAccessLayers(
 						depth.augmentPrimary(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PORT_UNQUALIFIED,
@@ -341,7 +338,7 @@ public class JMoleculesArchitectureRules {
 				.mayOnlyAccessLayers(depth.augmentSecondary(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PORT_UNQUALIFIED))
 
 				.whereLayer(HEXAGONAL_PORT_UNQUALIFIED)
-				.mayOnlyAccessLayers(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PRIMARY_PORT, HEXAGONAL_SECONDARY_PORT)
+				.mayOnlyAccessLayers(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PORT, HEXAGONAL_PRIMARY_PORT, HEXAGONAL_SECONDARY_PORT)
 
 				// Application
 
