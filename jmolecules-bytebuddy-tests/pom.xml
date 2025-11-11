@@ -24,6 +24,7 @@
 		<module>jmolecules-bytebuddy-tests-jpa</module>
 		<module>jmolecules-bytebuddy-tests-mongodb</module>
 		<module>jmolecules-bytebuddy-tests-parent</module>
+		<module>jmolecules-bytebuddy-tests-spring</module>
 	</modules>
 
 </project>

@@ -216,6 +216,14 @@ class JMoleculesTypeBuilder extends JMoleculesType {
 				: this;
 	}
 
+	public JMoleculesTypeBuilder mapBuilder(Predicate<JMoleculesTypeBuilder> filter,
+			BiFunction<Builder<?>, Log, Builder<?>> mapper) {
+
+		return filter.test(this)
+				? JMoleculesTypeBuilder.of(logger, mapper.apply(builder, logger))
+				: this;
+	}
+
 	public JMoleculesTypeBuilder map(Predicate<JMoleculesTypeBuilder> filter,
 			Function<JMoleculesTypeBuilder, JMoleculesTypeBuilder> mapper) {
 

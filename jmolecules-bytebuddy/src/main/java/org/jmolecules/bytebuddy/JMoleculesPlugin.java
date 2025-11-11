@@ -82,7 +82,8 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 					springDataPlugin(world), //
 					springDataJdbcPlugin(world), //
 					springDataJpaPlugin(world, jpa), //
-					springDataMongoDbPlugin(world))
+					springDataMongoDbPlugin(world), //
+					springAotPlugin(world))
 					.flatMap(it -> it)
 					.collect(Collectors.toList());
 		});
@@ -218,6 +219,14 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 		return world.isAvailable("org.axonframework.spring.stereotype.Aggregate") //
 				? Stream.of(new JMoleculesAxonSpringPlugin()) //
 				: Stream.empty();
+	}
+
+	private static Stream<LoggingPlugin> springAotPlugin(ClassWorld world) {
+
+		return world.isAvailable("org.jmolecules.ddd.annotation.Entity")
+				&& world.isAvailable("org.springframework.boot.autoconfigure.SpringBootApplication")
+						? Stream.of(new JMoleculesSpringAotPlugin())
+						: Stream.empty();
 	}
 
 	@Slf4j
