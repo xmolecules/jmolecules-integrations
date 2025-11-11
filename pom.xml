@@ -33,7 +33,7 @@
 		<java.version>17</java.version>
 		<jmolecules.version>1.10.0</jmolecules.version>
 		<jmolecules-next.version>2.0.0-RC2</jmolecules-next.version>
-		<kotlin.version>2.2.10</kotlin.version>
+		<kotlin.version>2.2.21</kotlin.version>
 		<module.name>org.jmolecules.integrations</module.name>
 		<spring-boot.version>3.5.7</spring-boot.version>
 		<spring-boot4.version>4.0.0-M3</spring-boot4.version>
