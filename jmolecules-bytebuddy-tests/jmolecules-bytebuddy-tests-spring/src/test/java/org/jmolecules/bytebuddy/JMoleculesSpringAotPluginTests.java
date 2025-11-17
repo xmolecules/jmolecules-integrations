@@ -17,6 +17,7 @@ package org.jmolecules.bytebuddy;
 
 import static org.assertj.core.api.Assertions.*;
 
+import example.AlreadyAnnotated;
 import example.SampleAggregate;
 import example.SampleAnnotatedAggregate;
 import example.SampleAnnotatedEntity;
@@ -49,7 +50,7 @@ class JMoleculesSpringAotPluginTests {
 	Stream<DynamicTest> annotatesValueObjectWithReflective() {
 
 		var types = Stream.of(SampleValueObject.class, SampleEntity.class, SampleAnnotatedEntity.class,
-				SampleAggregate.class, SampleAnnotatedAggregate.class);
+				SampleAggregate.class, SampleAnnotatedAggregate.class, AlreadyAnnotated.class);
 
 		return DynamicTest.stream(types, it -> it + " is annotated with @" + Reflective.class.getSimpleName(), it -> {
 
@@ -57,5 +58,17 @@ class JMoleculesSpringAotPluginTests {
 					.<Class<?>> extracting(Annotation::annotationType)
 					.contains(RegisterReflection.class);
 		});
+	}
+
+	@Test // GH-371
+	void retainsOriginalAnnotation() {
+
+		RegisterReflection reflection = AlreadyAnnotated.class.getDeclaredAnnotation(RegisterReflection.class);
+
+		assertThat(reflection)
+				.isNotNull()
+				.satisfies(it -> {
+					assertThat(it.memberCategories()).isEmpty();
+				});
 	}
 }

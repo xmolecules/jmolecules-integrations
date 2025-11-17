@@ -17,6 +17,7 @@ package org.jmolecules.bytebuddy;
 
 import static org.jmolecules.bytebuddy.PluginUtils.*;
 
+import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.DynamicType.Builder;
@@ -66,18 +67,18 @@ public class JMoleculesSpringAotPlugin implements LoggingPlugin {
 		}
 
 		return JMoleculesTypeBuilder.of(log, builder)
-				.mapBuilder(JMoleculesType::isEntity, this::addReflectiveAnnotation)
-				.mapBuilder(JMoleculesType::isValueObject, this::addReflectiveAnnotation)
+				.map(JMoleculesType::isEntity, this::addReflectiveAnnotation)
+				.map(JMoleculesType::isValueObject, this::addReflectiveAnnotation)
 				.conclude();
 	}
 
-	private Builder<?> addReflectiveAnnotation(Builder<?> builder, Log log) {
+	private JMoleculesTypeBuilder addReflectiveAnnotation(JMoleculesTypeBuilder builder) {
 
-		log.info("Adding @RegisterReflection for public method invocation.");
-
-		return builder.annotateType(getAnnotation(RegisterReflection.class, it -> it
+		AnnotationDescription annotation = getAnnotation(RegisterReflection.class, it -> it
 				.defineEnumerationArray("memberCategories", MemberCategory.class,
-						MemberCategory.INVOKE_PUBLIC_METHODS, MemberCategory.INVOKE_PUBLIC_CONSTRUCTORS)));
+						MemberCategory.INVOKE_PUBLIC_METHODS, MemberCategory.INVOKE_PUBLIC_CONSTRUCTORS));
+
+		return builder.annotateTypeIfMissing(annotation);
 	}
 
 	/*

@@ -129,10 +129,17 @@ class JMoleculesTypeBuilder extends JMoleculesType {
 	}
 
 	@SafeVarargs
+	public final JMoleculesTypeBuilder annotateTypeIfMissing(AnnotationDescription annotation,
+			Class<? extends Annotation>... additionalFilters) {
+
+		return addAnnotationIfMissing(__ -> annotation, additionalFilters);
+	}
+
+	@SafeVarargs
 	public final JMoleculesTypeBuilder annotateTypeIfMissing(
 			Function<TypeDescription, Class<? extends Annotation>> producer,
 			Class<? extends Annotation>... additionalFilters) {
-		return addAnnotationIfMissing(producer, additionalFilters);
+		return addAnnotationIfMissing(producer.andThen(PluginUtils::getAnnotation), additionalFilters);
 	}
 
 	public JMoleculesTypeBuilder implementPersistable(PersistableOptions options) {
@@ -293,20 +300,20 @@ class JMoleculesTypeBuilder extends JMoleculesType {
 	private final JMoleculesTypeBuilder addAnnotationIfMissing(Class<? extends Annotation> annotation,
 			Class<? extends Annotation>... exclusions) {
 
-		return addAnnotationIfMissing(__ -> annotation, exclusions);
+		return addAnnotationIfMissing(__ -> PluginUtils.getAnnotation(annotation), exclusions);
 	}
 
 	@SafeVarargs
 	private final JMoleculesTypeBuilder addAnnotationIfMissing(
-			Function<TypeDescription, Class<? extends Annotation>> producer,
+			Function<TypeDescription, AnnotationDescription> producer,
 			Class<? extends Annotation>... exclusions) {
 
 		AnnotationList existing = type.getDeclaredAnnotations();
-		Class<? extends Annotation> annotation = producer.apply(type);
+		AnnotationDescription annotation = producer.apply(type);
 
 		String annotationName = PluginUtils.abbreviate(annotation);
 
-		if (existing.isAnnotationPresent(annotation)) {
+		if (existing.isAnnotationPresent(annotation.getAnnotationType())) {
 
 			logger.info("Not adding @{} because type is already annotated with it.", annotationName);
 
@@ -331,7 +338,7 @@ class JMoleculesTypeBuilder extends JMoleculesType {
 
 		logger.info("Adding @{}.", annotationName);
 
-		return JMoleculesTypeBuilder.of(logger, builder.annotateType(PluginUtils.getAnnotation(annotation)));
+		return JMoleculesTypeBuilder.of(logger, builder.annotateType(annotation));
 	}
 
 	public Optional<InDefinedShape> findIdField() {
