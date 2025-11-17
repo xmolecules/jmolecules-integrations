@@ -24,11 +24,19 @@ import io.toolisticon.cute.CuteApi.CompilerTestExpectAndThatInterface;
 import io.toolisticon.cute.CuteApi.DoCustomAssertions;
 import net.minidev.json.JSONArray;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+
 import javax.tools.StandardLocation;
 
 import org.junit.jupiter.api.Test;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SpecVersion;
 
 /**
  * Unit tests for {@link JMoleculesProcessor}.
@@ -41,6 +49,22 @@ class JMoleculesProcessorUnitTests {
 	BlackBoxTestSourceFilesAndProcessorInterface baseBlackBoxSetup = Cute.blackBoxTest()
 			.given()
 			.processor(JMoleculesProcessor.class);
+
+	static final JsonSchema SCHEMA;
+
+	static {
+
+		try (var stream = JMoleculesProcessorUnitTests.class
+				.getResourceAsStream("/META-INF/jmolecules-stereotypes.schema.json")) {
+
+			var factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7);
+
+			SCHEMA = factory.getSchema(stream);
+
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
+	}
 
 	@Test // GH-230
 	void detectsInvalidAggregateRootReferenceInImplementingAggregate() {
@@ -165,20 +189,30 @@ class JMoleculesProcessorUnitTests {
 							.getGeneratedResourceFile("/META-INF/jmolecules-stereotypes.json");
 
 					var content = file.get().getContent();
-					var context = JsonPath.parse(content);
 
-					assertThat(context.read("$.stereotypes['example.stereotype.AssignableStereotype']", Object.class))
-							.isNotNull()
-							.satisfies(it -> {
+					assertThat(SCHEMA.validate(readJson(content))).isEmpty();
+					assertThat(
+							JsonPath.parse(content).read("$.stereotypes['example.stereotype.AssignableStereotype']", Object.class))
+									.isNotNull()
+									.satisfies(it -> {
 
-								var nested = JsonPath.parse(it);
+										var nested = JsonPath.parse(it);
 
-								assertThat(nested.read("$.targets", JSONArray.class))
-										.containsExactly("example.stereotype.AssignableStereotype");
-								assertThat(nested.read("$.groups", JSONArray.class)).containsExactly("example.stereotype");
-								assertThat(nested.read("$.priority", Integer.class)).isEqualTo(0);
-							});
+										assertThat(nested.read("$.assignments", JSONArray.class))
+												.containsExactly("example.stereotype.AssignableStereotype");
+										assertThat(nested.read("$.groups", JSONArray.class)).containsExactly("example.stereotype");
+										assertThat(nested.read("$.priority", Integer.class)).isEqualTo(0);
+									});
 				});
+	}
+
+	private static JsonNode readJson(String input) {
+
+		try {
+			return new ObjectMapper().readTree(input);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	private static CompilerTestExpectAndThatInterface assertFailed(String source) {

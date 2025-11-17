@@ -265,7 +265,7 @@ public class JMoleculesProcessor implements Processor {
 		var stereotype = definition.getStereotype();
 		var result = new LinkedHashMap<String, Object>();
 
-		result.put("targets", definition.getAssignments().stream().map(Assignment::getTarget).toArray());
+		result.put("assignments", definition.getAssignments().stream().map(Assignment::getTarget).toArray());
 		result.put("groups", stereotype.getGroups());
 		result.put("priority", stereotype.getPriority());
 
