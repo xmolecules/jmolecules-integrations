@@ -14,8 +14,19 @@
 	<properties>
 		<module.name>org.jmolecules.integrations.jackson3</module.name>
 		<jackson.version>3.0.2</jackson.version>
-		<spring-boot.version>${spring-boot4.version}</spring-boot.version>
 	</properties>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-dependencies</artifactId>
+				<version>${spring-boot4.version}</version>
+				<scope>import</scope>
+				<type>pom</type>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 	<dependencies>
 
