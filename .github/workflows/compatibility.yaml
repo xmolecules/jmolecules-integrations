@@ -12,7 +12,12 @@ jobs:
 
     strategy:
       matrix:
-        version: ['3.2.12', '3.4.0-SNAPSHOT']
+        version:
+        - '3.3.12'
+        - '3.4.11'
+        - '3.4.12-SNAPSHOT'
+        - '3.5.7'
+        - '3.5.8-SNAPSHOT'
 
     name: Compatibility with Spring Boot ${{ matrix.version }}
 
