@@ -37,7 +37,7 @@
 		<module.name>org.jmolecules.integrations</module.name>
 		<spring-boot.version>3.5.7</spring-boot.version>
 		<spring-boot4.version>4.0.0</spring-boot4.version>
-		<axon.version>4.12.1</axon.version>
+		<axon.version>4.12.2</axon.version>
 	</properties>
 
 	<licenses>
