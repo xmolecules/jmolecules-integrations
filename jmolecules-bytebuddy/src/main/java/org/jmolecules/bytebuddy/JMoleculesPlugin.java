@@ -235,11 +235,12 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 		private final Properties properties;
 
 		public JMoleculesConfiguration(File outputFolder) {
+			this(loadProperties(detectConfiguration(detectProjectRoot(outputFolder)), outputFolder));
+		}
 
-			this.properties = new Properties();
+		public JMoleculesConfiguration(Properties properties) {
 
-			Path projectRoot = detectProjectRoot(outputFolder);
-			loadProperties(detectConfiguration(projectRoot), outputFolder);
+			this.properties = properties;
 
 			String toInclude = getPackagesToInclude();
 
@@ -252,32 +253,30 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 			return properties.getProperty(key);
 		}
 
-		private void loadProperties(File configuration, File outputFolder) {
+		private static Properties loadProperties(File configuration, File outputFolder) {
+
+			Properties result = new Properties();
 
 			if (configuration == null) {
 
 				logNoConfigFound(outputFolder);
-				return;
+				return result;
 			}
 
 			try {
 
-				this.properties.load(new FileInputStream(configuration));
+				result.load(new FileInputStream(configuration));
+
+				return result;
 
 			} catch (FileNotFoundException o_O) {
 
 				logNoConfigFound(outputFolder);
-				return;
+				return result;
 
 			} catch (IOException o_O) {
 				throw new UncheckedIOException(o_O);
 			}
-		}
-
-		public void logNoConfigFound(File outputFolder) {
-
-			log.info("No jmolecules.config found traversing {}", outputFolder.getAbsolutePath());
-			return;
 		}
 
 		public boolean include(TypeDescription description) {
@@ -299,16 +298,27 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 		public boolean supportsPersistence(String persistence) {
 
 			String value = properties.getProperty("bytebuddy.persistence");
+			String trimmed = value == null ? null : value.trim();
 
-			if (value == null || value.trim().isEmpty()) {
+			if (trimmed == null || trimmed.isEmpty()) {
 				return true;
 			}
 
-			return Stream.of(value.split("\\,")).map(String::trim).anyMatch(persistence::equals);
+			if (trimmed.equals("none")) {
+				return false;
+			}
+
+			return Stream.of(trimmed.split("\\,")).map(String::trim).anyMatch(persistence::equals);
 		}
 
 		private String getPackagesToInclude() {
 			return properties.getProperty("bytebuddy.include");
+		}
+
+		private static void logNoConfigFound(File outputFolder) {
+
+			log.info("No jmolecules.config found traversing {}", outputFolder.getAbsolutePath());
+			return;
 		}
 
 		private static Path detectProjectRoot(File file) {

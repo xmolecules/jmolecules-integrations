@@ -20,6 +20,8 @@ import static org.assertj.core.api.Assertions.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Properties;
+import java.util.stream.Stream;
 
 import org.jmolecules.bytebuddy.JMoleculesPlugin.JMoleculesConfiguration;
 import org.junit.jupiter.api.Test;
@@ -54,6 +56,20 @@ class JMoleculesConfigurationTests {
 		File file = getFolder("config/intermediate/nested");
 
 		assertThat(new JMoleculesConfiguration(file).getProperty("intermediate")).isNull();
+	}
+
+	@Test // GH-373
+	void disablesPersistenceCodeGenerationIfConfigured() {
+
+		Properties properties = new Properties();
+		properties.put("bytebuddy.persistence", "none");
+
+		JMoleculesConfiguration configuration = new JMoleculesConfiguration(properties);
+
+		Stream.of("jdbc", "jpa", "mongodb")
+				.forEach(it -> {
+					assertThat(configuration.supportsPersistence(it)).isFalse();
+				});
 	}
 
 	private static File getFolder(String name) {
