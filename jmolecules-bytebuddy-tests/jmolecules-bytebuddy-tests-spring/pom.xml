@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.jmolecules.integrations</groupId>
 		<artifactId>jmolecules-bytebuddy-tests-parent</artifactId>
-		<version>0.32.0</version>
+		<version>0.33.0-SNAPSHOT</version>
 		<relativePath>../jmolecules-bytebuddy-tests-parent/pom.xml</relativePath>
 	</parent>
 
@@ -26,8 +26,4 @@
 		</dependency>
 
 	</dependencies>
-
-  <scm>
-    <tag>0.32.0</tag>
-  </scm>
 </project>
