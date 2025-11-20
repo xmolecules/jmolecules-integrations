@@ -61,12 +61,15 @@ class PluginUtils {
 	 * @param annotationType must not be {@literal null}.
 	 * @return result of the check.
 	 */
+	@SuppressWarnings("unchecked")
 	static boolean isAnnotatedWith(TypeDescription type, Class<?> annotationType) {
 
-		return type.getDeclaredAnnotations() //
-				.asTypeList() //
-				.stream() //
-				.anyMatch(it -> it.isAssignableTo(annotationType));
+		if (!annotationType.isAnnotation()) {
+			return false;
+		}
+
+		return type.getDeclaredAnnotations()
+				.isAnnotationPresent((Class<? extends Annotation>) annotationType);
 	}
 
 	/**
@@ -107,7 +110,8 @@ class PluginUtils {
 
 			Class<?> source = entry.getKey();
 
-			if (source.isAnnotation() ? isAnnotatedWith(type, source) : type.isAssignableTo(source)) {
+			if (source.isAnnotation() ? isAnnotatedWith(builder.toTypeDescription(), source)
+					: type.isAssignableTo(source)) {
 				builder = addAnnotationIfMissing(entry.getValue(), builder, type, log);
 			}
 		}
