@@ -26,13 +26,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.hibernate.Version;
-import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.metamodel.spi.EmbeddableInstantiator;
 import org.hibernate.metamodel.spi.ValueAccess;
 
 /**
- * Hibernate 6 specific {@link EmbeddableInstantiator} that inspects a {@link Record} for its {@link RecordComponent}s
- * to assemble instances of it in {@link #instantiate(Supplier, SessionFactoryImplementor)}. To use it directly, declare
+ * Hibernate 7 specific {@link EmbeddableInstantiator} that inspects a {@link Record} for its {@link RecordComponent}s
+ * to assemble instances of it in {@link #instantiate(ValueAccess)}. To use it directly, declare
  * a subclass of it invoking {@link RecordInstantiator}'s constructor with the record type at hand and use that declared
  * types via {@link org.hibernate.annotations.EmbeddableInstantiator} on the record type.
  *
@@ -78,7 +77,7 @@ public class RecordInstantiator implements EmbeddableInstantiator {
 	 * @see org.hibernate.metamodel.spi.Instantiator#isInstance(java.lang.Object, org.hibernate.engine.spi.SessionFactoryImplementor)
 	 */
 	@Override
-	public boolean isInstance(Object object, SessionFactoryImplementor sessionFactory) {
+	public boolean isInstance(Object object) {
 		return type.isInstance(object);
 	}
 
@@ -87,7 +86,7 @@ public class RecordInstantiator implements EmbeddableInstantiator {
 	 * @see org.hibernate.metamodel.spi.Instantiator#isSameClass(java.lang.Object, org.hibernate.engine.spi.SessionFactoryImplementor)
 	 */
 	@Override
-	public boolean isSameClass(Object object, SessionFactoryImplementor sessionFactory) {
+	public boolean isSameClass(Object object) {
 		return type.equals(object.getClass());
 	}
 
@@ -96,7 +95,7 @@ public class RecordInstantiator implements EmbeddableInstantiator {
 	 * @see org.hibernate.metamodel.spi.EmbeddableInstantiator#instantiate(org.hibernate.metamodel.spi.ValueAccess, org.hibernate.engine.spi.SessionFactoryImplementor)
 	 */
 	@Override
-	public Object instantiate(ValueAccess access, SessionFactoryImplementor factory) {
+	public Object instantiate(ValueAccess access) {
 
 		Object[] sources = access.getValues();
 

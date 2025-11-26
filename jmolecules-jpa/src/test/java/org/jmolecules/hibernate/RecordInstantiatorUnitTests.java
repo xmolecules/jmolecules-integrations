@@ -40,7 +40,7 @@ class RecordInstantiatorUnitTests {
 		ValueAccess access = mock(ValueAccess.class);
 		doReturn(values).when(access).getValues();
 
-		assertThat(instantiator.instantiate(access, null))
+		assertThat(instantiator.instantiate(access))
 				.isEqualTo(new Person("Matthews", 57, "Dave"));
 	}
 

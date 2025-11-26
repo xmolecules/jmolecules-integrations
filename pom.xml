@@ -29,7 +29,7 @@
 		<aptk-tools.version>0.30.5</aptk-tools.version>
 		<archunit.version>1.4.1</archunit.version>
 		<bytebuddy.version>1.18.1</bytebuddy.version>
-		<hibernate.version>6.6.36.Final</hibernate.version>
+		<hibernate.version>7.0.10.Final</hibernate.version>
 		<java.version>17</java.version>
 		<jmolecules.version>1.10.0</jmolecules.version>
 		<jmolecules-next.version>2.0.1</jmolecules-next.version>
