@@ -48,6 +48,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import org.hibernate.Version;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.jmolecules.bytebuddy.PluginLogger.Log;
@@ -76,7 +77,9 @@ public class JMoleculesJpaPlugin implements LoggingPlugin, WithPreprocessor {
 		this.jpa = jpa;
 
 		if (world.isAvailable("org.hibernate.annotations.EmbeddableInstantiator")) {
-			this.embeddableInstantiatorAnnotationType = jpa.getType("org.hibernate.annotations.EmbeddableInstantiator");
+			if (Version.getVersionString().startsWith("6")) {
+				this.embeddableInstantiatorAnnotationType = jpa.getType("org.hibernate.annotations.EmbeddableInstantiator");
+			}
 		}
 	}
 
