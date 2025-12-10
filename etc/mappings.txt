@@ -4,3 +4,4 @@ axon=Axon
 bytebuddy=ByteBuddy
 hibernate=Hibernate
 kotlin=Kotlin
+spring-boot=Spring Boot
