@@ -36,7 +36,7 @@ import org.springframework.aot.hint.annotation.RegisterReflection;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ReflectiveScan;
 
-class JMoleculesSpringAotPluginTests {
+class JMoleculesSpringNativePluginTests {
 
 	@Test
 	void annotatesSpringBootApplicationClassWithAtReflectiveScan() {

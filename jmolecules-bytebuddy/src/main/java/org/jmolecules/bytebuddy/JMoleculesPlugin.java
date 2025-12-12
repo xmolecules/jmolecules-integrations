@@ -221,11 +221,11 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 				: Stream.empty();
 	}
 
-	private static Stream<LoggingPlugin> springAotPlugin(ClassWorld world) {
+	private Stream<LoggingPlugin> springAotPlugin(ClassWorld world) {
 
 		return world.isAvailable("org.jmolecules.ddd.annotation.Entity")
 				&& world.isAvailable("org.springframework.boot.autoconfigure.SpringBootApplication")
-						? Stream.of(new JMoleculesSpringAotPlugin())
+						? Stream.of(new JMoleculesSpringNativePlugin(configuration))
 						: Stream.empty();
 	}
 
@@ -309,6 +309,10 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 			}
 
 			return Stream.of(trimmed.split("\\,")).map(String::trim).anyMatch(persistence::equals);
+		}
+
+		public boolean supportsNativeImage() {
+			return "true".equals(properties.getProperty("bytebuddy.native-image"));
 		}
 
 		private String getPackagesToInclude() {

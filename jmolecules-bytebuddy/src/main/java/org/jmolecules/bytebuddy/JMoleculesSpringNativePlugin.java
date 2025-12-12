@@ -27,13 +27,20 @@ import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jmolecules.bytebuddy.JMoleculesPlugin.JMoleculesConfiguration;
 import org.jmolecules.bytebuddy.PluginLogger.Log;
 import org.springframework.aot.hint.MemberCategory;
 import org.springframework.aot.hint.annotation.RegisterReflection;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ReflectiveScan;
 
-public class JMoleculesSpringAotPlugin implements LoggingPlugin {
+class JMoleculesSpringNativePlugin implements LoggingPlugin {
+
+	private final JMoleculesConfiguration configuration;
+
+	JMoleculesSpringNativePlugin(JMoleculesConfiguration configuration) {
+		this.configuration = configuration;
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -41,6 +48,10 @@ public class JMoleculesSpringAotPlugin implements LoggingPlugin {
 	 */
 	@Override
 	public boolean matches(TypeDescription type) {
+
+		if (!configuration.supportsNativeImage()) {
+			return false;
+		}
 
 		JMoleculesType jMoleculesType = new JMoleculesType(type);
 
