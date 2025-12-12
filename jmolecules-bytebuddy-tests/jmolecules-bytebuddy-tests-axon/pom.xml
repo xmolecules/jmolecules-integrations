@@ -11,6 +11,10 @@
 
 	<artifactId>jmolecules-bytebuddy-tests-axon</artifactId>
 	<name>jMolecules - ByteBuddy - Tests - Axon</name>
+	
+	<properties>
+		<source.excludes>**/SampleSpringAndSpringDataRepository.java</source.excludes>
+	</properties>
 
 	<dependencies>
 

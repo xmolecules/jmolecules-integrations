@@ -82,6 +82,9 @@
 									<includes>
 										<include>**/*.java</include>
 									</includes>
+									<excludes>
+										<exclude>${source.excludes}</exclude>
+									</excludes>
 								</resource>
 							</resources>
 						</configuration>

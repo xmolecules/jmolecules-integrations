@@ -349,7 +349,7 @@ class PluginUtils {
 	private static Builder<?> addAnnotationIfMissing(Class<? extends Annotation> annotation, Builder<?> builder,
 			TypeDescription type, Log log) {
 
-		if (isAnnotatedWith(type, annotation)) {
+		if (isAnnotatedWith(builder.toTypeDescription(), annotation)) {
 			log.info("Not adding @{}, already present.", PluginUtils.abbreviate(annotation));
 			return builder;
 		}
