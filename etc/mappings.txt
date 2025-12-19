@@ -5,3 +5,4 @@ bytebuddy=ByteBuddy
 hibernate=Hibernate
 kotlin=Kotlin
 spring-boot=Spring Boot
+spring-boot4=Spring Boot 4
