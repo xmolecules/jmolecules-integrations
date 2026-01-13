@@ -69,6 +69,7 @@ jobs:
           distribution: 'graalvm'
           github-token: ${{ secrets.GITHUB_TOKEN }}
           native-image-job-reports: 'true'
+          cache: 'maven'
 
       - name: Build Native Binary
         working-directory: jmolecules-cli
@@ -125,6 +126,7 @@ jobs:
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
+          cache: 'maven'
 
       - name: Run JReleaser (Update Release)
         uses: jreleaser/release-action@v2
