@@ -121,33 +121,6 @@
 				</executions>
 			</plugin>
 
-			<plugin>
-				<groupId>kr.motd.maven</groupId>
-				<artifactId>os-maven-plugin</artifactId>
-				<version>1.7.1</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>detect</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<version>3.7.1</version>
-				<configuration>
-					<attach>false</attach>
-					<appendAssemblyId>false</appendAssemblyId>
-					<outputDirectory>${project.build.directory}/distributions</outputDirectory>
-					<descriptors>
-						<descriptor>src/main/assembly/assembly.xml</descriptor>
-					</descriptors>
-				</configuration>
-			</plugin>
-
 		</plugins>
 	</build>
 
@@ -156,6 +129,18 @@
 			<id>dist</id>
 			<build>
 				<plugins>
+					<plugin>
+						<groupId>kr.motd.maven</groupId>
+						<artifactId>os-maven-plugin</artifactId>
+						<version>1.7.1</version>
+						<executions>
+							<execution>
+								<goals>
+									<goal>detect</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
 					<plugin>
 						<groupId>org.graalvm.buildtools</groupId>
 						<artifactId>native-maven-plugin</artifactId>
@@ -172,6 +157,16 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-assembly-plugin</artifactId>
+						<version>3.7.1</version>
+						<configuration>
+							<attach>false</attach>
+							<appendAssemblyId>false</appendAssemblyId>
+							<finalName>jm-${project.version}-${os.detected.classifier}</finalName>
+							<outputDirectory>${project.build.directory}/distributions</outputDirectory>
+							<descriptors>
+								<descriptor>src/main/assembly/assembly.xml</descriptor>
+							</descriptors>
+						</configuration>
 						<executions>
 							<execution>
 								<id>assemble-distribution</id>

@@ -16,12 +16,12 @@ class {{brewFormulaName}} < Formula
   {{/brewDependencies}}
 
   on_intel do
-    url "{{distributionUrl}}", using: :nounzip
+    url "{{distributionUrl}}"
     sha256 "{{distributionChecksumSha256}}"
   end
 
   on_arm do
-    url "{{distributionUrlArm}}", using: :nounzip
+    url "{{distributionUrlArm}}"
     sha256 "{{distributionChecksumSha256Arm}}"
   end
 

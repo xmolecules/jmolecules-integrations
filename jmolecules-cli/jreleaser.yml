@@ -40,11 +40,11 @@ distributions:
       name: jm
       windowsExtension: exe
     artifacts:
-      - path: target/distributions/{{distributionName}}-{{projectVersion}}-osx-x86_64.tar.gz
+      - path: target/distributions/{{distributionName}}-{{projectVersion}}-osx-x86_64.zip
         platform: osx-x86_64
-      - path: target/distributions/{{distributionName}}-{{projectVersion}}-osx-aarch64.tar.gz
+      - path: target/distributions/{{distributionName}}-{{projectVersion}}-osx-aarch_64.zip
         platform: osx-aarch_64
-      - path: target/distributions/{{distributionName}}-{{projectVersion}}-linux-x86_64.tar.gz
+      - path: target/distributions/{{distributionName}}-{{projectVersion}}-linux-x86_64.zip
         platform: linux-x86_64
       - path: target/distributions/{{distributionName}}-{{projectVersion}}-windows-x86_64.zip
         platform: windows-x86_64
