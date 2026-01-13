@@ -2,7 +2,8 @@ project:
   name: jm
   description: 'Command-line interface for jMolecules - DDD and architecture building blocks'
   longDescription: 'jMolecules CLI provides tools for working with Domain-Driven Design building blocks and architecture patterns in Java projects.'
-  website: https://github.com/xmolecules/jmolecules-integrations
+  links:
+    homepage: https://github.com/xmolecules/jmolecules-integrations
   authors:
     - Oliver Drotbohm
   license: Apache-2.0
@@ -13,35 +14,39 @@ project:
     - cli
     - java
     - architecture
-  java:
-    groupId: org.jmolecules.integrations
-    artifactId: jmolecules-cli
-    version: 17
-    mainClass: org.jmolecules.cli.CliApplication
+  languages:
+    java:
+      groupId: org.jmolecules.integrations
+      artifactId: jmolecules-cli
+      version: 17
+      mainClass: org.jmolecules.cli.CliApplication
 
 release:
   github:
-    skipRelease: true
+    skipTag: true
+    tagName: '{{projectVersion}}'
     update:
       enabled: true
       sections:
         - ASSETS
     overwrite: true
+    changelog:
+      enabled: false
 
 distributions:
   jm:
-    type: NATIVE_IMAGE
+    type: BINARY
     executable:
       name: jm
       windowsExtension: exe
     artifacts:
-      - path: target/distributions/{{distributionName}}-{{projectVersion}}-darwin-x86_64.{{distributionArtifactFileFormat}}
+      - path: target/distributions/{{distributionName}}-{{projectVersion}}-osx-x86_64.tar.gz
         platform: osx-x86_64
-      - path: target/distributions/{{distributionName}}-{{projectVersion}}-darwin-aarch64.{{distributionArtifactFileFormat}}
+      - path: target/distributions/{{distributionName}}-{{projectVersion}}-osx-aarch64.tar.gz
         platform: osx-aarch_64
-      - path: target/distributions/{{distributionName}}-{{projectVersion}}-linux-x86_64.{{distributionArtifactFileFormat}}
+      - path: target/distributions/{{distributionName}}-{{projectVersion}}-linux-x86_64.tar.gz
         platform: linux-x86_64
-      - path: target/distributions/{{distributionName}}-{{projectVersion}}-windows-x86_64.{{distributionArtifactFileFormat}}
+      - path: target/distributions/{{distributionName}}-{{projectVersion}}-windows-x86_64.zip
         platform: windows-x86_64
 
 packagers:
@@ -50,19 +55,20 @@ packagers:
     continueOnError: false
     multiPlatform: true
     formulaName: jm
-    templateDirectory: src/jreleaser/distributions/{{distributionName}}/brew
+    templateDirectory: src/jreleaser/distributions/jm/brew
     repository:
       owner: xmolecules
       name: homebrew-tap
-      tapName: xmolecules/jm
-    commitMessage: '{{distributionName}} {{tagName}}'
+      tagName: '{{projectVersion}}'
+      commitMessage: '{{distributionName}} {{tagName}}'
     extraProperties:
       skipJava: true
 
   scoop:
     active: ALWAYS
     continueOnError: false
-    bucket:
+    repository:
       owner: xmolecules
       name: scoop-bucket
-    commitMessage: '{{distributionName}} {{tagName}}'
+      tagName: '{{projectVersion}}'
+      commitMessage: '{{distributionName}} {{tagName}}'

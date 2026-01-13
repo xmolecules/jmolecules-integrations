@@ -34,13 +34,13 @@ jobs:
           - os: macos-15-intel
             platform: darwin
             arch: x86_64
-            artifact-suffix: darwin-x86_64
+            artifact-suffix: osx-x86_64
 
           # macOS Apple Silicon
           - os: macos-latest
             platform: darwin
             arch: aarch64
-            artifact-suffix: darwin-aarch64
+            artifact-suffix: osx-aarch64
 
           # Linux x86_64
           - os: ubuntu-latest
@@ -137,7 +137,8 @@ jobs:
         env:
           JRELEASER_PROJECT_VERSION: ${{ github.event.inputs.version || github.ref_name }}
           JRELEASER_GITHUB_TOKEN: ${{ secrets.JRELEASER_GITHUB_TOKEN }}
-          JRELEASER_SKIP_RELEASE: ${{ github.event.inputs.dry_run == 'true' }}
+          JRELEASER_DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
+          JRELEASER_GIT_ROOT_SEARCH: true
 
       - name: JReleaser Output
         if: always()
