@@ -15,11 +15,12 @@
  */
 package org.jmolecules.cli;
 
+import static org.assertj.core.api.Assertions.*;
+
 import picocli.AutoComplete;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
@@ -33,19 +34,13 @@ public class AutocompletionGenerationTest {
 
 		var binaryName = "jm";
 		var commandLine = CliApplication.createCommandLine("integration-test");
-
-		try {
-			var bashCompletion = AutoComplete.bash(binaryName, commandLine);
-			Files.writeString(Path.of("target/%s.completion".formatted(binaryName)), customize(bashCompletion));
-
-		} catch (Exception o_O) {
-			throw new RuntimeException(o_O);
-		}
-	}
-
-	private static String customize(String completionScript) {
+		var bashCompletion = AutoComplete.bash(binaryName, commandLine);
 		var placeholder = AddAggregateCommand.ModuleReferencePlaceholder.class.getName();
-		return completionScript.replace("\"%s\"".formatted(placeholder),
+		var customized = bashCompletion.replace("\"%s\"".formatted(placeholder),
 				"$([ -f .jm/modules ] && jq -c -r 'keys | join(\" \")' .jm/modules)");
+
+		assertThatNoException().isThrownBy(() -> {
+			Files.writeString(Path.of("target/%s.completion".formatted(binaryName)), customized);
+		});
 	}
 }
