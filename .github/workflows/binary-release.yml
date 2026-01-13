@@ -138,6 +138,7 @@ jobs:
           JRELEASER_PROJECT_VERSION: ${{ github.event.inputs.version || github.ref_name }}
           JRELEASER_GITHUB_TOKEN: ${{ secrets.JRELEASER_GITHUB_TOKEN }}
           JRELEASER_SKIP_RELEASE: ${{ github.event.inputs.dry_run == 'true' }}
+          JRELEASER_GIT_ROOT_SEARCH: true
 
       - name: JReleaser Output
         if: always()
