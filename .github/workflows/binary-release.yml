@@ -69,6 +69,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up QEMU
+        if: matrix.use-docker
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
       - name: Set up GraalVM
         if: ${{ !matrix.use-docker }}
         uses: graalvm/setup-graalvm@v1
