@@ -131,7 +131,6 @@ jobs:
   release:
     name: Attach Binaries to Release
     needs: [build]
-    if: ${{ github.event.inputs.dry_run != 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -161,6 +160,7 @@ jobs:
         env:
           JRELEASER_PROJECT_VERSION: ${{ github.event.inputs.version || github.ref_name }}
           JRELEASER_GITHUB_TOKEN: ${{ secrets.JRELEASER_GITHUB_TOKEN }}
+          JRELEASER_SKIP_RELEASE: ${{ github.event.inputs.dry_run == 'true' }}
 
       - name: JReleaser Output
         if: always()
