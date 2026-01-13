@@ -31,22 +31,21 @@ public class AutocompletionGenerationTest {
 	@Test
 	void generateAutoCompletionScript() throws Exception {
 
-		Stream.of("jm", "jmn").forEach(jm -> {
+		var binaryName = "jm";
+		var commandLine = CliApplication.createCommandLine("integration-test");
 
-			try {
+		try {
+			var bashCompletion = AutoComplete.bash(binaryName, commandLine);
+			Files.writeString(Path.of("target/%s.completion".formatted(binaryName)), customize(bashCompletion));
 
-				var completionScript = AutoComplete.bash(jm, CliApplication.createCommandLine("integration-test"));
-				var placeholder = AddAggregateCommand.ModuleReferencePlaceholder.class.getName();
+		} catch (Exception o_O) {
+			throw new RuntimeException(o_O);
+		}
+	}
 
-				completionScript = completionScript.replace("\"%s\"".formatted(placeholder),
-						"$([ -f .jm/modules ] && jq -c -r 'keys | join(\" \")' .jm/modules)");
-
-				Files.writeString(Path.of("target/%s.completion".formatted(jm)), completionScript);
-
-			} catch (Exception o_O) {
-				throw new RuntimeException(o_O);
-			}
-		});
-
+	private static String customize(String completionScript) {
+		var placeholder = AddAggregateCommand.ModuleReferencePlaceholder.class.getName();
+		return completionScript.replace("\"%s\"".formatted(placeholder),
+				"$([ -f .jm/modules ] && jq -c -r 'keys | join(\" \")' .jm/modules)");
 	}
 }

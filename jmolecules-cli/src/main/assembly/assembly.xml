@@ -1,0 +1,46 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0
+          https://maven.apache.org/xsd/assembly-2.2.0.xsd">
+	<id>distribution</id>
+	<formats>
+		<format>zip</format>
+		<format>tar.gz</format>
+	</formats>
+	<includeBaseDirectory>false</includeBaseDirectory>
+	<fileSets>
+		<!-- Native binary -->
+		<fileSet>
+			<directory>${project.build.directory}</directory>
+			<outputDirectory>bin</outputDirectory>
+			<includes>
+				<include>jm</include>
+				<include>jm.exe</include>
+			</includes>
+			<fileMode>0755</fileMode>
+		</fileSet>
+		<!-- Completion scripts -->
+		<fileSet>
+			<directory>${project.build.directory}</directory>
+			<outputDirectory>completion</outputDirectory>
+			<includes>
+				<include>jm.completion</include>
+			</includes>
+		</fileSet>
+		<!-- Documentation -->
+		<fileSet>
+			<directory>${project.basedir}</directory>
+			<outputDirectory>/</outputDirectory>
+			<includes>
+				<include>README*</include>
+			</includes>
+		</fileSet>
+		<fileSet>
+			<directory>${project.basedir}/..</directory>
+			<outputDirectory>/</outputDirectory>
+			<includes>
+				<include>LICENSE*</include>
+			</includes>
+		</fileSet>
+	</fileSets>
+</assembly>

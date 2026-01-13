@@ -1,0 +1,162 @@
+name: Binary Release
+
+# Trigger AFTER the Maven release has created a tag and GitHub release
+# This workflow adds native binaries to the existing release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag to attach binaries to (e.g., 0.34.0)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run: build binaries but skip release/publishing'
+        required: false
+        type: boolean
+        default: false
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+env:
+  GRAAL_VERSION: '25'
+  JAVA_VERSION: '25'
+
+jobs:
+  # Build native binaries for each platform
+  build:
+    name: Build ${{ matrix.platform }}-${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # macOS Intel
+          - os: macos-13
+            platform: darwin
+            arch: x86_64
+            artifact-suffix: darwin-x86_64
+
+          # macOS Apple Silicon
+          - os: macos-latest
+            platform: darwin
+            arch: aarch64
+            artifact-suffix: darwin-aarch64
+
+          # Linux x86_64
+          - os: ubuntu-latest
+            platform: linux
+            arch: x86_64
+            artifact-suffix: linux-x86_64
+
+          # Linux ARM64 (via Docker)
+          - os: ubuntu-latest
+            platform: linux
+            arch: aarch64
+            artifact-suffix: linux-aarch64
+            use-docker: true
+
+          # Windows x86_64
+          - os: windows-latest
+            platform: windows
+            arch: x86_64
+            artifact-suffix: windows-x86_64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up GraalVM
+        if: ${{ !matrix.use-docker }}
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: 'true'
+
+      - name: Build Native Binary (Linux ARM64 via Docker)
+        if: matrix.use-docker && matrix.arch == 'aarch64'
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace/jmolecules-cli \
+            --platform linux/arm64 \
+            ghcr.io/graalvm/graalvm-community:25 \
+            sh -c "../mvnw -B -Pdist clean package"
+
+      - name: Build Native Binary (Standard)
+        if: ${{ !matrix.use-docker }}
+        working-directory: jmolecules-cli
+        run: ../mvnw -B -Pdist clean package
+
+      - name: Create Archive (Unix)
+        if: matrix.platform != 'windows'
+        working-directory: jmolecules-cli/target
+        run: |
+          mkdir -p distributions
+          tar -czf distributions/jm-${{ github.event.inputs.version || github.ref_name }}-${{ matrix.artifact-suffix }}.tar.gz \
+            -C .. target/jm \
+            -C .. target/jm.completion
+
+      - name: Create Archive (Windows)
+        if: matrix.platform == 'windows'
+        working-directory: jmolecules-cli/target
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path distributions
+          Compress-Archive -Path jm.exe,jm.completion -DestinationPath distributions/jm-${{ github.event.inputs.version || github.ref_name }}-${{ matrix.artifact-suffix }}.zip
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jm-${{ matrix.artifact-suffix }}
+          path: jmolecules-cli/target/distributions/*
+          retention-days: ${{ github.event.inputs.dry_run == 'true' && 7 || 1 }}
+
+  # Attach binaries to existing release using jReleaser
+  release:
+    name: Attach Binaries to Release
+    needs: [build]
+    if: ${{ github.event.inputs.dry_run != 'true' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: jmolecules-cli/target/distributions
+          merge-multiple: true
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Run JReleaser (Update Release)
+        uses: jreleaser/release-action@v2
+        with:
+          version: latest
+          arguments: full-release
+          working-directory: jmolecules-cli
+        env:
+          JRELEASER_PROJECT_VERSION: ${{ github.event.inputs.version || github.ref_name }}
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.JRELEASER_GITHUB_TOKEN }}
+
+      - name: JReleaser Output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jreleaser-logs
+          path: |
+            jmolecules-cli/out/jreleaser/trace.log
+            jmolecules-cli/out/jreleaser/output.properties
