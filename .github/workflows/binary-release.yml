@@ -103,10 +103,10 @@ jobs:
         if: matrix.platform != 'windows'
         working-directory: jmolecules-cli/target
         run: |
-          mkdir -p distributions
-          tar -czf distributions/jm-${{ github.event.inputs.version || github.ref_name }}-${{ matrix.artifact-suffix }}.tar.gz \
-            -C .. target/jm \
-            -C .. target/jm.completion
+          mkdir -p distributions bin completion
+          cp jm bin/
+          cp jm.completion completion/
+          tar -czf distributions/jm-${{ github.event.inputs.version || github.ref_name }}-${{ matrix.artifact-suffix }}.tar.gz bin/jm completion/jm.completion
 
       - name: Create Archive (Windows)
         if: matrix.platform == 'windows'
@@ -114,7 +114,11 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path distributions
-          Compress-Archive -Path jm.exe,jm.completion -DestinationPath distributions/jm-${{ github.event.inputs.version || github.ref_name }}-${{ matrix.artifact-suffix }}.zip
+          New-Item -ItemType Directory -Force -Path bin
+          New-Item -ItemType Directory -Force -Path completion
+          Copy-Item jm.exe -Destination bin/
+          Copy-Item jm.completion -Destination completion/
+          Compress-Archive -Path bin/jm.exe,completion/jm.completion -DestinationPath distributions/jm-${{ github.event.inputs.version || github.ref_name }}-${{ matrix.artifact-suffix }}.zip
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
