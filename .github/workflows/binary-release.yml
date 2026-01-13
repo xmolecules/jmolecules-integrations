@@ -48,13 +48,6 @@ jobs:
             arch: x86_64
             artifact-suffix: linux-x86_64
 
-          # Linux ARM64 (via Docker)
-          - os: ubuntu-latest
-            platform: linux
-            arch: aarch64
-            artifact-suffix: linux-aarch64
-            use-docker: true
-
           # Windows x86_64
           - os: windows-latest
             platform: windows
@@ -69,14 +62,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up QEMU
-        if: matrix.use-docker
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
       - name: Set up GraalVM
-        if: ${{ !matrix.use-docker }}
         uses: graalvm/setup-graalvm@v1
         with:
           java-version: ${{ env.JAVA_VERSION }}
@@ -84,18 +70,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           native-image-job-reports: 'true'
 
-      - name: Build Native Binary (Linux ARM64 via Docker)
-        if: matrix.use-docker && matrix.arch == 'aarch64'
-        run: |
-          docker run --rm \
-            -v "${{ github.workspace }}:/workspace" \
-            -w /workspace/jmolecules-cli \
-            --platform linux/arm64 \
-            ghcr.io/graalvm/graalvm-community:25 \
-            sh -c "../mvnw -B -Pdist clean package"
-
-      - name: Build Native Binary (Standard)
-        if: ${{ !matrix.use-docker }}
+      - name: Build Native Binary
         working-directory: jmolecules-cli
         run: ../mvnw -B -Pdist clean package
 
@@ -129,7 +104,7 @@ jobs:
 
   # Attach binaries to existing release using jReleaser
   release:
-    name: Attach Binaries to Release
+    name: Publish Binaries
     needs: [build]
     runs-on: ubuntu-latest
 

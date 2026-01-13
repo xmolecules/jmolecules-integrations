@@ -41,8 +41,6 @@ distributions:
         platform: osx-aarch_64
       - path: target/distributions/{{distributionName}}-{{projectVersion}}-linux-x86_64.{{distributionArtifactFileFormat}}
         platform: linux-x86_64
-      - path: target/distributions/{{distributionName}}-{{projectVersion}}-linux-aarch64.{{distributionArtifactFileFormat}}
-        platform: linux-aarch_64
       - path: target/distributions/{{distributionName}}-{{projectVersion}}-windows-x86_64.{{distributionArtifactFileFormat}}
         platform: windows-x86_64
 
