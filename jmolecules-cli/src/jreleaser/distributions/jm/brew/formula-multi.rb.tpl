@@ -16,13 +16,13 @@ class {{brewFormulaName}} < Formula
   {{/brewDependencies}}
 
   on_intel do
-    url "{{distributionUrl}}"
-    sha256 "{{distributionChecksumSha256}}"
+    url "{{artifactOsxX8664Url}}"
+    sha256 "{{artifactOsxX8664ChecksumSha256}}"
   end
 
   on_arm do
-    url "{{distributionUrlArm}}"
-    sha256 "{{distributionChecksumSha256Arm}}"
+    url "{{artifactOsxAarch64Url}}"
+    sha256 "{{artifactOsxAarch64ChecksumSha256}}"
   end
 
   def install
