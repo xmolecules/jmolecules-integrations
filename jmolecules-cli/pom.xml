@@ -158,15 +158,6 @@
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-assembly-plugin</artifactId>
 						<version>3.7.1</version>
-						<configuration>
-							<attach>false</attach>
-							<appendAssemblyId>false</appendAssemblyId>
-							<finalName>jm-${project.version}-${os.detected.classifier}</finalName>
-							<outputDirectory>${project.build.directory}/distributions</outputDirectory>
-							<descriptors>
-								<descriptor>src/main/assembly/assembly.xml</descriptor>
-							</descriptors>
-						</configuration>
 						<executions>
 							<execution>
 								<id>assemble-distribution</id>
@@ -174,6 +165,31 @@
 								<goals>
 									<goal>single</goal>
 								</goals>
+								<configuration>
+									<attach>false</attach>
+									<appendAssemblyId>false</appendAssemblyId>
+									<finalName>jm-${project.version}-${os.detected.classifier}</finalName>
+									<outputDirectory>${project.build.directory}/distributions</outputDirectory>
+									<descriptors>
+										<descriptor>src/main/assembly/assembly.xml</descriptor>
+									</descriptors>
+								</configuration>
+							</execution>
+							<execution>
+								<id>assemble-local-tap</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+								<configuration>
+									<attach>false</attach>
+									<appendAssemblyId>false</appendAssemblyId>
+									<finalName>tap</finalName>
+									<outputDirectory>${project.build.directory}</outputDirectory>
+									<descriptors>
+										<descriptor>src/main/assembly/tap.xml</descriptor>
+									</descriptors>
+								</configuration>
 							</execution>
 						</executions>
 					</plugin>
