@@ -56,6 +56,8 @@ packagers:
     multiPlatform: true
     formulaName: jm
     templateDirectory: src/jreleaser/distributions/jm/brew
+    dependencies:
+      - jq
     repository:
       owner: xmolecules
       name: homebrew-tap
@@ -67,6 +69,8 @@ packagers:
   scoop:
     active: ALWAYS
     continueOnError: false
+    dependencies:
+      - jq
     repository:
       owner: xmolecules
       name: scoop-bucket
