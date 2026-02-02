@@ -26,7 +26,7 @@
 				<include>jm.completion</include>
 			</includes>
 		</fileSet>
-		<!-- Documentation -->
+		<!-- Local formula -->
 		<fileSet>
 			<directory>${project.basedir}/etc/Formula</directory>
 			<outputDirectory>Formula</outputDirectory>

@@ -195,7 +195,7 @@
 									<finalName>tap</finalName>
 									<outputDirectory>${project.build.directory}</outputDirectory>
 									<descriptors>
-										<descriptor>src/main/assembly/tap.xml</descriptor>
+										<descriptor>src/main/assembly/local-tap.xml</descriptor>
 									</descriptors>
 								</configuration>
 							</execution>

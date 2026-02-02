@@ -78,12 +78,27 @@ Requires:
 
 ```bash
 # Build JAR
-./mvnw clean package
+../mvnw clean package
 
 # Build native binary
-./mvnw -Pdist clean package
+../mvnw -Pdist clean package
 
 # Binary output: target/jm (or target/jm.exe on Windows)
+```
+
+### Install to and from local tap
+
+The build process of profile `dist` creates an additional assembly within `target/tap` for local installation into homebrew. To use 
+
+```bash
+# Create local taps folder
+mkdir -p /opt/homebrew/Library/Taps/local
+
+# Create local tap symlink pointing to local target folder
+ln -s $(pwd)/target/tap /opt/homebrew/Library/Taps/local/homebrew-jm
+
+# Install local build of jm into Homebrew
+brew install local/jm/jm-local
 ```
 
 ## License

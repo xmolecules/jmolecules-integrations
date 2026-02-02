@@ -1,0 +1,18 @@
+{
+	"reflection": [
+		{
+			"type": "picocli.CommandLine$AutoHelpMixin",
+			"allDeclaredConstructors": true,
+			"allPublicConstructors": true,
+			"allDeclaredMethods": true,
+			"allPublicMethods": true,
+			"allDeclaredFields": true,
+			"allPublicFields": true
+		},
+		{
+			"type": "com.jayway.jsonpath.internal.function.json.KeySetFunction",
+			"allDeclaredConstructors": true,
+			"allDeclaredMethods": true
+		}
+	]
+}
