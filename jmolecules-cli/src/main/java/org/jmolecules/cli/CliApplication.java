@@ -17,7 +17,12 @@ package org.jmolecules.cli;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.IVersionProvider;
 
+import java.io.IOException;
+import java.util.Properties;
+
+import org.jmolecules.cli.CliApplication.PropertiesVersionProvider;
 import org.jmolecules.cli.core.BuildSystem;
 import org.jmolecules.cli.core.DefaultProjectContext;
 import org.jmolecules.cli.core.MetadataCache;
@@ -27,7 +32,7 @@ import org.jmolecules.codegen.generator.JMoleculesCodeGenerator;
 /**
  * @author Oliver Drotbohm
  */
-@Command(name = "jm", mixinStandardHelpOptions = true)
+@Command(name = "jm", mixinStandardHelpOptions = true, versionProvider = PropertiesVersionProvider.class)
 public class CliApplication {
 
 	static {
@@ -57,5 +62,34 @@ public class CliApplication {
 		commandLine.addSubcommand(new InitCommand(buildSystem, context, cache));
 
 		return commandLine;
+	}
+
+	static class PropertiesVersionProvider implements IVersionProvider {
+
+		private static final String VERSION;
+
+		static {
+
+			var props = new Properties();
+
+			try {
+
+				props.load(PropertiesVersionProvider.class.getResourceAsStream("/version.properties"));
+
+				VERSION = props.getProperty("version");
+
+			} catch (IOException o_O) {
+				throw new RuntimeException(o_O);
+			}
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see picocli.CommandLine.IVersionProvider#getVersion()
+		 */
+		@Override
+		public String[] getVersion() throws Exception {
+			return new String[] { VERSION };
+		}
 	}
 }
