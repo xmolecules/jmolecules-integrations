@@ -31,6 +31,7 @@ import org.jmolecules.codegen.generator.JMoleculesCodeGenerator;
 public class AddModuleCommand implements Callable<Void> {
 
 	private final JMoleculesCodeGenerator generator;
+	private final InitCommand init;
 
 	@Parameters //
 	String name;
@@ -43,6 +44,8 @@ public class AddModuleCommand implements Callable<Void> {
 	public Void call() throws Exception {
 
 		generator.createModule(name);
+
+		init.initSpringModulith();
 
 		return null;
 	}

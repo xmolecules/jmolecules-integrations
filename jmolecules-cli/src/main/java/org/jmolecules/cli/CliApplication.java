@@ -20,6 +20,8 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.IVersionProvider;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.Properties;
 
 import org.jmolecules.cli.CliApplication.PropertiesVersionProvider;
@@ -56,10 +58,13 @@ public class CliApplication {
 		var code = new JMoleculesCodeGenerator(context);
 
 		var commandLine = new CommandLine(new CliApplication());
+
+		var initCommand = new InitCommand(buildSystem, context, cache);
+
+		commandLine.addSubcommand(initCommand);
 		commandLine.addSubcommand(new AddAggregateCommand(code, context));
-		commandLine.addSubcommand(new AddModuleCommand(code));
+		commandLine.addSubcommand(new AddModuleCommand(code, initCommand));
 		commandLine.addSubcommand(new ConfigCommand(context));
-		commandLine.addSubcommand(new InitCommand(buildSystem, context, cache));
 
 		return commandLine;
 	}

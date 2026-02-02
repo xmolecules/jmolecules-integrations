@@ -25,7 +25,6 @@ import org.jmolecules.cli.core.BuildSystem;
 import org.jmolecules.cli.core.MetadataCache;
 import org.jmolecules.cli.core.ModulithMetadata;
 import org.jmolecules.codegen.Dependency.Scope;
-import org.jmolecules.codegen.ProjectConfiguration;
 import org.jmolecules.codegen.ProjectContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,8 +76,8 @@ public class InitCommand implements Callable<Void> {
 
 		if (context.hasDependency("spring-modulith-core", Scope.TEST, Scope.RUNTIME, Scope.COMPILE)) {
 
-			initSpringModulith(configuration);
 			configuration = configuration.enableSpringModulith();
+			initSpringModulith();
 
 		} else {
 			cache.writeInternal("modules", "{}");
@@ -93,18 +92,18 @@ public class InitCommand implements Callable<Void> {
 		return null;
 	}
 
-	void initSpringModulith(ProjectConfiguration configuration) throws Exception {
+	void initSpringModulith() throws Exception {
 
 		var classpath = buildSystem.getRawClasspath();
 
 		ProcessBuilder builder = new ProcessBuilder("java", "-cp", "target/classes:" + classpath,
-				"org.springframework.modulith.core.util.ApplicationModulesExporter", configuration.getBasePackage(),
+				"org.springframework.modulith.core.util.ApplicationModulesExporter",
+				context.getConfiguration().getBasePackage(),
 				cache.resolveInternal(ModulithMetadata.MODULES_CACHE).toString());
 
 		var process = builder.start();
 
 		process.waitFor();
-
 		process.exitValue();
 	}
 }
