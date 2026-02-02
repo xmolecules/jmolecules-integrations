@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.*;
 import java.io.IOException;
 import java.nio.file.Path;
 
+import org.jmolecules.codegen.NamedFile;
 import org.jmolecules.codegen.ProjectConfiguration;
 import org.jmolecules.codegen.SourceFile;
 import org.jmolecules.codegen.TestProjectContext;
@@ -63,5 +64,19 @@ class JMoleculeCodeGeneratorUnitTests {
 						"CustomerUnitTest.java",
 						"CustomerRepository.java",
 						"CustomerRepositoryIntegrationTests.java");
+	}
+
+	@Test
+	void generatesFilesForModule() {
+
+		var context = new TestProjectContext().withProjectRoot(temp);
+
+		var generator = new JMoleculesCodeGenerator(context);
+
+		var result = generator.createModule("foo");
+
+		assertThat(result)
+				.extracting(NamedFile::getFileName)
+				.containsExactlyInAnyOrder("package-info.java", "Foo.java");
 	}
 }

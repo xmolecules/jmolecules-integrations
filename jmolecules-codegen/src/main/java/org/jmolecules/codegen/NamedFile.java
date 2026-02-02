@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 the original author or authors.
+ * Copyright 2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,27 +15,17 @@
  */
 package org.jmolecules.codegen;
 
-import com.palantir.javapoet.JavaFile;
-
 /**
+ * Returns a named file.
+ *
  * @author Oliver Drotbohm
  */
-public record SourceFile(JavaFile file, Type type) implements NamedFile {
+public interface NamedFile {
 
-	public String toPath() {
-		return file.toJavaFileObject().toUri().toString();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.jmolecules.codegen.Named#getFileName()
+	/**
+	 * Returns the file name.
+	 *
+	 * @return will never be {@literal null}.
 	 */
-	@Override
-	public String getFileName() {
-		return toPath().substring(toPath().lastIndexOf("/") + 1);
-	}
-
-	public enum Type {
-		SOURCE, TEST_SOURCE, RESOURCE, TEST_RESOURCE;
-	}
+	String getFileName();
 }

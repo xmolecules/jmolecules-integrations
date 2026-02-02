@@ -19,6 +19,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jmolecules.codegen.NamedFile;
+import org.jmolecules.codegen.PackageInfo;
 import org.jmolecules.codegen.ProjectConfiguration;
 import org.jmolecules.codegen.ProjectFiles;
 import org.jmolecules.codegen.SourceFile;
@@ -57,9 +59,9 @@ class ModuleModel {
 		return basePackage + "." + name;
 	}
 
-	public List<SourceFile> createJavaFiles(ProjectConfiguration configuration, ProjectFiles workspace) {
+	public List<NamedFile> createFiles(ProjectConfiguration configuration, ProjectFiles workspace) {
 
-		var result = new ArrayList<SourceFile>();
+		var result = new ArrayList<NamedFile>();
 
 		var packageInfoPath = Path
 				.of(ClassUtils.convertClassNameToResourcePath(getPackageName() + ".package-info").concat(".java"));
@@ -72,6 +74,13 @@ class ModuleModel {
 		var content = template.formatted(APPLICATION_MODULE.topLevelClassName(), getPackageName());
 
 		workspace.writeSource(packageInfoPath, Type.SOURCE, content);
+
+		result.add(new PackageInfo(getPackageName()));
+
+		// Placeholder component
+		result.add(toFile(TypeSpec.classBuilder(ClassName.get(getPackageName(), StringUtils.capitalize(name)))
+				.addAnnotation(ClassName.get("org.springframework.stereotype", "Component"))
+				.build(), Type.SOURCE));
 
 		if (configuration.isSpringModulithEnabled()) {
 

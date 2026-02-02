@@ -17,6 +17,7 @@ package org.jmolecules.codegen.generator;
 
 import java.util.List;
 
+import org.jmolecules.codegen.NamedFile;
 import org.jmolecules.codegen.ProjectContext;
 import org.jmolecules.codegen.SourceFile;
 
@@ -48,12 +49,19 @@ public class JMoleculesCodeGenerator {
 		return result;
 	}
 
-	public void createModule(String name) {
+	public List<NamedFile> createModule(String name) {
 
 		var configuration = context.getConfiguration();
 		var model = new ModuleModel(name, configuration.getBasePackage());
 		var files = context.getFiles();
 
-		model.createJavaFiles(configuration, files).forEach(files::writeSource);
+		var result = model.createFiles(configuration, files);
+
+		result.stream()
+				.filter(SourceFile.class::isInstance)
+				.map(SourceFile.class::cast)
+				.forEach(context.getFiles()::writeSource);
+
+		return result;
 	}
 }
