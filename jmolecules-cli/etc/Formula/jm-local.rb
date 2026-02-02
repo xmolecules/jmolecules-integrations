@@ -13,6 +13,6 @@ class JmLocal < Formula
 		cp "#{__dir__}/../bin/jm", bin/"jm"
 
 		bash_completion.mkpath
-    	cp "#{__dir__}/../completion/jm.completion", bash_completion/"jm"
+		cp "#{__dir__}/../completion/jm.completion", bash_completion/"jm"
 	end
 end
