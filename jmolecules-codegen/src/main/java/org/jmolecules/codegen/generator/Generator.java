@@ -22,10 +22,10 @@ import java.util.List;
 
 import javax.lang.model.element.Modifier;
 
+import org.jmolecules.codegen.Dependency.Scope;
 import org.jmolecules.codegen.ProjectConfiguration;
 import org.jmolecules.codegen.ProjectContext;
 import org.jmolecules.codegen.SourceFile;
-import org.jmolecules.codegen.Dependency.Scope;
 import org.jmolecules.codegen.SourceFile.Type;
 
 import com.palantir.javapoet.ClassName;
@@ -150,12 +150,7 @@ class Generator {
 
 			var createdEventName = model.getCreationEventName();
 
-			var createdEventType = createSinglePropertyWrapper(createdEventName, identifierName, "id");
-
-			// Add jMolecules DomainEvent marker interface if present
-			if (context.hasDependency("jmolecules-events", Scope.COMPILE)) {
-				createdEventType = createdEventType.addSuperinterface(DOMAIN_EVENT_TYPE);
-			}
+			var createdEventType = createCreatedEvent(createdEventName, identifierName);
 
 			var superclass = ParameterizedTypeName.get(ClassName.get(DOMAIN_PACKAGE, "AbstractAggregateRoot"),
 					aggregateName);
@@ -163,7 +158,7 @@ class Generator {
 			constructorBuilder = constructorBuilder
 					.addStatement("registerEvent(new $T(id))", createdEventName);
 
-			type = type.superclass(superclass).addType(createdEventType.build());
+			type = type.superclass(superclass).addType(createdEventType);
 		}
 
 		type.addMethod(constructorBuilder.build());
@@ -179,12 +174,30 @@ class Generator {
 
 		return createSinglePropertyWrapper(model.getIdentifierName(), UUID_TYPE, "id")
 				.addSuperinterface(IDENTIFIER_TYPE)
+				.addMethod(MethodSpec.methodBuilder("toString")
+						.addAnnotation(Override.class)
+						.addModifiers(Modifier.PUBLIC)
+						.returns(String.class)
+						.addStatement("return $N.toString()", "id")
+						.build())
 				.build();
+	}
+
+	private TypeSpec createCreatedEvent(ClassName createdEventName, ClassName identifierName) {
+
+		var builder = createSinglePropertyWrapper(createdEventName, identifierName, "id");
+
+		// Add jMolecules DomainEvent marker interface if present
+		if (context.hasDependency("jmolecules-events", Scope.COMPILE)) {
+			builder = builder.addSuperinterface(DOMAIN_EVENT_TYPE);
+		}
+
+		return builder.build();
 	}
 
 	private Builder createSinglePropertyWrapper(ClassName type, TypeName parameterType, String parameterName) {
 
-		var builder = configuration.supportsRecords()
+		return configuration.supportsRecords()
 				? TypeSpec.recordBuilder(type)
 						.recordConstructor(MethodSpec.constructorBuilder()
 								.addParameter(parameterType, parameterName)
@@ -196,13 +209,5 @@ class Generator {
 						.addMethod(MethodSpec.constructorBuilder()
 								.addStatement("this.$F = $F", parameterName, parameterName)
 								.build());
-
-		return builder
-				.addMethod(MethodSpec.methodBuilder("toString")
-						.addAnnotation(Override.class)
-						.addModifiers(Modifier.PUBLIC)
-						.returns(String.class)
-						.addStatement("return $N.toString()", parameterName)
-						.build());
 	}
 }
