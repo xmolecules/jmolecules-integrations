@@ -15,8 +15,6 @@
  */
 package org.jmolecules.codegen.generator;
 
-import lombok.RequiredArgsConstructor;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,6 +57,7 @@ class Generator {
 
 	private static final ClassName SPRING_BOOT_TEST = ClassName.get(SPRING_PACKAGE + ".boot.test.context",
 			"SpringBootTest");
+	private static final ClassName REQUIRED_ARGS_CONSTRUCTOR = ClassName.get("lombok", "RequiredArgsConstructor");
 
 	private final ProjectConfiguration configuration;
 	private final ProjectContext context;
@@ -99,7 +98,7 @@ class Generator {
 
 		if (configuration.isLombokEnabled()) {
 
-			builder = builder.addAnnotation(RequiredArgsConstructor.class);
+			builder = builder.addAnnotation(REQUIRED_ARGS_CONSTRUCTOR);
 		} else {
 
 			builder = builder.addMethod(MethodSpec.constructorBuilder()
