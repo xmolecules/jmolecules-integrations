@@ -204,7 +204,7 @@ class MavenBuildSystem implements BuildSystem {
 
 	private void calculateClasspath() {
 
-		LOG.info("Calculating classpath ({})", classpath);
+		LOG.info("> Calculating classpath ({})", classpath);
 
 		try {
 
