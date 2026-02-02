@@ -31,7 +31,7 @@ import org.jmolecules.codegen.generator.JMoleculesCodeGenerator;
 /**
  * @author Oliver Drotbohm
  */
-@Command(name = "add-aggregate", mixinStandardHelpOptions = true)
+@Command(name = "add-aggregate")
 @Slf4j
 @RequiredArgsConstructor
 public class AddAggregateCommand implements Callable<Void> {
@@ -39,7 +39,7 @@ public class AddAggregateCommand implements Callable<Void> {
 	private final JMoleculesCodeGenerator generator;
 	private final ProjectContext context;
 
-	@Parameters //
+	@Parameters(description = "The name of the aggregate to be created. Must be a valid Java type name.") //
 	public String name;
 
 	@Option(names = { "-p", "--package" },

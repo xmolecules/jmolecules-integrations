@@ -17,7 +17,7 @@ package org.jmolecules.cli;
 
 import lombok.RequiredArgsConstructor;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 import java.util.concurrent.Callable;
 
@@ -32,7 +32,7 @@ public class AddModuleCommand implements Callable<Void> {
 
 	private final JMoleculesCodeGenerator generator;
 
-	@Option(names = { "-n", "--name" }) //
+	@Parameters //
 	String name;
 
 	/*
