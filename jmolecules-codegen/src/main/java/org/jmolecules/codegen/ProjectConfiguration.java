@@ -23,8 +23,6 @@ import java.util.Properties;
 import java.util.function.Function;
 
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Oliver Drotbohm
@@ -36,8 +34,6 @@ public class ProjectConfiguration {
 	public static final String LOMBOK_ENABLED = "lombok.enabled";
 	public static final String SPRING_DATA_ENABLED = "spring-data.enabled";
 	public static final String SPRING_MODULITH_ENABLED = "spring-modulith.enabled";
-
-	private final Logger LOG = LoggerFactory.getLogger(ProjectConfiguration.class);
 
 	private final Properties properties;
 	private final @Nullable Path config;
@@ -107,8 +103,6 @@ public class ProjectConfiguration {
 		if (config == null) {
 			return;
 		}
-
-		LOG.info("> jMolecules configuration written to {}.", config.toString());
 
 		try (var writer = Files.newBufferedWriter(config)) {
 			this.properties.store(writer, " jMolecules configuration");

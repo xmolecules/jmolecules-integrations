@@ -44,6 +44,7 @@ public interface ProjectContext {
 	 *
 	 * @return must not be {@literal null}.
 	 */
+	@Nullable
 	String getApplicationBasePackage();
 
 	/**

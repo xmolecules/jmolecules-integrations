@@ -29,13 +29,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.function.SingletonSupplier;
+import org.springframework.util.function.ThrowingConsumer;
 
 /**
  * @author Oliver Drotbohm
  */
 public class ProjectFiles {
 
-	private static Logger LOG = LoggerFactory.getLogger(ProjectFiles.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ProjectFiles.class);
 
 	private final Path root, srcMainJava, srcTestJava;
 	private final Supplier<ProjectConfiguration> configuration;
@@ -72,9 +73,11 @@ public class ProjectFiles {
 
 			walk.filter(Files::isRegularFile)
 					.filter(p -> p.toString().endsWith(".java"))
-					.forEach(p -> {
+					.forEach(ThrowingConsumer.of(p -> {
+
 						try (var reader = Files.newBufferedReader(p)) {
 							String line;
+
 							while ((line = reader.readLine()) != null) {
 
 								var matches = useRegex
@@ -86,10 +89,8 @@ public class ProjectFiles {
 									break;
 								}
 							}
-						} catch (IOException e) {
-							throw new UncheckedIOException(e);
 						}
-					});
+					}));
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
@@ -110,14 +111,15 @@ public class ProjectFiles {
 		var path = from(source.type());
 		var file = source.file();
 		var fullPath = path.resolve(source.toPath());
+		var params = new Object[] { source.getIcon(), fullPath };
 
 		if (Files.exists(fullPath)) {
 
-			LOG.info("Skipping creation of {} as it already exists.", fullPath);
+			LOG.info("{} Skipping creation of {} as it already exists.", params);
 			return;
 		}
 
-		LOG.info("Writing source file {}.", fullPath);
+		LOG.info("{} ️Writing source file {}.", params);
 
 		try {
 			file.writeToPath(path);
@@ -129,14 +131,15 @@ public class ProjectFiles {
 	public void writeSource(Path path, Type type, String content) {
 
 		var fullPath = from(type).resolve(path);
+		var params = new Object[] { NamedFile.getIcon(fullPath.toString()), fullPath };
 
 		if (Files.exists(fullPath)) {
-			LOG.info("Skipping creation of {} as it already exists.", fullPath);
+			LOG.info("{} Skipping creation of {} as it already exists.", params);
 		}
 
 		createDirectoriesIfNecessary(fullPath.getParent());
 
-		LOG.info("Writing source file {}.", fullPath);
+		LOG.info("{} Writing source file {}.", params);
 
 		try {
 

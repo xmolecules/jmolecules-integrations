@@ -16,7 +16,6 @@
 package org.jmolecules.cli;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -27,14 +26,17 @@ import java.util.concurrent.Callable;
 
 import org.jmolecules.codegen.ProjectContext;
 import org.jmolecules.codegen.generator.JMoleculesCodeGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Oliver Drotbohm
  */
 @Command(name = "add-aggregate")
-@Slf4j
 @RequiredArgsConstructor
 public class AddAggregateCommand implements Callable<Void> {
+
+	private static final Logger LOG = LoggerFactory.getLogger(AddAggregateCommand.class);
 
 	private final JMoleculesCodeGenerator generator;
 	private final ProjectContext context;
@@ -72,7 +74,7 @@ public class AddAggregateCommand implements Callable<Void> {
 
 		if (!context.getConfiguration().isSpringModulithEnabled() && pkg == null) {
 
-			log.info("> No Spring Modulith configured, Explicit package (--package, -p) required!");
+			LOG.info("No Spring Modulith configured, Explicit package (--package, -p) required!");
 
 			System.exit(1);
 		}

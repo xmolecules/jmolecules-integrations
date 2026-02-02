@@ -20,9 +20,10 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.IVersionProvider;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 import org.jmolecules.cli.CliApplication.PropertiesVersionProvider;
 import org.jmolecules.cli.core.BuildSystem;
@@ -34,11 +35,26 @@ import org.jmolecules.codegen.generator.JMoleculesCodeGenerator;
 /**
  * @author Oliver Drotbohm
  */
-@Command(name = "jm", mixinStandardHelpOptions = true, versionProvider = PropertiesVersionProvider.class)
+@Command(name = "jm",
+		mixinStandardHelpOptions = true,
+		versionProvider = PropertiesVersionProvider.class,
+		description = "⚗️ jMolecules Command Line ♥️")
 public class CliApplication {
 
 	static {
+
 		System.setProperty("picocli.trace", "OFF");
+
+		try {
+
+			LogManager.getLogManager()
+					.readConfiguration(CliApplication.class.getResourceAsStream("/logging.properties"));
+
+		} catch (IOException | SecurityException | ExceptionInInitializerError ex) {
+
+			Logger.getLogger(CliApplication.class.getName())
+					.log(Level.SEVERE, "Failed to read logging.properties file", ex);
+		}
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -63,7 +79,7 @@ public class CliApplication {
 
 		commandLine.addSubcommand(initCommand);
 		commandLine.addSubcommand(new AddAggregateCommand(code, context));
-		commandLine.addSubcommand(new AddModuleCommand(code, initCommand));
+		commandLine.addSubcommand(new AddModuleCommand(code, buildSystem, initCommand));
 		commandLine.addSubcommand(new ConfigCommand(context));
 
 		return commandLine;

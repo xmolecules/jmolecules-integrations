@@ -49,7 +49,7 @@ import org.springframework.util.function.SingletonSupplier;
  */
 class MavenBuildSystem implements BuildSystem {
 
-	private static final Logger LOG = LoggerFactory.getLogger(MavenBuildSystem.class);
+	private static final Logger LOG = LoggerFactory.getLogger(MavenBuildSystem.class.getName());
 
 	private final ProjectFiles fileSystem;
 	private final MetadataCache cache;
@@ -131,6 +131,38 @@ class MavenBuildSystem implements BuildSystem {
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.jmolecules.cli.core.BuildSystem#compile()
+	 */
+	@Override
+	public void compile() {
+
+		LOG.info("☕️ Compiling project…");
+
+		try {
+
+			// Set up the Maven invocation request
+			InvocationRequest request = new DefaultInvocationRequest();
+			request.setPomFile(new File("./pom.xml"));
+			request.addArg("clean");
+			request.addArg("compile");
+			request.setInputStream(InputStream.nullInputStream());
+			request.setOutputHandler(LOG::info);
+
+			// Set up the Maven invoker
+			Invoker invoker = new DefaultInvoker();
+			invoker.setMavenExecutable(mavenExecutable.toFile());
+
+			// Execute the request
+			invoker.execute(request);
+
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.jmolecules.cli.build.BuildSystem#getClasspath()
 	 */
 	@Override
@@ -171,7 +203,7 @@ class MavenBuildSystem implements BuildSystem {
 
 	private Void calculateDependencies() {
 
-		LOG.info("> Updating Maven dependencies to {}", dependencies);
+		LOG.info("☕️️ Updating Maven dependencies to ({}).", dependencies);
 
 		try {
 
@@ -204,7 +236,7 @@ class MavenBuildSystem implements BuildSystem {
 
 	private void calculateClasspath() {
 
-		LOG.info("> Calculating classpath ({})", classpath);
+		LOG.info("☕️️ Calculating classpath ({}).", classpath);
 
 		try {
 

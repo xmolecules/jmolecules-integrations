@@ -21,6 +21,7 @@ import picocli.CommandLine.Parameters;
 
 import java.util.concurrent.Callable;
 
+import org.jmolecules.cli.core.BuildSystem;
 import org.jmolecules.codegen.generator.JMoleculesCodeGenerator;
 
 /**
@@ -31,6 +32,7 @@ import org.jmolecules.codegen.generator.JMoleculesCodeGenerator;
 public class AddModuleCommand implements Callable<Void> {
 
 	private final JMoleculesCodeGenerator generator;
+	private final BuildSystem buildSystem;
 	private final InitCommand init;
 
 	@Parameters //
@@ -45,6 +47,7 @@ public class AddModuleCommand implements Callable<Void> {
 
 		generator.createModule(name);
 
+		buildSystem.compile();
 		init.initSpringModulith();
 
 		return null;

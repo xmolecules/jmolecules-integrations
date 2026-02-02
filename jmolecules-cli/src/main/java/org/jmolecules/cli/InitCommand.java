@@ -25,6 +25,7 @@ import org.jmolecules.cli.core.BuildSystem;
 import org.jmolecules.cli.core.MetadataCache;
 import org.jmolecules.cli.core.ModulithMetadata;
 import org.jmolecules.codegen.Dependency.Scope;
+import org.jmolecules.codegen.ProjectConfiguration;
 import org.jmolecules.codegen.ProjectContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +38,7 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class InitCommand implements Callable<Void> {
 
-	private static final Logger LOG = LoggerFactory.getLogger(InitCommand.class);
+	private static final Logger LOG = LoggerFactory.getLogger(InitCommand.class.getName());
 
 	private final BuildSystem buildSystem;
 	private final ProjectContext context;
@@ -66,12 +67,20 @@ public class InitCommand implements Callable<Void> {
 		if (!StringUtils.hasText(configuration.getBasePackage()) || force) {
 
 			if (!force) {
-				LOG.info("No base package configured. Detecting…");
+				LOG.info("🍃 No base package configured. Detecting…");
 			}
 
 			var basePackage = context.getApplicationBasePackage();
-			LOG.info("Configure base package to '{}'.", basePackage);
-			configuration.withBasePackage(context.getApplicationBasePackage());
+
+			if (basePackage != null) {
+
+				LOG.info("🍃 Configuring base package to '{}'.", basePackage);
+				configuration.withBasePackage(context.getApplicationBasePackage());
+
+			} else {
+
+				LOG.warn("⚠️  Couldn't detect base package! Please manually configure `base-package` in jmolecules.config!");
+			}
 		}
 
 		if (context.hasDependency("spring-modulith-core", Scope.TEST, Scope.RUNTIME, Scope.COMPILE)) {
@@ -87,6 +96,8 @@ public class InitCommand implements Callable<Void> {
 			configuration = configuration.enableSpringData();
 		}
 
+		LOG.info("⚗️  jMolecules configuration written to {}.", ProjectConfiguration.CONFIGURATION_FILE);
+
 		configuration.write();
 
 		return null;
@@ -100,6 +111,8 @@ public class InitCommand implements Callable<Void> {
 				"org.springframework.modulith.core.util.ApplicationModulesExporter",
 				context.getConfiguration().getBasePackage(),
 				cache.resolveInternal(ModulithMetadata.MODULES_CACHE).toString());
+
+		LOG.info("📦 Calculating application module metadata.");
 
 		var process = builder.start();
 

@@ -28,4 +28,18 @@ public interface NamedFile {
 	 * @return will never be {@literal null}.
 	 */
 	String getFileName();
+
+	default String getIcon() {
+		return getIcon(getFileName());
+	}
+
+	public static String getIcon(String name) {
+
+		var extension = name.substring(name.lastIndexOf("."));
+
+		return switch (extension) {
+			case ".java" -> "☕️";
+			default -> "📄";
+		};
+	}
 }

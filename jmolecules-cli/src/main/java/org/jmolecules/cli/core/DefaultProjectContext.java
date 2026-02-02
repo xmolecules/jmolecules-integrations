@@ -21,6 +21,7 @@ import java.util.function.Supplier;
 import org.jmolecules.codegen.Dependency.Scope;
 import org.jmolecules.codegen.ProjectContext;
 import org.jmolecules.codegen.ProjectFiles;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.ClassUtils;
@@ -31,13 +32,13 @@ import org.springframework.util.function.SingletonSupplier;
  */
 public class DefaultProjectContext implements ProjectContext {
 
-	private static final Logger LOG = LoggerFactory.getLogger(DefaultProjectContext.class);
+	private static final Logger LOG = LoggerFactory.getLogger(DefaultProjectContext.class.getName());
 
 	private final ProjectFiles files;
 	private final MetadataCache workspace;
 	private final BuildSystem buildSystem;
 
-	private final Supplier<String> basePackage;
+	private final Supplier<@Nullable String> basePackage;
 
 	public DefaultProjectContext(ProjectFiles files, MetadataCache workspace, BuildSystem buildSystem) throws Exception {
 
@@ -92,14 +93,28 @@ public class DefaultProjectContext implements ProjectContext {
 		return files;
 	}
 
+	@Nullable
 	private String detectBasePackage() {
 
 		var list = files.findSourceFileContaining("^@SpringBootApplication", true);
 
-		if (list.size() != 1) {
-			LOG.info("Unable to detect main class as multiple classes are annotated with @SpringBootApplication: {}", list);
+		if (list.isEmpty()) {
+
+			LOG.warn("⚠️  No class annotated with @SpringBootApplication found!");
+			return null;
 		}
 
-		return ClassUtils.getPackageName(list.get(0));
+		if (list.size() > 1) {
+
+			LOG.warn("⚠️  Unable to detect main class as multiple classes are annotated with @SpringBootApplication: {}",
+					list);
+			return null;
+		}
+
+		var mainApplicationClass = list.get(0);
+
+		LOG.info("🍃 Found main application class {0}.", mainApplicationClass);
+
+		return ClassUtils.getPackageName(mainApplicationClass);
 	}
 }

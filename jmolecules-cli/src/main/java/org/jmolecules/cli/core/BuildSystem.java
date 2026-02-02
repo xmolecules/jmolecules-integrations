@@ -32,6 +32,8 @@ public interface BuildSystem {
 
 	void refresh();
 
+	void compile();
+
 	List<Dependency> getDependencies();
 
 	URL[] getClasspath();
