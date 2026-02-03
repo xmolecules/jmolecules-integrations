@@ -25,14 +25,13 @@ import org.jmolecules.codegen.ProjectConfiguration;
 import org.jmolecules.codegen.ProjectContext;
 import org.jmolecules.codegen.SourceFile;
 import org.jmolecules.codegen.SourceFile.Type;
-
-import com.palantir.javapoet.ClassName;
-import com.palantir.javapoet.FieldSpec;
-import com.palantir.javapoet.MethodSpec;
-import com.palantir.javapoet.ParameterizedTypeName;
-import com.palantir.javapoet.TypeName;
-import com.palantir.javapoet.TypeSpec;
-import com.palantir.javapoet.TypeSpec.Builder;
+import org.springframework.javapoet.ClassName;
+import org.springframework.javapoet.FieldSpec;
+import org.springframework.javapoet.MethodSpec;
+import org.springframework.javapoet.ParameterizedTypeName;
+import org.springframework.javapoet.TypeName;
+import org.springframework.javapoet.TypeSpec;
+import org.springframework.javapoet.TypeSpec.Builder;
 
 /**
  * @author Oliver Drotbohm

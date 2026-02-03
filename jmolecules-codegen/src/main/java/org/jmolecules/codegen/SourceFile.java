@@ -15,7 +15,7 @@
  */
 package org.jmolecules.codegen;
 
-import com.palantir.javapoet.JavaFile;
+import org.springframework.javapoet.JavaFile;
 
 /**
  * @author Oliver Drotbohm

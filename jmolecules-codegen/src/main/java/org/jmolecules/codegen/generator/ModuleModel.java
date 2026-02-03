@@ -25,12 +25,11 @@ import org.jmolecules.codegen.ProjectConfiguration;
 import org.jmolecules.codegen.ProjectFiles;
 import org.jmolecules.codegen.SourceFile;
 import org.jmolecules.codegen.SourceFile.Type;
+import org.springframework.javapoet.ClassName;
+import org.springframework.javapoet.JavaFile;
+import org.springframework.javapoet.TypeSpec;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
-
-import com.palantir.javapoet.ClassName;
-import com.palantir.javapoet.JavaFile;
-import com.palantir.javapoet.TypeSpec;
 
 /**
  * @author Oliver Drotbohm

@@ -16,10 +16,9 @@
 package org.jmolecules.codegen.generator;
 
 import org.jmolecules.codegen.SourceFile;
-
-import com.palantir.javapoet.ClassName;
-import com.palantir.javapoet.JavaFile;
-import com.palantir.javapoet.TypeSpec;
+import org.springframework.javapoet.ClassName;
+import org.springframework.javapoet.JavaFile;
+import org.springframework.javapoet.TypeSpec;
 
 class AggregateModel {
 

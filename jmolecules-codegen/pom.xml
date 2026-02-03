@@ -19,12 +19,6 @@
 	<dependencies>
 
 		<dependency>
-			<groupId>com.palantir.javapoet</groupId>
-			<artifactId>javapoet</artifactId>
-			<version>0.10.0</version>
-		</dependency>
-
-		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-core</artifactId>
 		</dependency>
