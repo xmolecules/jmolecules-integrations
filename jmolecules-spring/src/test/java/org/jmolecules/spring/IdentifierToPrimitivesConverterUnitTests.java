@@ -15,7 +15,8 @@
  */
 package org.jmolecules.spring;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.UUID;
 
@@ -30,7 +31,9 @@ class IdentifierToPrimitivesConverterUnitTests {
 
 	static final TypeDescriptor UUID_DESCRIPTOR = TypeDescriptor.valueOf(UUID.class);
 	static final TypeDescriptor STRING_DESCRIPTOR = TypeDescriptor.valueOf(String.class);
-	static final TypeDescriptor IDENTIFIER_DESCRIPTOR = TypeDescriptor.valueOf(SampleIdentifier.class);
+	static final TypeDescriptor INT_DESCRIPTOR = TypeDescriptor.valueOf(int.class);
+	static final TypeDescriptor UUID_IDENTIFIER_DESCRIPTOR = TypeDescriptor.valueOf(SampleIdentifier.class);
+	static final TypeDescriptor INT_IDENTIFIER_DESCRIPTOR = TypeDescriptor.valueOf(SampleIntegerIdentifier.class);
 
 	ConversionService conversionService;
 	IdentifierToPrimitivesConverter converter;
@@ -46,7 +49,7 @@ class IdentifierToPrimitivesConverterUnitTests {
 	}
 
 	@Test // #16
-	void convertsToPrimitiveSources() {
+	void convertsUuidIdetifierToPrimitiveSources() {
 
 		UUID uuid = UUID.randomUUID();
 		SampleIdentifier identifier = SampleIdentifier.of(uuid);
@@ -54,21 +57,41 @@ class IdentifierToPrimitivesConverterUnitTests {
 		assertThat(conversionService.convert(identifier, UUID.class)).isEqualTo(uuid);
 		assertThat(conversionService.convert(identifier, String.class)).isEqualTo(uuid.toString());
 	}
+	
+	@Test // #16
+	void convertsIntegerIdentifierToPrimitiveSources() {
+
+		int id = 1;
+		SampleIntegerIdentifier identifier = SampleIntegerIdentifier.of(id);
+
+		assertThat(conversionService.convert(identifier, Long.class)).isEqualTo(id);
+		assertThat(conversionService.convert(identifier, long.class)).isEqualTo(id);
+		assertThat(conversionService.convert(identifier, Integer.class)).isEqualTo(id);
+		assertThat(conversionService.convert(identifier, int.class)).isEqualTo(id);
+		assertThat(conversionService.convert(identifier, String.class)).isEqualTo(Integer.toString(id));
+	}
 
 	@Test // #16
 	void matchesPrimitives() {
 
-		assertThat(converter.matches(IDENTIFIER_DESCRIPTOR, UUID_DESCRIPTOR)).isTrue();
-		assertThat(converter.matches(IDENTIFIER_DESCRIPTOR, STRING_DESCRIPTOR)).isTrue();
-		assertThat(converter.matches(IDENTIFIER_DESCRIPTOR, TypeDescriptor.valueOf(Long.class))).isFalse();
+		assertThat(converter.matches(UUID_IDENTIFIER_DESCRIPTOR, UUID_DESCRIPTOR)).isTrue();
+		assertThat(converter.matches(UUID_IDENTIFIER_DESCRIPTOR, STRING_DESCRIPTOR)).isTrue();
+		assertThat(converter.matches(UUID_IDENTIFIER_DESCRIPTOR, TypeDescriptor.valueOf(Long.class))).isFalse();
+
+		assertThat(converter.matches(INT_IDENTIFIER_DESCRIPTOR, TypeDescriptor.valueOf(Long.class))).isTrue();
+		assertThat(converter.matches(INT_IDENTIFIER_DESCRIPTOR, TypeDescriptor.valueOf(long.class))).isTrue();
+		assertThat(converter.matches(INT_IDENTIFIER_DESCRIPTOR, TypeDescriptor.valueOf(Integer.class))).isTrue();
+		assertThat(converter.matches(INT_IDENTIFIER_DESCRIPTOR, INT_DESCRIPTOR)).isTrue();
+		assertThat(converter.matches(INT_IDENTIFIER_DESCRIPTOR, STRING_DESCRIPTOR)).isTrue();
+		assertThat(converter.matches(INT_IDENTIFIER_DESCRIPTOR, UUID_DESCRIPTOR)).isFalse();
 	}
 
 	@Test // #16
 	void handlesNullValues() {
 
-		assertThat(converter.convert(null, IDENTIFIER_DESCRIPTOR, UUID_DESCRIPTOR)).isNull();
+		assertThat(converter.convert(null, UUID_IDENTIFIER_DESCRIPTOR, UUID_DESCRIPTOR)).isNull();
 		assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> {
-			converter.convert(SampleIdentifier.of(null), IDENTIFIER_DESCRIPTOR, UUID_DESCRIPTOR);
+			converter.convert(SampleIdentifier.of(null), UUID_IDENTIFIER_DESCRIPTOR, UUID_DESCRIPTOR);
 		});
 	}
 
@@ -94,7 +117,7 @@ class IdentifierToPrimitivesConverterUnitTests {
 
 		var identifier = SampleIdentifier.of(UUID.randomUUID());
 
-		assertThat(converter.convert(identifier, IDENTIFIER_DESCRIPTOR, IDENTIFIER_DESCRIPTOR)).isSameAs(identifier);
+		assertThat(converter.convert(identifier, UUID_IDENTIFIER_DESCRIPTOR, UUID_IDENTIFIER_DESCRIPTOR)).isSameAs(identifier);
 	}
 
 	static abstract class IdentifierBase implements Identifier {

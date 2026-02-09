@@ -33,8 +33,9 @@ class PrimitivesToIdentifierConverterUnitTests {
 
 	static final TypeDescriptor UUID_DESCRIPTOR = TypeDescriptor.valueOf(UUID.class);
 	static final TypeDescriptor STRING_DESCRIPTOR = TypeDescriptor.valueOf(String.class);
-	static final TypeDescriptor IDENTIFIER_DESCRIPTOR = TypeDescriptor.valueOf(SampleIdentifier.class);
-	static final TypeDescriptor LONG_DESCRIPTOR = TypeDescriptor.valueOf(Long.class);
+	static final TypeDescriptor INT_DESCRIPTOR = TypeDescriptor.valueOf(int.class);
+	static final TypeDescriptor UUID_IDENTIFIER_DESCRIPTOR = TypeDescriptor.valueOf(SampleIdentifier.class);
+	static final TypeDescriptor INT_IDENTIFIER_DESCRIPTOR = TypeDescriptor.valueOf(SampleIntegerIdentifier.class);
 
 	ConfigurableConversionService conversionService;
 	PrimitivesToIdentifierConverter converter;
@@ -48,7 +49,7 @@ class PrimitivesToIdentifierConverterUnitTests {
 	}
 
 	@Test // #16
-	void convertsFromPrimitiveSources() {
+	void convertsToUuidIdentifierFromPrimitiveSources() {
 
 		UUID uuid = UUID.randomUUID();
 
@@ -56,20 +57,41 @@ class PrimitivesToIdentifierConverterUnitTests {
 		assertThat(conversionService.convert(uuid.toString(), SampleIdentifier.class).getId()).isEqualTo(uuid);
 
 		assertThatExceptionOfType(ConverterNotFoundException.class)
-				.isThrownBy(() -> converter.convert(1L, LONG_DESCRIPTOR, IDENTIFIER_DESCRIPTOR));
+				.isThrownBy(() -> converter.convert(1L, INT_DESCRIPTOR, UUID_IDENTIFIER_DESCRIPTOR));
+	}
+
+	@Test // #16
+	void convertsToIntegerIdentifierFromPrimitiveSources() {
+
+		int id = 1;
+
+		assertThat(conversionService.convert(id, SampleIntegerIdentifier.class).getId()).isEqualTo(id);
+		assertThat(conversionService.convert(Integer.valueOf(id), SampleIntegerIdentifier.class).getId()).isEqualTo(id);
+		assertThat(conversionService.convert(Long.valueOf(id), SampleIntegerIdentifier.class).getId()).isEqualTo(id);
+		assertThat(conversionService.convert(Long.valueOf(id).longValue(), SampleIntegerIdentifier.class).getId()).isEqualTo(id);
+
+		UUID uuid = UUID.randomUUID();
+		assertThatExceptionOfType(ConverterNotFoundException.class)
+				.isThrownBy(() -> converter.convert(uuid, UUID_DESCRIPTOR, INT_IDENTIFIER_DESCRIPTOR));
 	}
 
 	@Test // #16
 	void matchesPrimitives() {
 
-		assertThat(converter.matches(UUID_DESCRIPTOR, IDENTIFIER_DESCRIPTOR)).isTrue();
-		assertThat(converter.matches(STRING_DESCRIPTOR, IDENTIFIER_DESCRIPTOR)).isTrue();
-		assertThat(converter.matches(TypeDescriptor.valueOf(Long.class), IDENTIFIER_DESCRIPTOR)).isFalse();
+		assertThat(converter.matches(UUID_DESCRIPTOR, UUID_IDENTIFIER_DESCRIPTOR)).isTrue();
+		assertThat(converter.matches(STRING_DESCRIPTOR, UUID_IDENTIFIER_DESCRIPTOR)).isTrue();
+		assertThat(converter.matches(INT_DESCRIPTOR, INT_IDENTIFIER_DESCRIPTOR)).isTrue();
+		assertThat(converter.matches(TypeDescriptor.valueOf(Integer.class), INT_IDENTIFIER_DESCRIPTOR)).isTrue();
+		assertThat(converter.matches(TypeDescriptor.valueOf(long.class), INT_IDENTIFIER_DESCRIPTOR)).isTrue();
+		assertThat(converter.matches(TypeDescriptor.valueOf(Long.class), INT_IDENTIFIER_DESCRIPTOR)).isTrue();
+
+		assertThat(converter.matches(INT_DESCRIPTOR, UUID_IDENTIFIER_DESCRIPTOR)).isFalse();
+		assertThat(converter.matches(UUID_DESCRIPTOR, INT_IDENTIFIER_DESCRIPTOR)).isFalse();
 	}
 
 	@Test // #16
 	void handlesNullValues() {
-		assertThat(converter.convert(null, UUID_DESCRIPTOR, IDENTIFIER_DESCRIPTOR)).isNull();
+		assertThat(converter.convert(null, UUID_DESCRIPTOR, UUID_IDENTIFIER_DESCRIPTOR)).isNull();
 	}
 
 	@Test // #46
