@@ -96,6 +96,15 @@ class PrimitivesToIdentifierConverterUnitTests {
 		assertThat(converter.convert("id", STRING_DESCRIPTOR, descriptor)).isEqualTo(new Implementation("id"));
 	}
 
+	@Test // GH-358
+	void createsCombinedIdentifier() {
+
+		var expected = new CombinedIdentifier(1, 2);
+		var target = TypeDescriptor.valueOf(CombinedIdentifier.class);
+
+		assertThat(converter.convert("1:2", STRING_DESCRIPTOR, target)).isEqualTo(expected);
+	}
+
 	@Value
 	static class IdentifierWithoutFactoryMethod implements Identifier {
 		UUID id;

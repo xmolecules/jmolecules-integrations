@@ -17,6 +17,8 @@ package org.jmolecules.spring;
 
 import static org.assertj.core.api.Assertions.*;
 
+import lombok.AllArgsConstructor;
+
 import java.util.UUID;
 
 import org.jmolecules.ddd.types.Identifier;
@@ -97,11 +99,40 @@ class IdentifierToPrimitivesConverterUnitTests {
 		assertThat(converter.convert(identifier, IDENTIFIER_DESCRIPTOR, IDENTIFIER_DESCRIPTOR)).isSameAs(identifier);
 	}
 
+	@Test // GH-358
+	void supportsNumericPrimitive() {
+
+		var identifier = new IntegerIdentifier(1);
+		var source = TypeDescriptor.forObject(identifier);
+		var integerTarget = TypeDescriptor.valueOf(Integer.class);
+
+		assertThat(converter.convert(identifier, source, integerTarget)).isEqualTo(1);
+		assertThat(converter.convert(identifier, source, STRING_DESCRIPTOR)).isEqualTo("1");
+	}
+
+	@Test // GH-358
+	void supportsMultipleFieldIdentifiers() {
+
+		var identifier = new CombinedIdentifier(1, 2);
+		var source = TypeDescriptor.forObject(identifier);
+		var integerTarget = TypeDescriptor.valueOf(Integer.class);
+
+		assertThat(converter.matches(source, integerTarget)).isFalse();
+		assertThat(converter.matches(source, STRING_DESCRIPTOR)).isTrue();
+
+		assertThat(converter.convert(identifier, source, STRING_DESCRIPTOR)).isEqualTo("1:2");
+	}
+
 	static abstract class IdentifierBase implements Identifier {
 		UUID id;
 	}
 
 	static class ConcreteIdentifier extends IdentifierBase {
 
+	}
+
+	@AllArgsConstructor
+	static class IntegerIdentifier implements Identifier {
+		Integer id;
 	}
 }

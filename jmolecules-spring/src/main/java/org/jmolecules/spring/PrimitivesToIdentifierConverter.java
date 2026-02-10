@@ -34,7 +34,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.converter.ConditionalGenericConverter;
-import org.springframework.core.convert.converter.Converter;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
@@ -149,8 +148,8 @@ public class PrimitivesToIdentifierConverter implements ConditionalGenericConver
 				.flatMap(name -> primitives.stream().map(primitive -> new Signature(name, primitive)))
 				.map(it -> ClassUtils.getStaticMethod(type, it.name, it.argumentType))
 				.filter(it -> it != null)
-				.peek(ReflectionUtils::makeAccessible)
 				.filter(it -> isAssignableOrConvertable(it.getParameterTypes()[0], parameterType))
+				.peek(ReflectionUtils::makeAccessible)
 				.findFirst()
 				.map(it -> new Instantiator(it,
 						param -> ReflectionUtils.invokeMethod(it, parameterType, preparer.apply(param, it))));

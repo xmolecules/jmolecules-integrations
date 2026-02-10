@@ -15,15 +15,12 @@
  */
 package org.jmolecules.spring;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.jmolecules.ddd.types.Identifier;
@@ -44,11 +41,9 @@ import org.springframework.util.ReflectionUtils;
  */
 public class IdentifierToPrimitivesConverter implements ConditionalGenericConverter {
 
-	private static final Map<Class<?>, Optional<Field>> CACHE = new ConcurrentReferenceHashMap<>();
-	private static final List<Class<?>> DEFAULT_PRIMITIVES = Arrays.asList(UUID.class, String.class);
+	private static final Map<Class<?>, Optional<ConvertibleExtractor>> CACHE = new ConcurrentReferenceHashMap<>();
 
 	private final Supplier<? extends ConversionService> conversionService;
-	private Set<Class<?>> primitives;
 
 	/**
 	 * Creates a new {@link IdentifierToPrimitivesConverter} for the given {@link ConversionService}.
@@ -59,7 +54,6 @@ public class IdentifierToPrimitivesConverter implements ConditionalGenericConver
 
 		Assert.notNull(conversionService, "ConversionService must not be null!");
 
-		this.primitives = new HashSet<>(DEFAULT_PRIMITIVES);
 		this.conversionService = conversionService;
 	}
 
@@ -80,13 +74,12 @@ public class IdentifierToPrimitivesConverter implements ConditionalGenericConver
 	@Override
 	public boolean matches(TypeDescriptor sourceType, TypeDescriptor targetType) {
 
-		if (sourceType.getType().equals(Identifier.class)
-				&& targetType.getType().equals(String.class)) {
+		if (sourceType.getType().equals(Identifier.class) && targetType.getType().equals(String.class)) {
 			return true;
 		}
 
-		return CACHE.computeIfAbsent(sourceType.getType(), it -> detectAndCacheIdentifierField(it))
-				.filter(it -> isAssignableOrConvertable(it.getType(), targetType.getType()))
+		return CACHE.computeIfAbsent(sourceType.getType(), it -> detectAndCacheIdentifierExtractor(it))
+				.filter(it -> isAssignableOrConvertable(it.type(), targetType.getType()))
 				.isPresent();
 	}
 
@@ -102,46 +95,64 @@ public class IdentifierToPrimitivesConverter implements ConditionalGenericConver
 			return source;
 		}
 
-		Class<? extends Object> type = source.getClass();
+		var type = source.getClass();
 
-		Field idField = CACHE.computeIfAbsent(type, it -> detectAndCacheIdentifierField(type))
+		var extractor = CACHE.computeIfAbsent(type, it -> detectAndCacheIdentifierExtractor(type))
 				.orElseThrow(() -> new IllegalStateException("Unable to find identifier field on " + type + "!"));
 
-		Object id = ReflectionUtils.getField(idField, source);
+		var extracted = extractor.function().apply(source);
 
-		if (id == null) {
+		if (extracted == null) {
 			throw new IllegalStateException(String.format("No identifier found on instance %s!", source.toString()));
 		}
 
-		if (targetType.getType().isInstance(id)) {
-			return id;
+		if (targetType.getType().isInstance(extracted)) {
+			return extracted;
 		}
 
-		return conversionService.get().convert(id, TypeDescriptor.forObject(id), targetType);
+		return conversionService.get().convert(extracted, TypeDescriptor.forObject(extracted), targetType);
 	}
 
-	private Optional<Field> detectAndCacheIdentifierField(Class<?> source) {
-		return CACHE.computeIfAbsent(source, type -> detectIdentifierField(source));
+	private boolean isAssignableOrConvertable(Class<?> source, Class<?> target) {
+
+		if (source.isAssignableFrom(target)) {
+			return true;
+		}
+
+		if (String.class.equals(source)) {
+			return String.class.equals(target);
+		}
+
+		return conversionService.get().canConvert(source, target);
 	}
 
-	private Optional<Field> detectIdentifierField(Class<?> source) {
+	private static Optional<ConvertibleExtractor> detectAndCacheIdentifierExtractor(Class<?> source) {
+		return CACHE.computeIfAbsent(source, type -> detectExtractor(source));
+	}
+
+	private static Optional<ConvertibleExtractor> detectExtractor(Class<?> source) {
 
 		if (source.isInterface() || source.equals(Object.class)) {
 			return Optional.empty();
 		}
 
-		Optional<Field> result = Arrays.stream(source.getDeclaredFields())
+		var result = Arrays.stream(source.getDeclaredFields())
 				.filter(it -> !Modifier.isStatic(it.getModifiers()))
-				.filter(it -> primitives.contains(it.getType()))
-				.peek(ReflectionUtils::makeAccessible)
-				.findFirst();
+				.toList();
 
-		return result.isPresent() ? result : detectIdentifierField(source.getSuperclass());
+		if (result.isEmpty()) {
+			return detectExtractor(source.getSuperclass());
+		}
+
+		if (result.size() > 1) {
+			return Optional.of(new ConvertibleExtractor(Object::toString, String.class));
+		}
+
+		var field = result.get(0);
+		ReflectionUtils.makeAccessible(field);
+
+		return Optional.of(new ConvertibleExtractor(it -> ReflectionUtils.getField(field, it), field.getType()));
 	}
 
-	private boolean isAssignableOrConvertable(Class<?> source, Class<?> target) {
-
-		return source.isAssignableFrom(target)
-				|| conversionService.get().canConvert(source, target);
-	}
+	private record ConvertibleExtractor(Function<Object, Object> function, Class<?> type) {}
 }
