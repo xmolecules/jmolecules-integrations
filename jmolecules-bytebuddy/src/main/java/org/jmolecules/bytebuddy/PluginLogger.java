@@ -22,7 +22,6 @@ import net.bytebuddy.description.type.TypeDescription;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentSkipListMap;
 
@@ -92,7 +91,7 @@ enum PluginLogger {
 			});
 
 		} finally {
-			logs = new TreeMap<>();
+			logs = new ConcurrentSkipListMap<>();
 		}
 	}
 
