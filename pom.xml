@@ -40,7 +40,7 @@
 		<maven.compiler.proc>full</maven.compiler.proc>
 		<spring-boot.version>3.5.9</spring-boot.version>
 		<spring-boot4.version>4.0.1</spring-boot4.version>
-		<axon.version>4.12.2</axon.version>
+		<axon.version>4.13.1</axon.version>
 	</properties>
 
 	<licenses>
