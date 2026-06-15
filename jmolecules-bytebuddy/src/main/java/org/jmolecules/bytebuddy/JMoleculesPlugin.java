@@ -74,6 +74,7 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 
 			return Stream.of(
 
+					dddPlugin(), //
 					axonPlugin(world), //
 					axonSpringPlugin(world), //
 					jpaPlugin(world, jpa), //
@@ -129,6 +130,10 @@ public class JMoleculesPlugin implements LoggingPlugin, WithPreprocessor {
 		return delegates.get(typeDescription).stream()
 				.reduce(builder, (it, plugin) -> (Builder) plugin.apply(it, typeDescription, classFileLocator),
 						(left, right) -> right);
+	}
+
+	private static Stream<LoggingPlugin> dddPlugin() {
+		return Stream.of(new DddPlugin());
 	}
 
 	private Stream<? extends LoggingPlugin> jpaPlugin(ClassWorld world, Optional<Jpa> jpa) {
