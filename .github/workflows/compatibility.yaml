@@ -13,21 +13,23 @@ jobs:
     strategy:
       matrix:
         version:
-        - '3.3.12'
-        - '3.4.11'
-        - '3.4.12-SNAPSHOT'
-        - '3.5.7'
-        - '3.5.8-SNAPSHOT'
+        - '3.3.13'
+        - '3.4.13'
+        - '3.5.15'
+        - '3.5.16-SNAPSHOT'
+        - '4.0.7'
+        - '4.0.8-SNAPSHOT'
+        - '4.2.0-SNAPSHOT'
 
     name: Compatibility with Spring Boot ${{ matrix.version }}
 
     steps:
 
     - name: Check out sources
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Set up JDK 17
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         distribution: 'temurin'
         java-version: 17
