@@ -97,7 +97,14 @@ public class CliApplication {
 
 				props.load(PropertiesVersionProvider.class.getResourceAsStream("/version.properties"));
 
-				VERSION = props.getProperty("version");
+				var version = props.getProperty("version");
+				var commit = props.getProperty("commit");
+				var dirty = props.getProperty("dirty");
+
+				var hasCommit = commit != null && !commit.isBlank() && !commit.startsWith("${");
+				var isDirty = "true".equalsIgnoreCase(dirty);
+
+				VERSION = hasCommit ? version + " (" + commit + (isDirty ? "-dirty" : "") + ")" : version;
 
 			} catch (IOException o_O) {
 				throw new RuntimeException(o_O);
