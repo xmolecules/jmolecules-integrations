@@ -64,7 +64,7 @@
 		<dependency>
 			<groupId>org.xmlbeam</groupId>
 			<artifactId>xmlprojector</artifactId>
-			<version>1.4.24</version>
+			<version>1.4.26</version>
 		</dependency>
 		
 		<dependency>
