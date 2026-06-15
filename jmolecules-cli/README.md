@@ -86,19 +86,16 @@ Requires:
 # Binary output: target/jm (or target/jm.exe on Windows)
 ```
 
-### Install to and from local tap
+### Local install for testing
 
-The build process of profile `dist` creates an additional assembly within `target/tap` for local installation into homebrew. To use 
+For end-to-end testing of a locally built `jm`, install the binary directly. Homebrew's API-mode design does not currently support installing a local-only tap formula without cloning `homebrew-core`, so the `target/tap` assembly is reserved for jreleaser's published-tap pipeline.
 
 ```bash
-# Create local taps folder
-mkdir -p /opt/homebrew/Library/Taps/local
+# Link the binary onto PATH
+ln -sf $(pwd)/target/jm /opt/homebrew/bin/jm
 
-# Create local tap symlink pointing to local target folder
-ln -s $(pwd)/target/tap /opt/homebrew/Library/Taps/local/homebrew-jm
-
-# Install local build of jm into Homebrew
-brew install local/jm/jm-local
+# Install bash completion (works for bash and zsh)
+cp target/tap/completion/jm.completion $(brew --prefix)/etc/bash_completion.d/jm
 ```
 
 ## License
