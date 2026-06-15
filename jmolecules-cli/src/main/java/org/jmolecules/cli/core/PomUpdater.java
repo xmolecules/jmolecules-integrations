@@ -16,130 +16,74 @@
 package org.jmolecules.cli.core;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.function.Function;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.function.Consumer;
 
 import org.jmolecules.cli.core.BuildSystem.ScriptOperations;
 import org.jmolecules.cli.core.MavenBuildSystem.MavenDependency;
-import org.jmolecules.cli.core.PomUpdater.Pom.ManagedArtifact;
 import org.jmolecules.codegen.ProjectFiles;
-import org.xmlbeam.annotation.XBRead;
-import org.xmlbeam.annotation.XBValue;
-import org.xmlbeam.annotation.XBWrite;
-import org.xmlbeam.io.FileIO;
+
+import eu.maveniverse.domtrip.Document;
+import eu.maveniverse.domtrip.maven.Coordinates;
+import eu.maveniverse.domtrip.maven.PomEditor;
 
 /**
  * @author Oliver Drotbohm
  */
 public class PomUpdater implements ScriptOperations {
 
-	private final ProjectFiles workspace;
-
-	private final FileIO io;
-	private final Pom pom;
+	private final Path pomPath;
 
 	public PomUpdater(ProjectFiles workspace) {
-
-		this.workspace = workspace;
-
-		// try {
-		this.io = null; // new XBProjector().io().file(workspace.resolve("pom.xml").toFile());
-		this.pom = null; // io.read(Pom.class);
-		// } catch (IOException e) {
-		// throw new RuntimeException(e);
-		// }
+		this.pomPath = workspace.resolve("pom.xml");
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.jmolecules.cli.build.BuildSystem.ScriptOperations#addDependency(java.lang.String)
+	/**
+	 * Opens a {@link PomEditor} against the project's {@code pom.xml}, hands it to {@code mutation}, and writes the
+	 * result back. Use for batching multiple edits in a single read/write cycle (e.g. from a command).
 	 */
-	@Override
-	public void addDependency(String coordinates) {
-
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.jmolecules.cli.build.BuildSystem.ScriptOperations#addManagedDependency(java.lang.String)
-	 */
-	@Override
-	public void addManagedDependency(String coordinates) {
-
-		var dependency = MavenDependency.of(coordinates);
-
-		pom.addDependencyManagement(new ManagedArtifact() {
-
-			@Override
-			public String getVersion() {
-				return dependency.version();
-			}
-
-			@Override
-			public String getGroupId() {
-				return dependency.groupId();
-			}
-
-			@Override
-			public String getArtifactId() {
-				return dependency.artifactId();
-			}
-		});
-	}
-
-	void update(Function<Pom, Pom> operations) {
+	public void withPom(Consumer<PomEditor> mutation) {
 
 		try {
-			io.write(operations.apply(pom));
+
+			var editor = new PomEditor(Document.of(pomPath));
+			mutation.accept(editor);
+			Files.writeString(pomPath, editor.toXml());
+
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	interface Pom {
+	@Override
+	public void addDependency(String coordinates) {
 
-		interface Artifact {
+		var dep = MavenDependency.of(coordinates);
 
-			@XBRead("child::groupId")
-			String getGroupId();
+		withPom(editor -> editor.dependencies().updateDependency(true,
+				Coordinates.of(dep.groupId(), dep.artifactId(), dep.version())));
+	}
 
-			@XBRead("child::artifactId")
-			String getArtifactId();
+	@Override
+	public void addManagedDependency(String coordinates) {
 
-			@XBRead("child::version")
-			String getVersion();
-		}
+		var dep = MavenDependency.of(coordinates);
 
-		interface ManagedArtifact extends Artifact {
+		withPom(editor -> {
 
-			@XBRead("child::scope")
-			default String getScope() {
-				return "import";
-			}
+			editor.dependencies().updateManagedDependency(true,
+					Coordinates.of(dep.groupId(), dep.artifactId(), dep.version(), null, "pom"));
 
-			@XBRead("child::pom")
-			default String getType() {
-				return "pom";
-			}
-		}
-
-		@XBWrite("/properties/{0}")
-		void addProperty(String name, @XBValue String value);
-
-		default void addDependencyManagement(ManagedArtifact artifact) {
-			var existing = getDependencyManagement();
-			existing.add(artifact);
-
-			setDependencyManagement(existing);
-		}
-
-		@XBRead("/dependencyManagement/dependencies")
-		List<ManagedArtifact> getDependencyManagement();
-
-		@XBWrite("/dependencyManagement/dependencies")
-		void setDependencyManagement(List<ManagedArtifact> artifacts);
-
-		@XBRead("/project/dependencies/dependency")
-		List<Artifact> getDependencies();
+			// PomEditor.updateManagedDependency does not write <scope>import</scope>; add it ourselves.
+			editor.root()
+					.path("dependencyManagement", "dependencies")
+					.ifPresent(deps -> deps.childElements("dependency")
+							.filter(it -> dep.groupId().equals(it.childText("groupId")))
+							.filter(it -> dep.artifactId().equals(it.childText("artifactId")))
+							.findFirst()
+							.filter(it -> it.childElement("scope").isEmpty())
+							.ifPresent(it -> editor.addElement(it, "scope", "import")));
+		});
 	}
 }
