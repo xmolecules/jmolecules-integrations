@@ -16,6 +16,8 @@
 package org.jmolecules.jackson.config;
 
 import org.jmolecules.jackson.JMoleculesModule;
+import org.jmolecules.jackson.SingleValueWrappingOpenApiModelConverter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -28,5 +30,15 @@ public class JMoleculesJacksonAutoConfiguration {
 	@Bean
 	JMoleculesModule jMoleculesModule() {
 		return new JMoleculesModule();
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnClass(name = "io.swagger.v3.core.converter.ModelConverter")
+	static class OpenApiConfiguration {
+
+		@Bean
+		SingleValueWrappingOpenApiModelConverter jMoleculesOpenApiModelConverter() {
+			return new SingleValueWrappingOpenApiModelConverter();
+		}
 	}
 }
