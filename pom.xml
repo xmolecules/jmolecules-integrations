@@ -39,6 +39,7 @@
 		<module.name>org.jmolecules.integrations</module.name>
 		<maven.compiler.proc>full</maven.compiler.proc>
 		<spring-boot.version>3.5.15</spring-boot.version>
+		<swagger-core.version>2.2.49</swagger-core.version>
 		<spring-boot4.version>4.1.0</spring-boot4.version>
 		<axon.version>4.13.1</axon.version>
 	</properties>
