@@ -23,16 +23,25 @@ import tools.jackson.databind.DeserializationConfig;
 import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.JavaType;
 import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.deser.BeanDeserializerBuilder;
+import tools.jackson.databind.deser.SettableBeanProperty;
 import tools.jackson.databind.deser.ValueDeserializerModifier;
+import tools.jackson.databind.deser.ValueInstantiator;
+import tools.jackson.databind.deser.impl.MethodProperty;
 import tools.jackson.databind.deser.std.StdDeserializer;
+import tools.jackson.databind.introspect.AnnotatedField;
+import tools.jackson.databind.introspect.AnnotatedMember;
+import tools.jackson.databind.introspect.AnnotatedMethod;
 import tools.jackson.databind.introspect.BeanPropertyDefinition;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
 
 import org.jmolecules.ddd.annotation.ValueObject;
+import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Identifier;
 import org.springframework.beans.BeanUtils;
 import org.springframework.util.ReflectionUtils;
@@ -47,6 +56,93 @@ class SingleValueWrappingTypeDeserializerModifier extends ValueDeserializerModif
 
 	private static final long serialVersionUID = 5297887920996219863L;
 	private static final AnnotationDetector DETECTOR = AnnotationDetector.getAnnotationDetector();
+
+	/*
+	 * (non-Javadoc)
+	 * @see tools.jackson.databind.deser.ValueDeserializerModifier#updateBuilder(tools.jackson.databind.DeserializationConfig, tools.jackson.databind.BeanDescription.Supplier, tools.jackson.databind.deser.BeanDeserializerBuilder)
+	 */
+	@Override
+	public BeanDeserializerBuilder updateBuilder(DeserializationConfig config, Supplier supplier,
+			BeanDeserializerBuilder builder) {
+
+		ValueInstantiator instantiator = builder.getValueInstantiator();
+
+		if (!instantiator.canCreateFromObjectWith()) {
+			return builder;
+		}
+
+		SettableBeanProperty[] creatorProps = instantiator.getFromObjectArguments(config);
+
+		if (creatorProps == null) {
+			return builder;
+		}
+
+		BeanDescription beanDesc = supplier.get();
+		Class<?> beanClass = beanDesc.getBeanClass();
+
+		for (SettableBeanProperty creatorProp : creatorProps) {
+
+			Field field = ReflectionUtils.findField(beanClass, creatorProp.getName());
+
+			if (field == null
+					|| !Association.class.isAssignableFrom(field.getType())
+					|| Association.class.isAssignableFrom(creatorProp.getType().getRawClass())) {
+				continue;
+			}
+
+			// GH-398: Jackson 3 selected a constructor as an implicit property-based creator
+			// whose parameter type does not match the Association-typed bean property.
+			// Disable the property-based creator so Jackson falls back to no-arg constructor
+			// and setter/field-based population, which correctly uses AssociationDeserializer.
+			builder.setValueInstantiator(new DefaultOnlyInstantiator(instantiator));
+
+			// Also replace the wrongly-typed property in the builder with one derived from
+			// the setter or field, which has the correct Association type.
+			replacePropertyFromMutator(beanDesc, builder, creatorProp.getName());
+
+			return builder;
+		}
+
+		return builder;
+	}
+
+	/**
+	 * Replaces the property with the given name in the builder with one created from the
+	 * bean's setter or field, which has the correct type.
+	 */
+	private static void replacePropertyFromMutator(BeanDescription beanDesc,
+			BeanDeserializerBuilder builder, String propertyName) {
+
+		for (BeanPropertyDefinition propDef : beanDesc.findProperties()) {
+
+			if (!propDef.getName().equals(propertyName)) {
+				continue;
+			}
+
+			AnnotatedMember mutator = propDef.getNonConstructorMutator();
+
+			if (mutator == null) {
+				break;
+			}
+
+			JavaType correctType;
+
+			if (mutator instanceof AnnotatedMethod) {
+				correctType = ((AnnotatedMethod) mutator).getParameterType(0);
+			} else if (mutator instanceof AnnotatedField) {
+				correctType = ((AnnotatedField) mutator).getType();
+			} else {
+				break;
+			}
+
+			MethodProperty replacement = new MethodProperty(propDef, correctType, null,
+					beanDesc.getClassAnnotations(), mutator);
+
+			builder.addOrReplaceProperty(replacement, true);
+
+			break;
+		}
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -118,6 +214,32 @@ class SingleValueWrappingTypeDeserializerModifier extends ValueDeserializerModif
 
 	private interface ThrowingFunction {
 		Object apply(Object source) throws Exception;
+	}
+
+	/**
+	 * A {@link ValueInstantiator} wrapper that disables property-based creation, falling back to
+	 * default (no-arg) construction. Used when Jackson 3 incorrectly selects a constructor as an
+	 * implicit property-based creator whose parameter types don't match the bean's
+	 * {@link Association}-typed properties.
+	 *
+	 * @author Oliver Drotbohm
+	 * @see <a href="https://github.com/xmolecules/jmolecules-integrations/issues/398">GH-398</a>
+	 */
+	private static class DefaultOnlyInstantiator extends ValueInstantiator.Delegating {
+
+		DefaultOnlyInstantiator(ValueInstantiator delegate) {
+			super(delegate);
+		}
+
+		@Override
+		public boolean canCreateFromObjectWith() {
+			return false;
+		}
+
+		@Override
+		public SettableBeanProperty[] getFromObjectArguments(DeserializationConfig config) {
+			return null;
+		}
 	}
 
 	private static class InstantiatorDeserializer extends StdDeserializer<Object> {
