@@ -255,6 +255,14 @@
 		"spring.ws.PayloadRoot" : {
 			"assignments" : [ "@org.springframework.ws.server.endpoint.annotation.PayloadRoot" ],
 			"groups" : [ "spring.ws" ]
+		},
+		"spring.shell.ShellComponent" : {
+			"assignments" : [ "@org.springframework.shell.standard.ShellComponent" ],
+			"groups" : [ "spring.shell" ]
+		},
+		"spring.shell.ShellMethod" : {
+			"assignments" : [ "@org.springframework.shell.standard.ShellMethod" ],
+			"groups" : [ "spring.shell" ]
 		}
 	},
 	"groups" : {
@@ -280,6 +288,9 @@
 		},
 		"spring.messaging" : {
 			"displayName" : "Spring Messaging"
+		},
+		"spring.shell" : {
+			"displayName" : "Spring Shell"
 		},
 		"spring.web" : {
 			"displayName" : "Spring Web"
