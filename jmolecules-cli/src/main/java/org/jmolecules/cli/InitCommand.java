@@ -22,6 +22,7 @@ import picocli.CommandLine.Option;
 import java.util.concurrent.Callable;
 
 import org.jmolecules.cli.core.BuildSystem;
+import org.jmolecules.cli.core.JMoleculesBomVersions;
 import org.jmolecules.cli.core.MetadataCache;
 import org.jmolecules.cli.core.ModulithMetadata;
 import org.jmolecules.codegen.Dependency.Scope;
@@ -47,6 +48,14 @@ public class InitCommand implements Callable<Void> {
 	@Option(names = { "--force", "-f" }, defaultValue = "false") //
 	boolean force;
 
+	@Option(names = { "--offline", "-o" }, defaultValue = "false",
+			description = "Run Maven in offline mode and resolve the BOM version from the local repository.") //
+	boolean offline;
+
+	@Option(names = { "--version" },
+			description = "jMolecules BOM version. Defaults to the latest release from Maven Central (or the local repo when --offline).") //
+	String jMoleculesVersion;
+
 	/*
 	 * (non-Javadoc)
 	 * @see java.util.concurrent.Callable#call()
@@ -55,8 +64,10 @@ public class InitCommand implements Callable<Void> {
 	public Void call() throws Exception {
 
 		buildSystem.initialize();
-
+		buildSystem.setOffline(offline);
 		buildSystem.getClasspath();
+
+		ensureJMoleculesBom();
 
 		var configuration = context.getConfiguration();
 
@@ -101,6 +112,31 @@ public class InitCommand implements Callable<Void> {
 		configuration.write();
 
 		return null;
+	}
+
+	private void ensureJMoleculesBom() {
+
+		var ops = buildSystem.getScriptOperations();
+
+		if (ops.declaresManagedDependency("org.jmolecules", "jmolecules-bom")) {
+			LOG.info("⚗️  jMolecules BOM already declared locally; skipping BOM addition.");
+			return;
+		}
+
+		if (buildSystem.hasManagedDependencyIn("org.jmolecules")) {
+			LOG.info("⚗️  jMolecules already declared as a managed dependency; skipping BOM addition.");
+			return;
+		}
+
+		var version = jMoleculesVersion != null
+				? jMoleculesVersion
+				: offline ? JMoleculesBomVersions.latestReleaseFromLocalRepository()
+						: JMoleculesBomVersions.latestRelease();
+
+		LOG.info("📦 Adding jMolecules BOM ({}) to dependencyManagement.", version);
+
+		ops.addProperty("jmolecules.version", version);
+		ops.addManagedDependency("org.jmolecules:jmolecules-bom:pom:${jmolecules.version}:import");
 	}
 
 	void initSpringModulith() throws Exception {

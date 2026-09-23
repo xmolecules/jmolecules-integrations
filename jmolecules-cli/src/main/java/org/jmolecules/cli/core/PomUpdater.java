@@ -86,4 +86,31 @@ public class PomUpdater implements ScriptOperations {
 							.ifPresent(it -> editor.addElement(it, "scope", "import")));
 		});
 	}
+
+	@Override
+	public void addProperty(String name, String value) {
+
+		withPom(editor -> {
+
+			var properties = editor.root().childElement("properties")
+					.orElseGet(() -> editor.addElement(editor.root(), "properties"));
+
+			if (properties.childElement(name).isEmpty()) {
+				editor.addElement(properties, name, value);
+			}
+		});
+	}
+
+	@Override
+	public boolean declaresManagedDependency(String groupId, String artifactId) {
+
+		var editor = new PomEditor(Document.of(pomPath));
+
+		return editor.root()
+				.path("dependencyManagement", "dependencies")
+				.map(deps -> deps.childElements("dependency")
+						.anyMatch(dep -> groupId.equals(dep.childText("groupId"))
+								&& artifactId.equals(dep.childText("artifactId"))))
+				.orElse(false);
+	}
 }

@@ -70,6 +70,7 @@ public class MetadataCache {
 		var path = resolveInternal(fileName);
 
 		try {
+			Files.createDirectories(path.getParent());
 			Files.writeString(path, content);
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);

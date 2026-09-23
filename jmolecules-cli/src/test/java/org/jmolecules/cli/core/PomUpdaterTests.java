@@ -83,6 +83,38 @@ class PomUpdaterTests {
 	}
 
 	@Test
+	void addsPropertyToProperties() throws Exception {
+
+		updater.addProperty("jmolecules.version", "1.10.0");
+
+		var doc = parse();
+		assertThat(xpath(doc, "/project/properties/jmolecules.version/text()")).isEqualTo("1.10.0");
+	}
+
+	@Test
+	void addPropertyIsIdempotent() throws Exception {
+
+		updater.addProperty("jmolecules.version", "1.10.0");
+		updater.addProperty("jmolecules.version", "9.9.9"); // ignored, already present
+
+		var doc = parse();
+		assertThat(xpath(doc, "count(/project/properties/jmolecules.version)")).isEqualTo("1");
+		assertThat(xpath(doc, "/project/properties/jmolecules.version/text()")).isEqualTo("1.10.0");
+	}
+
+	@Test
+	void declaresManagedDependencyReportsLocalDeclaration() throws Exception {
+
+		assertThat(updater.declaresManagedDependency("org.example", "bom")).isFalse();
+
+		updater.addManagedDependency("org.example:bom:pom:2.0:import");
+
+		assertThat(updater.declaresManagedDependency("org.example", "bom")).isTrue();
+		assertThat(updater.declaresManagedDependency("org.example", "other")).isFalse();
+		assertThat(updater.declaresManagedDependency("other.group", "bom")).isFalse();
+	}
+
+	@Test
 	void batchesEditsViaWithPom() throws Exception {
 
 		updater.withPom(editor -> {

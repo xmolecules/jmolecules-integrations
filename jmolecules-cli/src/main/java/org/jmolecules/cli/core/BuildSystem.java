@@ -30,6 +30,12 @@ public interface BuildSystem {
 
 	void initialize();
 
+	/**
+	 * Toggles offline mode for subsequent Maven invocations performed by this build system. When {@code true}, Maven
+	 * is invoked with {@code -o} and will only resolve already-cached artifacts.
+	 */
+	void setOffline(boolean offline);
+
 	void refresh();
 
 	void compile();
@@ -46,6 +52,13 @@ public interface BuildSystem {
 
 	ScriptOperations getScriptOperations();
 
+	/**
+	 * Returns whether the effective view of the project's POM declares any managed dependency under the given group id
+	 * &mdash; covering local declarations, parent inheritance, and BOM imports (which Maven flattens into their
+	 * constituent managed entries during effective-pom resolution).
+	 */
+	boolean hasManagedDependencyIn(String groupId);
+
 	public static BuildSystem of(ProjectFiles workspace, MetadataCache cache) {
 
 		var path = workspace.resolve("pom.xml");
@@ -58,5 +71,17 @@ public interface BuildSystem {
 		void addDependency(String coordinates);
 
 		void addManagedDependency(String coordinates);
+
+		/**
+		 * Adds a property to {@code <project><properties>}. No-op if a property with that name is already present.
+		 */
+		void addProperty(String name, String value);
+
+		/**
+		 * Whether the local {@code pom.xml} directly declares a managed dependency for the given group and artifact id.
+		 * Does not consider parent inheritance or BOM imports &mdash; a fast file-only check meant as a short-circuit
+		 * before more expensive effective-pom lookups.
+		 */
+		boolean declaresManagedDependency(String groupId, String artifactId);
 	}
 }

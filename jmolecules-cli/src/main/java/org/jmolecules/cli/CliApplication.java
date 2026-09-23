@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 
 import org.jmolecules.cli.CliApplication.PropertiesVersionProvider;
 import org.jmolecules.cli.core.BuildSystem;
+import org.jmolecules.cli.core.BuildSystemException;
 import org.jmolecules.cli.core.DefaultProjectContext;
 import org.jmolecules.cli.core.MetadataCache;
 import org.jmolecules.codegen.ProjectFiles;
@@ -81,6 +82,18 @@ public class CliApplication {
 		commandLine.addSubcommand(new AddAggregateCommand(code, context));
 		commandLine.addSubcommand(new AddModuleCommand(code, buildSystem, initCommand));
 		commandLine.addSubcommand(new ConfigCommand(context));
+
+		commandLine.setExecutionExceptionHandler((ex, cmd, parseResult) -> {
+
+			if (ex instanceof BuildSystemException) {
+
+				cmd.getErr().println(ex.getMessage());
+
+				return cmd.getCommandSpec().exitCodeOnExecutionException();
+			}
+
+			throw ex;
+		});
 
 		return commandLine;
 	}

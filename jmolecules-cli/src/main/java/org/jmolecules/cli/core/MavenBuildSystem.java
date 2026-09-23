@@ -54,14 +54,16 @@ class MavenBuildSystem implements BuildSystem {
 	private final ProjectFiles fileSystem;
 	private final MetadataCache cache;
 	private final Path mavenExecutable;
-	private final Path dependencies, classpath;
+	private final Path dependencies, classpath, effectivePom;
 
 	private final Supplier<List<Dependency>> calculatedDependencies;
 	private final Supplier<URL[]> calculatedClasspath;
 
-	private final Supplier<Void> dependenciesLookup, classpathLookup;
+	private final Supplier<Void> dependenciesLookup, classpathLookup, effectivePomLookup;
 
 	private final PomUpdater updater;
+
+	private boolean offline;
 
 	/**
 	 * @param publisher
@@ -75,6 +77,7 @@ class MavenBuildSystem implements BuildSystem {
 
 		this.dependencies = cache.resolveInternal("dependencies");
 		this.classpath = cache.resolveInternal("classpath");
+		this.effectivePom = cache.resolveInternal("effective-pom.xml");
 
 		this.dependenciesLookup = SingletonSupplier.of(() -> {
 
@@ -89,6 +92,15 @@ class MavenBuildSystem implements BuildSystem {
 
 			if (!Files.exists(classpath)) {
 				calculateClasspath();
+			}
+
+			return null;
+		});
+
+		this.effectivePomLookup = SingletonSupplier.of(() -> {
+
+			if (!Files.exists(effectivePom)) {
+				calculateEffectivePom();
 			}
 
 			return null;
@@ -123,6 +135,11 @@ class MavenBuildSystem implements BuildSystem {
 	}
 
 	@Override
+	public void setOffline(boolean offline) {
+		this.offline = offline;
+	}
+
+	@Override
 	public void refresh() {
 
 		calculateDependencies();
@@ -138,27 +155,13 @@ class MavenBuildSystem implements BuildSystem {
 
 		LOG.info("☕️ Compiling project…");
 
-		try {
+		InvocationRequest request = new DefaultInvocationRequest();
+		request.setPomFile(fileSystem.resolve("pom.xml").toFile());
+		request.addArg("clean");
+		request.addArg("compile");
+		request.setInputStream(InputStream.nullInputStream());
 
-			// Set up the Maven invocation request
-			InvocationRequest request = new DefaultInvocationRequest();
-			request.setPomFile(new File("./pom.xml"));
-			request.addArg("clean");
-			request.addArg("compile");
-			request.setInputStream(InputStream.nullInputStream());
-			request.setOutputHandler(LOG::info);
-
-			// Set up the Maven invoker
-			Invoker invoker = new DefaultInvoker();
-			invoker.setMavenExecutable(mavenExecutable.toFile());
-
-			// Execute the request
-			invoker.execute(request);
-
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-
+		executeOrThrow(request, "clean compile", "Project compilation failed.", LOG::info);
 	}
 
 	/*
@@ -205,31 +208,18 @@ class MavenBuildSystem implements BuildSystem {
 
 		LOG.info("☕️️ Updating Maven dependencies to ({}).", dependencies);
 
-		try {
+		Properties properties = new Properties();
+		properties.setProperty("outputFile", dependencies.toFile().getAbsolutePath());
 
-			Properties properties = new Properties();
-			properties.setProperty("outputFile", dependencies.toFile().getAbsolutePath());
+		InvocationRequest request = new DefaultInvocationRequest();
+		request.setPomFile(fileSystem.resolve("pom.xml").toFile());
+		request.addArg("dependency:list");
+		request.addArg("-Dsort");
+		request.addArg("-Dscan=false");
+		request.setInputStream(InputStream.nullInputStream());
+		request.setProperties(properties);
 
-			// Set up the Maven invocation request
-			InvocationRequest request = new DefaultInvocationRequest();
-			request.setPomFile(new File("./pom.xml"));
-			request.addArg("dependency:list");
-			request.addArg("-Dsort");
-			request.addArg("-Dscan=false");
-			request.setInputStream(InputStream.nullInputStream());
-			request.setOutputHandler(LOG::debug);
-			request.setProperties(properties);
-
-			// Set up the Maven invoker
-			Invoker invoker = new DefaultInvoker();
-			invoker.setMavenExecutable(mavenExecutable.toFile()); // Adjust this path to your Maven installation
-
-			// Execute the request
-			invoker.execute(request);
-
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+		executeOrThrow(request, "dependency:list", "Project dependencies could not be resolved properly.", LOG::debug);
 
 		return null;
 	}
@@ -238,30 +228,108 @@ class MavenBuildSystem implements BuildSystem {
 
 		LOG.info("☕️️ Calculating classpath ({}).", classpath);
 
+		Properties properties = new Properties();
+		properties.setProperty("mdep.outputFile", classpath.toFile().getAbsolutePath());
+		properties.setProperty("scan", "false");
+
+		InvocationRequest request = new DefaultInvocationRequest();
+		request.setPomFile(fileSystem.resolve("pom.xml").toFile());
+		request.addArg("dependency:build-classpath");
+		request.setInputStream(InputStream.nullInputStream());
+		request.setProperties(properties);
+
+		executeOrThrow(request, "dependency:build-classpath", "Project classpath could not be resolved properly.",
+				LOG::debug);
+	}
+
+	private void calculateEffectivePom() {
+
+		LOG.info("☕️️ Computing effective POM ({}).", effectivePom);
+
+		Properties properties = new Properties();
+		properties.setProperty("output", effectivePom.toAbsolutePath().toString());
+
+		InvocationRequest request = new DefaultInvocationRequest();
+		request.setPomFile(fileSystem.resolve("pom.xml").toFile());
+		request.addArg("help:effective-pom");
+		request.setInputStream(InputStream.nullInputStream());
+		request.setProperties(properties);
+
+		executeOrThrow(request, "help:effective-pom", "Effective POM could not be computed.", LOG::debug);
+	}
+
+	@Override
+	public boolean hasManagedDependencyIn(String groupId) {
+
+		effectivePomLookup.get();
+
 		try {
 
-			Properties properties = new Properties();
-			properties.setProperty("mdep.outputFile", classpath.toFile().getAbsolutePath());
-			properties.setProperty("scan", "false");
+			var editor = new eu.maveniverse.domtrip.maven.PomEditor(eu.maveniverse.domtrip.Document.of(effectivePom));
 
-			// Set up the Maven invocation request
-			InvocationRequest request = new DefaultInvocationRequest();
-			request.setPomFile(new File("./pom.xml"));
-			request.addArg("dependency:build-classpath");
-			request.setInputStream(InputStream.nullInputStream());
-			request.setOutputHandler(LOG::debug);
-			request.setProperties(properties);
-
-			// Set up the Maven invoker
-			Invoker invoker = new DefaultInvoker();
-			invoker.setMavenExecutable(mavenExecutable.toFile());
-
-			// Execute the request
-			invoker.execute(request);
+			return editor.root()
+					.path("dependencyManagement", "dependencies")
+					.map(deps -> deps.childElements("dependency")
+							.anyMatch(dep -> groupId.equals(dep.childText("groupId"))))
+					.orElse(false);
 
 		} catch (Exception e) {
-			throw new RuntimeException(e);
+			throw new RuntimeException("Could not parse effective POM at " + effectivePom, e);
 		}
+	}
+
+	private void executeOrThrow(InvocationRequest request, String description, String userMessage,
+			java.util.function.Consumer<String> liveHandler) {
+
+		request.setOffline(offline);
+
+		var output = new ArrayList<String>();
+		request.setOutputHandler(line -> {
+			liveHandler.accept(line);
+			output.add(line);
+		});
+
+		Invoker invoker = new DefaultInvoker();
+		invoker.setMavenExecutable(mavenExecutable.toFile());
+
+		try {
+
+			var result = invoker.execute(request);
+
+			if (result.getExecutionException() != null) {
+				throw abort(description, result.getExitCode(), output, userMessage, result.getExecutionException());
+			}
+
+			if (result.getExitCode() != 0) {
+				throw abort(description, result.getExitCode(), output, userMessage, null);
+			}
+
+		} catch (org.apache.maven.shared.invoker.MavenInvocationException e) {
+			throw abort(description, -1, output, userMessage, e);
+		}
+	}
+
+	private BuildSystemException abort(String description, int exitCode, List<String> output, String userMessage,
+			Throwable cause) {
+
+		var details = new StringBuilder("Maven invocation failed (").append(description);
+		if (exitCode != 0) {
+			details.append(", exit ").append(exitCode);
+		}
+		details.append(")\n");
+		if (!output.isEmpty()) {
+			details.append("\n--- Maven output ---\n").append(String.join("\n", output)).append('\n');
+		}
+		if (cause != null) {
+			details.append("\n--- Cause ---\n");
+			var sw = new java.io.StringWriter();
+			cause.printStackTrace(new java.io.PrintWriter(sw));
+			details.append(sw);
+		}
+
+		cache.writeInternal("error", details.toString());
+
+		return new BuildSystemException(userMessage + " See " + cache.resolveInternal("error") + " for details.");
 	}
 
 	private Path detectMavenExecutable() {
