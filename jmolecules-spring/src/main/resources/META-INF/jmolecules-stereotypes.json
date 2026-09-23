@@ -38,6 +38,91 @@
 			"assignments" : [ "org.springframework.aot.hint.RuntimeHintsRegistrar" ],
 			"groups" : [ "spring" ]
 		},
+		"spring.batch.Job" : {
+			"assignments" : [ "org.springframework.batch.core.Job" ],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.Step" : {
+			"assignments" : [ "org.springframework.batch.core.Step" ],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.Tasklet" : {
+			"assignments" : [ "org.springframework.batch.core.step.tasklet.Tasklet" ],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.ItemReader" : {
+			"assignments" : [ "org.springframework.batch.item.ItemReader" ],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.ItemWriter" : {
+			"assignments" : [ "org.springframework.batch.item.ItemWriter" ],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.ItemProcessor" : {
+			"assignments" : [ "org.springframework.batch.item.ItemProcessor" ],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.JobExecutionListener" : {
+			"assignments" : [
+				"org.springframework.batch.core.JobExecutionListener",
+				"@org.springframework.batch.core.annotation.BeforeJob",
+				"@org.springframework.batch.core.annotation.AfterJob"
+			],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.StepExecutionListener" : {
+			"assignments" : [
+				"org.springframework.batch.core.StepExecutionListener",
+				"@org.springframework.batch.core.annotation.BeforeStep",
+				"@org.springframework.batch.core.annotation.AfterStep"
+			],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.ChunkListener" : {
+			"assignments" : [
+				"org.springframework.batch.core.ChunkListener",
+				"@org.springframework.batch.core.annotation.BeforeChunk",
+				"@org.springframework.batch.core.annotation.AfterChunk",
+				"@org.springframework.batch.core.annotation.AfterChunkError"
+			],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.ItemReadListener" : {
+			"assignments" : [
+				"org.springframework.batch.core.ItemReadListener",
+				"@org.springframework.batch.core.annotation.BeforeRead",
+				"@org.springframework.batch.core.annotation.AfterRead",
+				"@org.springframework.batch.core.annotation.OnReadError"
+			],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.ItemProcessListener" : {
+			"assignments" : [
+				"org.springframework.batch.core.ItemProcessListener",
+				"@org.springframework.batch.core.annotation.BeforeProcess",
+				"@org.springframework.batch.core.annotation.AfterProcess",
+				"@org.springframework.batch.core.annotation.OnProcessError"
+			],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.ItemWriteListener" : {
+			"assignments" : [
+				"org.springframework.batch.core.ItemWriteListener",
+				"@org.springframework.batch.core.annotation.BeforeWrite",
+				"@org.springframework.batch.core.annotation.AfterWrite",
+				"@org.springframework.batch.core.annotation.OnWriteError"
+			],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.SkipListener" : {
+			"assignments" : [
+				"org.springframework.batch.core.SkipListener",
+				"@org.springframework.batch.core.annotation.OnSkipInRead",
+				"@org.springframework.batch.core.annotation.OnSkipInProcess",
+				"@org.springframework.batch.core.annotation.OnSkipInWrite"
+			],
+			"groups" : [ "spring.batch" ]
+		},
 		"spring.data.Repository" : {
 			"assignments" : [
 				"@org.springframework.stereotype.Repository",
@@ -152,6 +237,9 @@
 		},
 		"spring.aot" : {
 			"displayName" : "Spring AOT"
+		},
+		"spring.batch" : {
+			"displayName" : "Spring Batch"
 		},
 		"spring.boot" : {
 			"displayName" : "Spring Boot"
