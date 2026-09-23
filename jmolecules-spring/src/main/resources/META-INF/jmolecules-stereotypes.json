@@ -247,6 +247,14 @@
 		"spring.web.graphql.BatchMapping" : {
 			"assignments" : [ "@org.springframework.graphql.data.method.annotation.BatchMapping" ],
 			"groups" : [ "spring.web.graphql" ]
+		},
+		"spring.ws.Endpoint" : {
+			"assignments" : [ "@org.springframework.ws.server.endpoint.annotation.Endpoint" ],
+			"groups" : [ "spring.ws" ]
+		},
+		"spring.ws.PayloadRoot" : {
+			"assignments" : [ "@org.springframework.ws.server.endpoint.annotation.PayloadRoot" ],
+			"groups" : [ "spring.ws" ]
 		}
 	},
 	"groups" : {
@@ -284,6 +292,9 @@
 		},
 		"spring.web.rest.hypermedia" : {
 			"displayName" : "Spring Hypermedia"
+		},
+		"spring.ws" : {
+			"displayName" : "Spring Web Services"
 		}
 	}
 }
