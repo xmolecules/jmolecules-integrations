@@ -227,6 +227,26 @@
 			"assignments" : [ "@org.springframework.web.bind.annotation.RequestMapping" ],
 			"displayName" : "Request Mappings",
 			"groups" : [ "spring.web" ]
+		},
+		"spring.web.graphql.QueryMapping" : {
+			"assignments" : [ "@org.springframework.graphql.data.method.annotation.QueryMapping" ],
+			"groups" : [ "spring.web.graphql" ]
+		},
+		"spring.web.graphql.MutationMapping" : {
+			"assignments" : [ "@org.springframework.graphql.data.method.annotation.MutationMapping" ],
+			"groups" : [ "spring.web.graphql" ]
+		},
+		"spring.web.graphql.SubscriptionMapping" : {
+			"assignments" : [ "@org.springframework.graphql.data.method.annotation.SubscriptionMapping" ],
+			"groups" : [ "spring.web.graphql" ]
+		},
+		"spring.web.graphql.SchemaMapping" : {
+			"assignments" : [ "@org.springframework.graphql.data.method.annotation.SchemaMapping" ],
+			"groups" : [ "spring.web.graphql" ]
+		},
+		"spring.web.graphql.BatchMapping" : {
+			"assignments" : [ "@org.springframework.graphql.data.method.annotation.BatchMapping" ],
+			"groups" : [ "spring.web.graphql" ]
 		}
 	},
 	"groups" : {
@@ -255,6 +275,9 @@
 		},
 		"spring.web" : {
 			"displayName" : "Spring Web"
+		},
+		"spring.web.graphql" : {
+			"displayName" : "Spring GraphQL"
 		},
 		"spring.web.rest" : {
 			"displayName" : "Spring REST"
