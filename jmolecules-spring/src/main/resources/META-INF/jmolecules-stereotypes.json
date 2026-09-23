@@ -228,6 +228,14 @@
 			"displayName" : "Request Mappings",
 			"groups" : [ "spring.web" ]
 		},
+		"spring.web.RouterFunction" : {
+			"assignments" : [ "org.springframework.web.reactive.function.server.RouterFunction" ],
+			"groups" : [ "spring.web" ]
+		},
+		"spring.web.HandlerFunction" : {
+			"assignments" : [ "org.springframework.web.reactive.function.server.HandlerFunction" ],
+			"groups" : [ "spring.web" ]
+		},
 		"spring.web.graphql.QueryMapping" : {
 			"assignments" : [ "@org.springframework.graphql.data.method.annotation.QueryMapping" ],
 			"groups" : [ "spring.web.graphql" ]
