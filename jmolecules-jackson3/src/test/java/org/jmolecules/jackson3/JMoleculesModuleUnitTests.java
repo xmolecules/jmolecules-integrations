@@ -28,6 +28,7 @@ import tools.jackson.databind.json.JsonMapper;
 import java.util.UUID;
 
 import org.jmolecules.ddd.annotation.ValueObject;
+import org.jmolecules.ddd.types.AggregateRoot;
 import org.jmolecules.ddd.types.Association;
 import org.jmolecules.ddd.types.Identifier;
 import org.junit.jupiter.api.Test;
@@ -101,6 +102,19 @@ class JMoleculesModuleUnitTests {
 		assertThat(wrapper.getId()).isNotNull();
 	}
 
+	@Test // GH-398
+	void deserializesAssociationWithImplicitCreator() throws Exception {
+
+		var uuidSource = "fe6f3370-5551-4251-86d3-b4db049a7ddd";
+		var uuid = UUID.fromString(uuidSource);
+
+		var result = mapper.readValue(
+				"{ \"customer\" : \"" + uuidSource + "\" }",
+				OrderWithPublicConstructor.class);
+
+		assertThat(result.getCustomer()).isEqualTo(Association.forId(SampleIdentifier.of(uuid)));
+	}
+
 	@Test // GH-347
 	void canBeFoundAndAddedDynamically() {
 
@@ -163,5 +177,48 @@ class JMoleculesModuleUnitTests {
 	@Data
 	static class Wrapper {
 		First first;
+	}
+
+	// GH-398
+
+	static class SampleAggregate implements AggregateRoot<SampleAggregate, SampleIdentifier> {
+
+		private final SampleIdentifier id;
+
+		SampleAggregate(SampleIdentifier id) {
+			this.id = id;
+		}
+
+		@Override
+		public SampleIdentifier getId() {
+			return id;
+		}
+	}
+
+	/**
+	 * Simulates a domain entity with a public constructor whose parameter name matches an
+	 * {@link Association}-typed bean property. Jackson 3 incorrectly selects such constructors as
+	 * implicit property-based creators, causing deserialization failures because the constructor
+	 * parameter type ({@code SampleAggregate}) does not match the bean property type
+	 * ({@code Association<SampleAggregate, SampleIdentifier>}).
+	 */
+	static class OrderWithPublicConstructor {
+
+		private Association<SampleAggregate, SampleIdentifier> customer;
+
+		OrderWithPublicConstructor() {
+		}
+
+		public OrderWithPublicConstructor(SampleAggregate customer) {
+			this.customer = Association.forAggregate(customer);
+		}
+
+		public Association<SampleAggregate, SampleIdentifier> getCustomer() {
+			return customer;
+		}
+
+		public void setCustomer(Association<SampleAggregate, SampleIdentifier> customer) {
+			this.customer = customer;
+		}
 	}
 }
