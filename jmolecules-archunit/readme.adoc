@@ -57,3 +57,62 @@ ArchUnit will verify the classes pointed to by <1> and the test will fail if vio
 <3> If you prefer to manually evaluate the violations, you can also declare a method annotated with `@ArchTest` and get the classes scanned for handed in as method argument.
 
 For detailed information about the rules, be sure to check out the types and method definitions in  https://github.com/xmolecules/jmolecules-integrations/blob/main/jmolecules-archunit/src/main/java/org/jmolecules/archunit[`org.jmolecules.archunit`].
+
+== Customizing the architecture rules
+
+The rules for the Hexagonal, Onion and Layered Architecture each come with an options type (`HexagonalVerificationOptions`, `OnionVerificationOptions` and `LayeredVerificationOptions`) to customize them, e.g. the way stereotypes are looked up, the depth of the verification, or the scope the rule is applied to.
+Start with the `defaults()` and derive customized instances from there.
+
+[source, java]
+----
+var options = HexagonalVerificationOptions.defaults()
+  .withDepth(VerificationDepth.SEMI_STRICT) // <1>
+  .withScope(JavaClass.Predicates.resideInAPackage("example.orders")); // <2>
+
+@ArchTest ArchRule hexagonal = JMoleculesArchitectureRules.ensureHexagonal(options);
+----
+<1> Configures how much access to non-port application code is allowed.
+<2> Restricts the verification to the given types. References from or to types outside the scope are ignored.
+
+=== Architectural units
+
+Annotations meta-annotated with `@ArchitecturalUnit` (e.g. `@Module`, `@Hexagon` or `@Onion`) declare packages as _architectural units_.
+The Hexagonal and Onion rules then also govern the references between units that use the respective architectural language.
+A unit uses a language if at least one of its types is assigned a stereotype of it, or if it is declared via `@Hexagon` or `@Onion`.
+By default, application code may refer to application code and primary ports of other units, secondary adapters to primary adapters (or infrastructure ring types to infrastructure ring types for the Onion Architecture).
+The options allow restricting which roles a unit exposes to other units and which of its roles may refer to other units:
+
+[source, java]
+----
+var options = HexagonalVerificationOptions.defaults()
+  .withExposure(Exposure.PRIMARY_ADAPTERS) // <1>
+  .withReferrers(Referrer.SECONDARY_ADAPTERS); // <2>
+----
+<1> Other units may only refer to a unit's primary adapters.
+<2> Only secondary adapters may refer to other units.
+
+Primary adapters (infrastructure ring types for the Onion Architecture) are only ever exposed to secondary adapters (infrastructure ring types) of other units.
+Individual units can replace the global settings via the `exposes` and `refersVia` attributes of `@Hexagon` and `@Onion`:
+
+[source, java]
+----
+@Hexagon(exposes = Exposure.PRIMARY_PORTS, refersVia = Referrer.SECONDARY_ADAPTERS)
+package example.orders;
+----
+
+Here, other units may only refer to the primary ports of `example.orders`, and only its secondary adapters may refer to other units, independently of the options configured.
+Units not using the architectural language are not restricted in what they refer to.
+
+Frameworks with their own notion of modules can provide an `ArchitecturalUnitResolver` via the options to define the units themselves.
+
+NOTE: As of jMolecules 2.1, packages annotated with `@Module` are architectural units, too.
+Code bases combining them with hexagonal or onion stereotypes might see new violations for references between modules.
+To verify the architecture as before, i.e. without considering any architectural units, opt out via `ArchitecturalUnitResolver.none()`:
+
+[source, java]
+----
+var options = HexagonalVerificationOptions.defaults()
+  .withUnitResolver(ArchitecturalUnitResolver.none());
+
+@ArchTest ArchRule hexagonal = JMoleculesArchitectureRules.ensureHexagonal(options);
+----

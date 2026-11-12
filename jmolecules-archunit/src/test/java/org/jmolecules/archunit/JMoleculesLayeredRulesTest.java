@@ -28,6 +28,7 @@ import org.jmolecules.archunit.layered.domain.DomainType;
 import org.jmolecules.archunit.layered.infra.InfraType;
 import org.jmolecules.archunit.layered.ui.UiType;
 
+import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
@@ -39,6 +40,7 @@ import com.tngtech.archunit.lang.EvaluationResult;
  * @author Oliver Drotbohm
  */
 @AnalyzeClasses(packagesOf = Layered.class)
+@SuppressWarnings("removal") // also covers the deprecated entry points until they are removed
 class JMoleculesLayeredRulesTest {
 
 	@ArchTest
@@ -86,6 +88,20 @@ class JMoleculesLayeredRulesTest {
 				violation(UiType.class, DomainByAnnotation.class), //
 				violation(UiType.class, InfraType.class), //
 				violation(UiType.class, InfraByAnnotation.class) //
+		);
+	}
+
+	@ArchTest // GH-418
+	void onlyVerifiesTypesInScope(JavaClasses types) {
+
+		LayeredVerificationOptions options = LayeredVerificationOptions.defaults()
+				.withScope(JavaClass.Predicates.resideInAnyPackage("org.jmolecules.archunit.layered.app",
+						"org.jmolecules.archunit.layered.ui"));
+
+		EvaluationResult result = JMoleculesArchitectureRules.ensureLayering(options).evaluate(types);
+
+		assertThat(result.getFailureReport().getDetails()).satisfiesExactlyInAnyOrder( //
+				violation(AppType.class, UiType.class) //
 		);
 	}
 }
