@@ -79,7 +79,7 @@ var options = HexagonalVerificationOptions.defaults()
 Annotations meta-annotated with `@ArchitecturalUnit` (e.g. `@Module`, `@Hexagon` or `@Onion`) declare packages as _architectural units_.
 The Hexagonal and Onion rules then also govern the references between units that use the respective architectural language.
 A unit uses a language if at least one of its types is assigned a stereotype of it, or if it is declared via `@Hexagon` or `@Onion`.
-By default, application code may refer to application code and primary ports of other units, secondary adapters to primary adapters (or infrastructure ring types to infrastructure ring types for the Onion Architecture).
+By default, application code may refer to application code and primary ports of other units, secondary adapters to primary adapters and primary ports (or infrastructure ring types to infrastructure ring types for the Onion Architecture).
 The options allow restricting which roles a unit exposes to other units and which of its roles may refer to other units:
 
 [source, java]

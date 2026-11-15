@@ -19,6 +19,7 @@ import org.jmolecules.architecture.hexagonal.SecondaryAdapter;
 import org.jmolecules.archunit.hexagonal.units.a.nested.PrimaryAdapterNested;
 import org.jmolecules.archunit.hexagonal.units.b.HelperB;
 import org.jmolecules.archunit.hexagonal.units.b.PrimaryAdapterB;
+import org.jmolecules.archunit.hexagonal.units.b.PrimaryPortB;
 import org.jmolecules.archunit.hexagonal.units.b.SecondaryPortB;
 import org.jmolecules.archunit.hexagonal.units.c.PrimaryAdapterC;
 import org.jmolecules.archunit.hexagonal.units.none.PrimaryAdapterNone;
@@ -31,6 +32,8 @@ class SecondaryAdapterA {
 	PrimaryAdapterB primaryAdapterB; // other unit (Module) -> allowed
 	PrimaryAdapterC primaryAdapterC; // other unit (custom annotation) -> allowed
 	PrimaryAdapterNone primaryAdapterNone; // no unit -> violation
-	SecondaryPortB secondaryPortB; // other unit, but no primary adapter -> violation
+	PrimaryPortA primaryPortA; // same unit -> violation
+	PrimaryPortB primaryPortB; // other unit -> allowed
+	SecondaryPortB secondaryPortB; // other unit, but neither primary adapter nor primary port -> violation
 	HelperB helperB; // unannotated type of other unit -> violation
 }

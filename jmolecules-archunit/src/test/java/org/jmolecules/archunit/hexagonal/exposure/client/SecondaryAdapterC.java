@@ -17,8 +17,10 @@ package org.jmolecules.archunit.hexagonal.exposure.client;
 
 import org.jmolecules.architecture.hexagonal.SecondaryAdapter;
 import org.jmolecules.archunit.hexagonal.exposure.ports.PrimaryAdapterP;
+import org.jmolecules.archunit.hexagonal.exposure.ports.PrimaryPortP;
 
 @SecondaryAdapter
 class SecondaryAdapterC {
 	PrimaryAdapterP primaryAdapterP; // primary adapters not exposed -> violation
+	PrimaryPortP primaryPortP; // primary ports exposed -> allowed
 }

@@ -216,10 +216,12 @@ class JMoleculesHexagonalRulesTest {
 				"a.SecondaryAdapterA.helperB", //
 				"a.SecondaryAdapterA.primaryAdapterA", //
 				"a.SecondaryAdapterA.primaryAdapterNone", //
+				"a.SecondaryAdapterA.primaryPortA", //
 				"a.SecondaryAdapterA.secondaryPortB", //
 				"b.PrimaryAdapterB.primaryPortA", //
 				"d.PlainD.helperB", //
-				"none.SecondaryAdapterNone.primaryAdapterB") //
+				"none.SecondaryAdapterNone.primaryAdapterB", //
+				"none.SecondaryAdapterNone.primaryPortB") //
 				.map(PREFIX::concat) //
 				.collect(Collectors.toList());
 
@@ -227,6 +229,7 @@ class JMoleculesHexagonalRulesTest {
 				"a.ApplicationA.applicationB", //
 				"a.ApplicationA.primaryPortB", //
 				"a.HelperA.plainE", //
+				"a.SecondaryAdapterA.primaryPortB", //
 				"d.PlainD.primaryPortB") //
 				.map(PREFIX::concat)) //
 				.collect(Collectors.toList());
@@ -245,6 +248,18 @@ class JMoleculesHexagonalRulesTest {
 								.contains("SecondaryPortB belongs to architectural unit Unit B")
 								.contains("only exposes primary adapters (to secondary adapters), application code and primary ports."));
 			});
+		}
+
+		@ArchTest // GH-418
+		void allowsSecondaryAdaptersToReferToPrimaryPortsOfOtherUnitsOnly(JavaClasses classes) {
+
+			assertThat(ensureHexagonal().evaluate(classes).getFailureReport().getDetails())
+					.noneSatisfy(it -> assertThat(it).contains("SecondaryAdapterA.primaryPortB"))
+					.anySatisfy(it -> assertThat(it).contains("SecondaryAdapterA.primaryPortA")
+							.contains("SecondaryAdapterA and PrimaryPortA both belong to architectural unit Unit A")
+							.contains("Secondary adapters may only refer to primary adapters or primary ports of other"))
+					.anySatisfy(it -> assertThat(it).contains("SecondaryAdapterNone.primaryPortB")
+							.contains("is not part of any architectural unit"));
 		}
 
 		@ArchTest // GH-418
@@ -287,7 +302,8 @@ class JMoleculesHexagonalRulesTest {
 					.withScope(JavaClass.Predicates.resideInAPackage("org.jmolecules.archunit.hexagonal.units.a"));
 
 			assertExpectedViolations(ensureHexagonal(options).evaluate(classes),
-					List.of("a.SecondaryAdapterA.primaryAdapterA").stream().map(PREFIX::concat).collect(Collectors.toList()));
+					List.of("a.SecondaryAdapterA.primaryAdapterA", "a.SecondaryAdapterA.primaryPortA").stream()
+							.map(PREFIX::concat).collect(Collectors.toList()));
 		}
 
 		@ArchTest // GH-418

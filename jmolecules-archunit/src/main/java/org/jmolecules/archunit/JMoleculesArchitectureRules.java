@@ -490,7 +490,7 @@ public class JMoleculesArchitectureRules {
 	 * restricted for units using hexagonal stereotypes: by default, their secondary adapters, application code and types
 	 * without a hexagonal stereotype may refer to other units, and other units may refer to their application code and
 	 * primary ports, as well as their primary adapters from secondary adapters or units not using hexagonal stereotypes.
-	 * Secondary adapters may only refer to primary adapters of other units. See
+	 * Secondary adapters may only refer to primary adapters and primary ports of other units. See
 	 * {@link HexagonalVerificationOptions#withExposure(Hexagon.Exposure...)} and
 	 * {@link HexagonalVerificationOptions#withReferrers(Hexagon.Referrer...)} to restrict that globally, and
 	 * {@link Hexagon#exposes()} and {@link Hexagon#refersVia()} to do so for individual units.
@@ -537,7 +537,8 @@ public class JMoleculesArchitectureRules {
 				.whereLayer(HEXAGONAL_SECONDARY_ADAPTER)
 				.mayOnlyAccessLayers(
 						depth.augmentSecondary(ANNOTATIONS, UNANNOTATED, HEXAGONAL_SECONDARY_PORT,
-								HEXAGONAL_PORT_UNQUALIFIED, HEXAGONAL_ADAPTER_UNQUALIFIED, HEXAGONAL_PRIMARY_ADAPTER))
+								HEXAGONAL_PORT_UNQUALIFIED, HEXAGONAL_ADAPTER_UNQUALIFIED, HEXAGONAL_PRIMARY_ADAPTER,
+								HEXAGONAL_PRIMARY_PORT))
 
 				// Ports
 
@@ -680,8 +681,8 @@ public class JMoleculesArchitectureRules {
 	 * Verifies the references between {@link ArchitecturalUnit}s for the Hexagonal Architecture, considering only units
 	 * using hexagonal stereotypes. See {@link #ensureHexagonal(HexagonalVerificationOptions)} for details.
 	 * Complements the layer definition in {@link #hexagonalLayers(HexagonalVerificationOptions)} that generally
-	 * permits secondary adapters to access primary adapters, as {@link LayeredArchitecture} cannot express constraints
-	 * between individual origin and target types.
+	 * permits secondary adapters to access primary adapters and primary ports, as {@link LayeredArchitecture} cannot
+	 * express constraints between individual origin and target types.
 	 *
 	 * @param options must not be {@literal null}.
 	 * @return will never be {@literal null}.
@@ -716,8 +717,8 @@ public class JMoleculesArchitectureRules {
 						false));
 
 		UnitRoles roles = new UnitRoles("hexagonal stereotypes", stereotyped, secondaryAdapter, "secondary adapters",
-				primaryAdapter, "primary adapters", true, declarable ? HexagonAnnotation.NAME : null, null, exposures,
-				referrers);
+				primaryAdapter.or(primaryPort), "primary adapters or primary ports", true,
+				declarable ? HexagonAnnotation.NAME : null, null, exposures, referrers);
 
 		return unitBoundaries(roles, options);
 	}

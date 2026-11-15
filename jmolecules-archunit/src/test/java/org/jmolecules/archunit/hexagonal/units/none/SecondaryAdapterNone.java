@@ -17,9 +17,11 @@ package org.jmolecules.archunit.hexagonal.units.none;
 
 import org.jmolecules.architecture.hexagonal.SecondaryAdapter;
 import org.jmolecules.archunit.hexagonal.units.b.PrimaryAdapterB;
+import org.jmolecules.archunit.hexagonal.units.b.PrimaryPortB;
 
 @SecondaryAdapter
 class SecondaryAdapterNone {
 
 	PrimaryAdapterB primaryAdapterB; // origin not in any unit -> violation
+	PrimaryPortB primaryPortB; // origin not in any unit -> violation
 }
