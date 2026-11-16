@@ -71,27 +71,35 @@ var options = HexagonalVerificationOptions.defaults()
 
 @ArchTest ArchRule hexagonal = JMoleculesArchitectureRules.ensureHexagonal(options);
 ----
-<1> Configures how much access to non-port application code is allowed.
+<1> Configures how much access to non-port application code is allowed within Hexagons. `SEMI_STRICT` allows secondary adapters to access application code (to avoid too many application types, such as aggregates and identifiers having to be moved to secondary ports). `LENIENT` allows primary adapters to access application code and secondary adapters directly.
 <2> Restricts the verification to the given types. References from or to types outside the scope are ignored.
 
 === Architectural units
 
 Annotations meta-annotated with `@ArchitecturalUnit` (e.g. `@Module`, `@Hexagon` or `@Onion`) declare packages as _architectural units_.
-The Hexagonal and Onion rules then also govern the references between units that use the respective architectural language.
+The Hexagonal rules are then applied to each unit using the language individually, and once to the code outside of any unit, i.e. references within a hexagon (and to code outside of any hexagon) are subject to the usual layering rules.
+References between units are governed by the roles a unit exposes and the roles that may refer to other units, as described below.
+The Onion rules govern the references between units that use the respective architectural language in the same way.
 A unit uses a language if at least one of its types is assigned a stereotype of it, or if it is declared via `@Hexagon` or `@Onion`.
-By default, application code may refer to application code and primary ports of other units, secondary adapters to primary adapters and primary ports (or infrastructure ring types to infrastructure ring types for the Onion Architecture).
-The options allow restricting which roles a unit exposes to other units and which of its roles may refer to other units:
+For the Hexagonal Architecture, by default, only secondary adapters may refer to other units, and only to their primary adapters.
+For the Onion Architecture, by default, only infrastructure ring types may refer to other units, and only to their infrastructure ring types.
+
+==== Customizing Exposure and Referrers
+
+The options allow configuring which roles a unit exposes to other units and which of its roles may refer to other units:
 
 [source, java]
 ----
 var options = HexagonalVerificationOptions.defaults()
-  .withExposure(Exposure.PRIMARY_ADAPTERS) // <1>
-  .withReferrers(Referrer.SECONDARY_ADAPTERS); // <2>
+  .withExposure(Exposure.PRIMARY_ADAPTERS, Exposure.PRIMARY_PORTS) // <1>
+  .withReferrers(Referrer.SECONDARY_ADAPTERS, Referrer.APPLICATION); // <2>
 ----
-<1> Other units may only refer to a unit's primary adapters.
-<2> Only secondary adapters may refer to other units.
+<1> Other units may refer to a unit's primary adapters and primary ports.
+<2> Secondary adapters and application code (including types without hexagonal stereotypes) may refer to other units.
 
-Primary adapters (infrastructure ring types for the Onion Architecture) are only ever exposed to secondary adapters (infrastructure ring types) of other units.
+Secondary ports can be exposed via `Exposure.SECONDARY_PORTS`, e.g. to allow other units to use a repository directly instead of going through a primary port and the application code. Declaring that on the unit documents the design decision.
+
+Primary adapters (infrastructure ring types for the Onion Architecture) by default are only ever exposed to secondary adapters (infrastructure ring types) of other units.
 Individual units can replace the global settings via the `exposes` and `refersVia` attributes of `@Hexagon` and `@Onion`:
 
 [source, java]
@@ -100,8 +108,34 @@ Individual units can replace the global settings via the `exposes` and `refersVi
 package example.orders;
 ----
 
-Here, other units may only refer to the primary ports of `example.orders`, and only its secondary adapters may refer to other units, independently of the options configured.
-Units not using the architectural language are not restricted in what they refer to.
+Here, other units may only refer to the primary ports of `example.orders`, and only the hexagons secondary adapters may refer to other units, independently of the general options configured.
+
+To add roles to the globally configured ones (or the ones declared via `exposes` and `refersVia`) instead of replacing them, use `additionallyExposes` and `additionallyRefersVia`.
+The options offer the same via `withAdditionalExposure(…)` and `withAdditionalReferrers(…)`:
+
+[source, java]
+----
+@Hexagon(additionallyExposes = Exposure.SECONDARY_PORTS)
+package example.orders;
+----
+
+[source, java]
+----
+var options = HexagonalVerificationOptions.defaults()
+  .withAdditionalExposure(Exposure.SECONDARY_PORTS);
+----
+
+The referrers setting only applies to units using a particular architectural language.
+In units not using it, as well as in code outside of any unit, any type may refer to other units, but only to the types those units expose.
+
+==== Direct Application-Level Access
+
+`withDirectApplicationAccess()` on the Hexagonal and Onion options allows the application core (application code including types without stereotypes of the language, as well as primary and secondary ports for the Hexagonal Architecture) to refer to the application code and primary ports (application ring types for the Onion Architecture) of other units, as well as to all types of units not using the language.
+That access is granted independently of the exposure and referrers configured, globally or on the individual units.
+`withoutDirectApplicationAccess()` disables it again.
+All other references, e.g. secondary adapters referring to primary ports of other units, still require the roles to be exposed explicitly.
+
+==== Customizing Unit Resolution
 
 Frameworks with their own notion of modules can provide an `ArchitecturalUnitResolver` via the options to define the units themselves.
 

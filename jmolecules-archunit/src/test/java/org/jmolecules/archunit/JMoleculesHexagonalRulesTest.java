@@ -19,7 +19,9 @@ import static org.assertj.core.api.Assertions.*;
 import static org.jmolecules.archunit.JMoleculesArchitectureRules.*;
 
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -220,8 +222,7 @@ class JMoleculesHexagonalRulesTest {
 				"a.SecondaryAdapterA.secondaryPortB", //
 				"b.PrimaryAdapterB.primaryPortA", //
 				"d.PlainD.helperB", //
-				"none.SecondaryAdapterNone.primaryAdapterB", //
-				"none.SecondaryAdapterNone.primaryPortB") //
+				"none.SecondaryAdapterNone.primaryAdapterNone") //
 				.map(PREFIX::concat) //
 				.collect(Collectors.toList());
 
@@ -230,47 +231,51 @@ class JMoleculesHexagonalRulesTest {
 				"a.ApplicationA.primaryPortB", //
 				"a.HelperA.plainE", //
 				"a.SecondaryAdapterA.primaryPortB", //
-				"d.PlainD.primaryPortB") //
+				"d.PlainD.primaryPortB", //
+				"none.SecondaryAdapterNone.primaryPortB") //
 				.map(PREFIX::concat)) //
 				.collect(Collectors.toList());
 
 		@ArchTest // GH-418
-		void allowsApplicationAccessBetweenUnitsByDefault(JavaClasses classes) {
-
-			Stream.of(VerificationDepth.values()).forEach(depth -> {
-
-				EvaluationResult result = ensureHexagonal(depth, StereotypeLookup.defaultLookup()).evaluate(classes);
-
-				assertExpectedViolations(result, expected);
-				assertThat(result.getFailureReport().getDetails())
-						.anySatisfy(it -> assertThat(it).contains("primaryAdapterA").contains("Unit A (a)"))
-						.anySatisfy(it -> assertThat(it).contains("SecondaryAdapterA.secondaryPortB")
-								.contains("SecondaryPortB belongs to architectural unit Unit B")
-								.contains("only exposes primary adapters (to secondary adapters), application code and primary ports."));
-			});
-		}
-
-		@ArchTest // GH-418
-		void allowsSecondaryAdaptersToReferToPrimaryPortsOfOtherUnitsOnly(JavaClasses classes) {
-
-			assertThat(ensureHexagonal().evaluate(classes).getFailureReport().getDetails())
-					.noneSatisfy(it -> assertThat(it).contains("SecondaryAdapterA.primaryPortB"))
-					.anySatisfy(it -> assertThat(it).contains("SecondaryAdapterA.primaryPortA")
-							.contains("SecondaryAdapterA and PrimaryPortA both belong to architectural unit Unit A")
-							.contains("Secondary adapters may only refer to primary adapters or primary ports of other"))
-					.anySatisfy(it -> assertThat(it).contains("SecondaryAdapterNone.primaryPortB")
-							.contains("is not part of any architectural unit"));
-		}
-
-		@ArchTest // GH-418
-		void onlyAllowsSecondaryAdaptersToReferToOtherUnitsInStrictMode(JavaClasses classes) {
+		void allowsApplicationAccessBetweenUnitsIfConfigured(JavaClasses classes) {
 
 			Stream.of(VerificationDepth.values()).forEach(depth -> {
 
 				HexagonalVerificationOptions options = HexagonalVerificationOptions.defaults()
 						.withDepth(depth)
-						.withExposure(Exposure.PRIMARY_ADAPTERS)
-						.withReferrers(Referrer.SECONDARY_ADAPTERS);
+						.withExposure(Exposure.PRIMARY_ADAPTERS, Exposure.PRIMARY_PORTS, Exposure.APPLICATION)
+						.withReferrers(Referrer.SECONDARY_ADAPTERS, Referrer.APPLICATION);
+
+				EvaluationResult result = ensureHexagonal(options).evaluate(classes);
+
+				assertExpectedViolations(result, expected);
+				assertThat(result.getFailureReport().getDetails())
+						.anySatisfy(it -> assertThat(it).contains("SecondaryAdapterA.primaryAdapterA>")
+								.doesNotContain("architectural unit"))
+						.anySatisfy(it -> assertThat(it).contains("SecondaryAdapterA.primaryPortA>")
+								.doesNotContain("architectural unit"))
+						.noneSatisfy(it -> assertThat(it).contains("SecondaryAdapterA.primaryPortB>"))
+						.anySatisfy(it -> assertThat(it).contains("SecondaryAdapterA.secondaryPortB")
+								.contains("SecondaryPortB belongs to architectural unit Unit B")
+								.contains(
+										"only exposes primary adapters (to secondary adapters), application code and primary ports."));
+			});
+		}
+
+		@ArchTest // GH-418
+		void onlyAllowsSecondaryAdaptersToReferToOtherUnitsByDefault(JavaClasses classes) {
+
+			HexagonalVerificationOptions defaults = HexagonalVerificationOptions.defaults();
+
+			assertThat(defaults.getDepth()).isEqualTo(VerificationDepth.STRICT);
+			assertThat(defaults.getExposure()).containsExactly(Exposure.PRIMARY_ADAPTERS.name());
+			assertThat(defaults.getReferrers()).containsExactly(Referrer.SECONDARY_ADAPTERS.name());
+
+			assertExpectedViolations(ensureHexagonal().evaluate(classes), strict);
+
+			Stream.of(VerificationDepth.values()).forEach(depth -> {
+
+				HexagonalVerificationOptions options = HexagonalVerificationOptions.defaults().withDepth(depth);
 
 				EvaluationResult result = ensureHexagonal(options).evaluate(classes);
 
@@ -307,13 +312,157 @@ class JMoleculesHexagonalRulesTest {
 		}
 
 		@ArchTest // GH-418
-		void exposesAndAllowsReferencesFromAllRolesByDefault(JavaClasses classes) {
+		void appliesGlobalRulesToTypesOutsideOfUnitsOnly(JavaClasses classes) {
 
-			assertThat(HexagonalVerificationOptions.defaults().getDepth()).isEqualTo(VerificationDepth.STRICT);
-			assertThat(HexagonalVerificationOptions.defaults().getExposure()).isNull();
-			assertThat(HexagonalVerificationOptions.defaults().getReferrers()).isNull();
+			HexagonalVerificationOptions options = HexagonalVerificationOptions.defaults()
+					.withExposure(Exposure.values())
+					.withReferrers(Referrer.values());
 
-			assertExpectedViolations(ensureHexagonal(HexagonalVerificationOptions.defaults()).evaluate(classes), expected);
+			List<String> details = ensureHexagonal(options).evaluate(classes).getFailureReport().getDetails();
+
+			// Secondary adapters must not refer to primary adapters unless they cross unit boundaries
+			assertThat(details)
+					.anySatisfy(it -> assertThat(it).contains("SecondaryAdapterNone.primaryAdapterNone>")
+							.doesNotContain("architectural unit"))
+					.anySatisfy(it -> assertThat(it).contains("SecondaryAdapterA.primaryAdapterNone>")
+							.doesNotContain("architectural unit"))
+					.noneSatisfy(it -> assertThat(it).contains("SecondaryAdapterNone.primaryAdapterB>"))
+					.noneSatisfy(it -> assertThat(it).contains("SecondaryAdapterA.primaryAdapterB>"));
+		}
+
+		@ArchTest // GH-418
+		void respectsExposureOfUnitsForTypesOutsideOfUnits(JavaClasses classes) {
+
+			List<String> details = ensureHexagonal().evaluate(classes).getFailureReport().getDetails();
+
+			// Primary adapters are exposed by default, primary ports are not
+			assertThat(details)
+					.noneSatisfy(it -> assertThat(it).contains("SecondaryAdapterNone.primaryAdapterB>"))
+					.anySatisfy(it -> assertThat(it).contains("SecondaryAdapterNone.primaryPortB>")
+							.contains("which only exposes primary adapters (to secondary adapters)."));
+
+			HexagonalVerificationOptions options = HexagonalVerificationOptions.defaults()
+					.withExposure(Exposure.PRIMARY_PORTS);
+
+			assertThat(ensureHexagonal(options).evaluate(classes).getFailureReport().getDetails())
+					.noneSatisfy(it -> assertThat(it).contains("SecondaryAdapterNone.primaryPortB>"))
+					.anySatisfy(it -> assertThat(it).contains("SecondaryAdapterNone.primaryAdapterB>")
+							.contains("which only exposes primary ports."));
+		}
+
+		@ArchTest // GH-418
+		void exposureCustomizationsReportReferencesToTypesOfOtherRoles(JavaClasses classes) {
+
+			// Fields referring to a type of unit B, by the exposure that is needed for them to be accepted
+			Map<Exposure, List<String>> fields = new EnumMap<>(Exposure.class);
+			fields.put(Exposure.APPLICATION, List.of("ApplicationA.applicationB"));
+			fields.put(Exposure.PRIMARY_PORTS,
+					List.of("ApplicationA.primaryPortB", "SecondaryAdapterA.primaryPortB", "PlainD.primaryPortB"));
+			fields.put(Exposure.PRIMARY_ADAPTERS, List.of("SecondaryAdapterA.primaryAdapterB", "PlainD.primaryAdapterB"));
+			fields.put(Exposure.SECONDARY_PORTS, List.of("ApplicationA.secondaryPortB", "SecondaryAdapterA.secondaryPortB"));
+
+			Map<Exposure, String> descriptions = new EnumMap<>(Exposure.class);
+			descriptions.put(Exposure.APPLICATION, "which only exposes application code.");
+			descriptions.put(Exposure.PRIMARY_PORTS, "which only exposes primary ports.");
+			descriptions.put(Exposure.PRIMARY_ADAPTERS, "which only exposes primary adapters (to secondary adapters).");
+			descriptions.put(Exposure.SECONDARY_PORTS, "which only exposes secondary ports.");
+
+			for (Exposure exposed : Exposure.values()) {
+
+				HexagonalVerificationOptions options = HexagonalVerificationOptions.defaults()
+						.withExposure(exposed)
+						.withReferrers(Referrer.values());
+
+				List<String> details = ensureHexagonal(options).evaluate(classes).getFailureReport().getDetails();
+
+				fields.forEach((role, names) -> names.forEach(name -> {
+
+					if (role == exposed) {
+						assertNotReported(details, name);
+					} else {
+						assertReported(details, name, descriptions.get(exposed));
+					}
+				}));
+			}
+		}
+
+		@ArchTest // GH-418
+		void referrerCustomizationsReportReferencesFromTypesOfOtherRoles(JavaClasses classes) {
+
+			// Fields referring to a type of another unit, by the referrer that is needed for them to be accepted
+			Map<Referrer, List<String>> fields = new EnumMap<>(Referrer.class);
+			fields.put(Referrer.APPLICATION,
+					List.of("ApplicationA.applicationB", "ApplicationA.primaryPortB", "HelperA.plainE"));
+			fields.put(Referrer.SECONDARY_ADAPTERS,
+					List.of("SecondaryAdapterA.primaryAdapterB", "SecondaryAdapterA.primaryPortB"));
+			fields.put(Referrer.PRIMARY_ADAPTERS, List.of("PrimaryAdapterB.primaryPortA"));
+
+			Map<Referrer, String> descriptions = new EnumMap<>(Referrer.class);
+			descriptions.put(Referrer.APPLICATION,
+					"Only application code (including types without hexagonal stereotypes) may refer to other architectural units");
+			descriptions.put(Referrer.SECONDARY_ADAPTERS, "Only secondary adapters may refer to other architectural units");
+			descriptions.put(Referrer.PRIMARY_ADAPTERS, "Only primary adapters may refer to other architectural units");
+			descriptions.put(Referrer.PRIMARY_PORTS, "Only primary ports may refer to other architectural units");
+			descriptions.put(Referrer.SECONDARY_PORTS, "Only secondary ports may refer to other architectural units");
+
+			for (Referrer allowed : Referrer.values()) {
+
+				HexagonalVerificationOptions options = HexagonalVerificationOptions.defaults()
+						.withExposure(Exposure.values())
+						.withReferrers(allowed);
+
+				List<String> details = ensureHexagonal(options).evaluate(classes).getFailureReport().getDetails();
+
+				fields.forEach((role, names) -> names.forEach(name -> {
+
+					if (role == allowed) {
+						assertNotReported(details, name);
+					} else {
+						assertReported(details, name, descriptions.get(allowed));
+					}
+				}));
+
+				// Origins in units not using hexagonal stereotypes are not restricted in what they refer to
+				assertNotReported(details, "PlainD.primaryAdapterB");
+				assertNotReported(details, "PlainD.primaryPortB");
+			}
+		}
+
+		@ArchTest // GH-418
+		void directApplicationAccessOnlyOpensApplicationCodeAndPrimaryPortsToApplicationCode(JavaClasses classes) {
+
+			HexagonalVerificationOptions options = HexagonalVerificationOptions.defaults().withDirectApplicationAccess();
+
+			// Exposure and referrers stay untouched
+			assertThat(options.getExposure()).containsExactly(Exposure.PRIMARY_ADAPTERS.name());
+			assertThat(options.getReferrers()).containsExactly(Referrer.SECONDARY_ADAPTERS.name());
+
+			List<String> details = ensureHexagonal(options).evaluate(classes).getFailureReport().getDetails();
+
+			assertNotReported(details, "a.ApplicationA.applicationB");
+			assertNotReported(details, "a.ApplicationA.primaryPortB");
+			assertNotReported(details, "d.PlainD.primaryPortB");
+			assertNotReported(details, "a.SecondaryAdapterA.primaryAdapterB");
+			assertReported(details, "a.SecondaryAdapterA.primaryPortB", "which only exposes primary adapters");
+			assertReported(details, "a.ApplicationA.secondaryPortB",
+					"Only secondary adapters, as well as application code and ports (to application code and primary ports), may refer");
+
+			// Explicitly exposed roles are available to all referrers
+			details = ensureHexagonal(options.withExposure(Exposure.PRIMARY_ADAPTERS, Exposure.PRIMARY_PORTS))
+					.evaluate(classes).getFailureReport().getDetails();
+
+			assertNotReported(details, "a.SecondaryAdapterA.primaryPortB");
+			assertNotReported(details, "a.ApplicationA.applicationB");
+		}
+
+		private static void assertReported(List<String> details, String field, String reason) {
+
+			assertThat(details).as(field)
+					.anySatisfy(it -> assertThat(it).contains(field + ">").contains(reason));
+		}
+
+		private static void assertNotReported(List<String> details, String field) {
+			assertThat(details).as(field).noneSatisfy(it -> assertThat(it).contains(field + ">"));
 		}
 	}
 
@@ -325,7 +474,11 @@ class JMoleculesHexagonalRulesTest {
 		@ArchTest // GH-418
 		void onlyAllowsReferencesToTypesExposedByUnit(JavaClasses classes) {
 
-			EvaluationResult result = ensureHexagonal().evaluate(classes);
+			HexagonalVerificationOptions options = HexagonalVerificationOptions.defaults()
+					.withExposure(Exposure.values())
+					.withReferrers(Referrer.values());
+
+			EvaluationResult result = ensureHexagonal(options).evaluate(classes);
 
 			assertExpectedViolations(result, Stream.of( //
 					"client.SecondaryAdapterC.primaryAdapterP", //
@@ -346,11 +499,9 @@ class JMoleculesHexagonalRulesTest {
 		}
 
 		@ArchTest // GH-418
-		void declaredExposureAndReferrersOverrideGlobalSettings(JavaClasses classes) {
+		void declaredExposureAndReferrersOverrideDefaultSettings(JavaClasses classes) {
 
-			HexagonalVerificationOptions options = HexagonalVerificationOptions.defaults()
-					.withExposure(Exposure.PRIMARY_ADAPTERS)
-					.withReferrers(Referrer.SECONDARY_ADAPTERS);
+			HexagonalVerificationOptions options = HexagonalVerificationOptions.defaults();
 
 			// Application code still must not refer to other units unless a unit allows it explicitly (liberal), but the
 			// types exposed explicitly are accessible to others
@@ -390,7 +541,8 @@ class JMoleculesHexagonalRulesTest {
 		@ArchTest // GH-418
 		void doesNotDetectUnitsWithoutAnnotationsByDefault(JavaClasses classes) {
 
-			// Types are not part of any unit, so the allowed reference cannot be accepted and the other one is not checked
+			// Without annotations there are no units, so the secondary adapter referring to a primary adapter is a plain
+			// layer violation
 			assertExpectedViolations(ensureHexagonal().evaluate(classes), List.of("SecondaryAdapterX.primaryAdapterY"));
 		}
 
@@ -401,6 +553,41 @@ class JMoleculesHexagonalRulesTest {
 
 			assertExpectedViolations(ensureHexagonal(options).evaluate(classes),
 					List.of("PrimaryAdapterX.primaryAdapterY"));
+		}
+	}
+
+	@AnalyzeClasses(packages = "org.jmolecules.archunit.hexagonal.nested")
+	static class NestedUnitBased {
+
+		@ArchTest // GH-418
+		void verifiesNestedUnitsIndividually(JavaClasses classes) {
+
+			// The layer rules only apply within a unit, i.e. not to references between the outer and the nested one, which
+			// are governed by the units' exposure instead. Types in sub-packages belong to the nearest unit.
+			assertExpectedViolations(ensureHexagonal().evaluate(classes), Stream.of( //
+					"outer.SecondaryAdapterO.primaryAdapterO", //
+					"outer.inner.SecondaryAdapterI.primaryAdapterI", //
+					"outer.inner.deeper.SecondaryAdapterDeep.primaryAdapterI") //
+					.map("Field <org.jmolecules.archunit.hexagonal.nested."::concat) //
+					.collect(Collectors.toList()));
+		}
+
+		@ArchTest // GH-418
+		void respectsExposureBetweenOuterAndNestedUnits(JavaClasses classes) {
+
+			HexagonalVerificationOptions options = HexagonalVerificationOptions.defaults()
+					.withExposure(Exposure.PRIMARY_PORTS);
+
+			// Primary adapters are not exposed anymore, so the references between the units are reported now
+			List<String> details = ensureHexagonal(options).evaluate(classes).getFailureReport().getDetails();
+
+			assertThat(details)
+					.anySatisfy(it -> assertThat(it).contains("SecondaryAdapterO.primaryAdapterI>")
+							.contains("PrimaryAdapterI belongs to architectural unit Inner"))
+					.anySatisfy(it -> assertThat(it).contains("SecondaryAdapterI.primaryAdapterO>")
+							.contains("PrimaryAdapterO belongs to architectural unit Outer"))
+					.anySatisfy(it -> assertThat(it).contains("SecondaryAdapterDeep.primaryAdapterO>")
+							.contains("PrimaryAdapterO belongs to architectural unit Outer"));
 		}
 	}
 

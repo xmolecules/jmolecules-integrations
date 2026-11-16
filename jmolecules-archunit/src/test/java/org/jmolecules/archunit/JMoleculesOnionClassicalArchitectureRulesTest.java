@@ -38,7 +38,6 @@ import com.tngtech.archunit.lang.EvaluationResult;
  * @author Oliver Drotbohm
  */
 @AnalyzeClasses(packagesOf = OnionClassical.class)
-@SuppressWarnings("removal") // also covers the deprecated entry points until they are removed
 class JMoleculesOnionClassicalArchitectureRulesTest {
 
 	@ArchTest

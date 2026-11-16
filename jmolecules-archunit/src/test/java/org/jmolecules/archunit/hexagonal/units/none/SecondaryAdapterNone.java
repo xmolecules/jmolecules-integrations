@@ -22,6 +22,7 @@ import org.jmolecules.archunit.hexagonal.units.b.PrimaryPortB;
 @SecondaryAdapter
 class SecondaryAdapterNone {
 
-	PrimaryAdapterB primaryAdapterB; // origin not in any unit -> violation
-	PrimaryPortB primaryPortB; // origin not in any unit -> violation
+	PrimaryAdapterB primaryAdapterB; // origin not in any unit, exposed by the unit -> allowed
+	PrimaryPortB primaryPortB; // origin not in any unit, exposure decides
+	PrimaryAdapterNone primaryAdapterNone; // neither in any unit -> violation
 }

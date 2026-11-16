@@ -17,6 +17,7 @@ package org.jmolecules.archunit;
 
 import static org.assertj.core.api.Assertions.*;
 
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -54,6 +55,16 @@ class TestUtils {
 
 		return violation("Field.*%s\\.%s.*%s.*%s.*", //
 				source.getSimpleName(), field, expected.getSimpleName(), actual == null ? "" : actual.getSimpleName());
+	}
+
+	static void assertReported(List<String> details, String field, String reason) {
+
+		assertThat(details).as(field)
+				.anySatisfy(it -> assertThat(it).contains(field + ">").contains(reason));
+	}
+
+	static void assertNotReported(List<String> details, String field) {
+		assertThat(details).as(field).noneSatisfy(it -> assertThat(it).contains(field + ">"));
 	}
 
 	static String abbreviate(Class<?> type) {

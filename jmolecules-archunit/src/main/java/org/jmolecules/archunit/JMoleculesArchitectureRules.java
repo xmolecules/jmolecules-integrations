@@ -25,16 +25,7 @@ import static org.jmolecules.archunit.JMoleculesArchitectureRules.JMoleculesOnio
 import lombok.RequiredArgsConstructor;
 
 import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -43,7 +34,6 @@ import java.util.stream.Stream;
 
 import org.jmolecules.architecture.hexagonal.Adapter;
 import org.jmolecules.architecture.hexagonal.Application;
-import org.jmolecules.architecture.hexagonal.Hexagon;
 import org.jmolecules.architecture.hexagonal.Port;
 import org.jmolecules.architecture.hexagonal.PrimaryAdapter;
 import org.jmolecules.architecture.hexagonal.PrimaryPort;
@@ -53,7 +43,6 @@ import org.jmolecules.architecture.layered.ApplicationLayer;
 import org.jmolecules.architecture.layered.DomainLayer;
 import org.jmolecules.architecture.layered.InfrastructureLayer;
 import org.jmolecules.architecture.layered.InterfaceLayer;
-import org.jmolecules.architecture.onion.Onion;
 import org.jmolecules.architecture.onion.classical.ApplicationServiceRing;
 import org.jmolecules.architecture.onion.classical.DomainModelRing;
 import org.jmolecules.architecture.onion.classical.DomainServiceRing;
@@ -63,13 +52,12 @@ import org.jmolecules.architecture.onion.simplified.InfrastructureRing;
 import org.jmolecules.archunit.ArchitecturalUnits.ArchitecturalUnit;
 import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
-import org.springframework.util.StringUtils;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.Dependency;
 import com.tngtech.archunit.core.domain.JavaAnnotation;
 import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.domain.JavaEnumConstant;
 import com.tngtech.archunit.core.domain.JavaPackage;
 import com.tngtech.archunit.core.domain.JavaType;
@@ -78,6 +66,7 @@ import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.CompositeArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
+import com.tngtech.archunit.lang.EvaluationResult;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import com.tngtech.archunit.library.Architectures;
 import com.tngtech.archunit.library.Architectures.LayeredArchitecture;
@@ -113,12 +102,6 @@ public class JMoleculesArchitectureRules {
 	private static final String HEXAGONAL_ADAPTER_UNQUALIFIED = "Adapter (unqualified)";
 	private static final String HEXAGONAL_PRIMARY_ADAPTER = "Primary adapter";
 	private static final String HEXAGONAL_SECONDARY_ADAPTER = "Secondary adapter";
-
-	// Unit annotations introduced in jMolecules 2.1, see HexagonAnnotation
-	private static final boolean HEXAGON_PRESENT = ClassUtils.isPresent("org.jmolecules.architecture.hexagonal.Hexagon",
-			JMoleculesArchitectureRules.class.getClassLoader());
-	private static final boolean ONION_PRESENT = ClassUtils.isPresent("org.jmolecules.architecture.onion.Onion",
-			JMoleculesArchitectureRules.class.getClassLoader());
 
 	private static final String UNANNOTATED = "Unannotated";
 	private static final String ANNOTATIONS = "Architecture annotations";
@@ -279,12 +262,12 @@ public class JMoleculesArchitectureRules {
 	 * {@link ArchitecturalUnit}s (packages annotated with an annotation meta-annotated with
 	 * {@link org.jmolecules.stereotype.ArchitecturalUnit}, like {@link org.jmolecules.architecture.onion.Onion} or
 	 * {@link org.jmolecules.ddd.annotation.Module}) are verified in isolation. References between them are only
-	 * restricted for units using rings: by default, their infrastructure ring types, application ring types and types
-	 * not assigned to a ring may refer to other units, and other units may refer to their application ring types, as
-	 * well as their infrastructure ring types from infrastructure ring types or units not using rings. See
-	 * {@link OnionVerificationOptions#withExposure(Onion.Exposure...)} and
-	 * {@link OnionVerificationOptions#withReferrers(Onion.Referrer...)} to restrict that globally, and
-	 * {@link Onion#exposes()} and {@link Onion#refersVia()} to do so for individual units.
+	 * restricted for units using rings: by default, only their infrastructure ring types may refer to other units, and
+	 * other units may only refer to their infrastructure ring types from infrastructure ring types or units not using
+	 * rings. See {@link OnionVerificationOptions#withExposure(org.jmolecules.architecture.onion.Onion.Exposure...)} and
+	 * {@link OnionVerificationOptions#withReferrers(org.jmolecules.architecture.onion.Onion.Referrer...)} to opt into
+	 * references between application ring types globally, and {@link org.jmolecules.architecture.onion.Onion#exposes()}
+	 * and {@link org.jmolecules.architecture.onion.Onion#refersVia()} to do so for individual units.
 	 *
 	 * @param options must not be {@literal null}.
 	 * @return will never be {@literal null}.
@@ -347,18 +330,17 @@ public class JMoleculesArchitectureRules {
 	}
 
 	/**
-	 * ArchUnit {@link ArchRule} defining the classic Onion Architecture using the given
-	 * {@link OnionVerificationOptions}.
+	 * ArchUnit {@link ArchRule} defining the classic Onion Architecture using the given {@link OnionVerificationOptions}.
 	 * <p>
 	 * {@link ArchitecturalUnit}s (packages annotated with an annotation meta-annotated with
 	 * {@link org.jmolecules.stereotype.ArchitecturalUnit}, like {@link org.jmolecules.architecture.onion.Onion} or
 	 * {@link org.jmolecules.ddd.annotation.Module}) are verified in isolation. References between them are only
-	 * restricted for units using rings: by default, their infrastructure ring types, application ring types and types
-	 * not assigned to a ring may refer to other units, and other units may refer to their application ring types, as
-	 * well as their infrastructure ring types from infrastructure ring types or units not using rings. See
-	 * {@link OnionVerificationOptions#withExposure(Onion.Exposure...)} and
-	 * {@link OnionVerificationOptions#withReferrers(Onion.Referrer...)} to restrict that globally, and
-	 * {@link Onion#exposes()} and {@link Onion#refersVia()} to do so for individual units.
+	 * restricted for units using rings: by default, only their infrastructure ring types may refer to other units, and
+	 * other units may only refer to their infrastructure ring types from infrastructure ring types or units not using
+	 * rings. See {@link OnionVerificationOptions#withExposure(org.jmolecules.architecture.onion.Onion.Exposure...)} and
+	 * {@link OnionVerificationOptions#withReferrers(org.jmolecules.architecture.onion.Onion.Referrer...)} to opt into
+	 * references between application ring types globally, and {@link org.jmolecules.architecture.onion.Onion#exposes()}
+	 * and {@link org.jmolecules.architecture.onion.Onion#refersVia()} to do so for individual units.
 	 *
 	 * @param options must not be {@literal null}.
 	 * @return will never be {@literal null}.
@@ -486,14 +468,15 @@ public class JMoleculesArchitectureRules {
 	 * <p>
 	 * {@link ArchitecturalUnit}s (packages annotated with an annotation meta-annotated with
 	 * {@link org.jmolecules.stereotype.ArchitecturalUnit}, like {@link org.jmolecules.architecture.hexagonal.Hexagon} or
-	 * {@link org.jmolecules.ddd.annotation.Module}) are verified in isolation. References between them are only
-	 * restricted for units using hexagonal stereotypes: by default, their secondary adapters, application code and types
-	 * without a hexagonal stereotype may refer to other units, and other units may refer to their application code and
-	 * primary ports, as well as their primary adapters from secondary adapters or units not using hexagonal stereotypes.
-	 * Secondary adapters may only refer to primary adapters and primary ports of other units. See
-	 * {@link HexagonalVerificationOptions#withExposure(Hexagon.Exposure...)} and
-	 * {@link HexagonalVerificationOptions#withReferrers(Hexagon.Referrer...)} to restrict that globally, and
-	 * {@link Hexagon#exposes()} and {@link Hexagon#refersVia()} to do so for individual units.
+	 * {@link org.jmolecules.ddd.annotation.Module}) are verified individually: the layer rules apply to the references
+	 * within each unit using hexagonal stereotypes, and to the references to types outside of any unit. References
+	 * between units are only governed by the roles they expose and the ones allowed to refer to other units: by default,
+	 * only secondary adapters may refer to other units, and only to their primary adapters. Types outside of any unit may
+	 * refer to whatever other units expose. See
+	 * {@link HexagonalVerificationOptions#withExposure(org.jmolecules.architecture.hexagonal.Hexagon.Exposure...)} and
+	 * {@link HexagonalVerificationOptions#withReferrers(org.jmolecules.architecture.hexagonal.Hexagon.Referrer...)} to
+	 * change that globally, and {@link org.jmolecules.architecture.hexagonal.Hexagon#exposes()} and
+	 * {@link org.jmolecules.architecture.hexagonal.Hexagon#refersVia()} to do so for individual units.
 	 *
 	 * @param options must not be {@literal null}.
 	 * @return will never be {@literal null}.
@@ -504,16 +487,21 @@ public class JMoleculesArchitectureRules {
 
 		Assert.notNull(options, "HexagonalVerificationOptions must not be null!");
 
-		return CompositeArchRule.of(hexagonalLayers(options))
-				.and(hexagonalUnitBoundaries(options));
+		return new HexagonalUnitRule(options, null, null);
 	}
 
-
-	private static ArchRule hexagonalLayers(HexagonalVerificationOptions options) {
+	/**
+	 * The layer rules of the Hexagonal Architecture, only considering the types in the scope of the given options.
+	 *
+	 * @param options must not be {@literal null}.
+	 * @param ignoredTargets the types to ignore references to, can be {@literal null}.
+	 */
+	private static ArchRule hexagonalLayers(HexagonalVerificationOptions options,
+			@Nullable DescribedPredicate<JavaClass> ignoredTargets) {
 
 		VerificationDepth depth = options.getDepth();
 
-		return hexagonalArchitecture(options)
+		return hexagonalArchitecture(options, ignoredTargets)
 
 				// Adapters
 
@@ -522,9 +510,8 @@ public class JMoleculesArchitectureRules {
 						depth.augmentPrimary(ANNOTATIONS, UNANNOTATED, HEXAGONAL_PORT, HEXAGONAL_PRIMARY_ADAPTER,
 								HEXAGONAL_SECONDARY_ADAPTER))
 
-				// Access from secondary adapters is restricted to other architectural units
 				.whereLayer(HEXAGONAL_PRIMARY_ADAPTER)
-				.mayOnlyBeAccessedByLayers(HEXAGONAL_ADAPTER_UNQUALIFIED, UNANNOTATED, HEXAGONAL_SECONDARY_ADAPTER)
+				.mayOnlyBeAccessedByLayers(HEXAGONAL_ADAPTER_UNQUALIFIED, UNANNOTATED)
 
 				.whereLayer(HEXAGONAL_PRIMARY_ADAPTER)
 				.mayOnlyAccessLayers(
@@ -537,8 +524,7 @@ public class JMoleculesArchitectureRules {
 				.whereLayer(HEXAGONAL_SECONDARY_ADAPTER)
 				.mayOnlyAccessLayers(
 						depth.augmentSecondary(ANNOTATIONS, UNANNOTATED, HEXAGONAL_SECONDARY_PORT,
-								HEXAGONAL_PORT_UNQUALIFIED, HEXAGONAL_ADAPTER_UNQUALIFIED, HEXAGONAL_PRIMARY_ADAPTER,
-								HEXAGONAL_PRIMARY_PORT))
+								HEXAGONAL_PORT_UNQUALIFIED, HEXAGONAL_ADAPTER_UNQUALIFIED))
 
 				// Ports
 
@@ -627,7 +613,8 @@ public class JMoleculesArchitectureRules {
 		return scoped(architecture, options);
 	}
 
-	private static LayeredArchitecture hexagonalArchitecture(HexagonalVerificationOptions options) {
+	private static LayeredArchitecture hexagonalArchitecture(HexagonalVerificationOptions options,
+			@Nullable DescribedPredicate<JavaClass> ignoredTargets) {
 
 		StereotypeLookup lookup = options.getStereotypeLookup();
 
@@ -674,15 +661,18 @@ public class JMoleculesArchitectureRules {
 				.definedBy(lookup.forAnnotation(SecondaryAdapter.class, HEXAGONAL_ANNOTATIONS)
 						.withoutExclusion(Adapter.class));
 
-		return scoped(architecture, options);
+		LayeredArchitecture scoped = scoped(architecture, options);
+
+		return ignoredTargets == null
+				? scoped
+				: scoped.ignoreDependency(DescribedPredicate.<JavaClass> alwaysTrue(), ignoredTargets);
 	}
 
 	/**
 	 * Verifies the references between {@link ArchitecturalUnit}s for the Hexagonal Architecture, considering only units
-	 * using hexagonal stereotypes. See {@link #ensureHexagonal(HexagonalVerificationOptions)} for details.
-	 * Complements the layer definition in {@link #hexagonalLayers(HexagonalVerificationOptions)} that generally
-	 * permits secondary adapters to access primary adapters and primary ports, as {@link LayeredArchitecture} cannot
-	 * express constraints between individual origin and target types.
+	 * using hexagonal stereotypes. See {@link #ensureHexagonal(HexagonalVerificationOptions)} for details. The layer
+	 * rules, see {@link #hexagonalLayers(HexagonalVerificationOptions, DescribedPredicate)}, only cover the references
+	 * within a unit and the ones between types outside of any unit.
 	 *
 	 * @param options must not be {@literal null}.
 	 * @return will never be {@literal null}.
@@ -697,28 +687,29 @@ public class JMoleculesArchitectureRules {
 				.withoutExclusion(Adapter.class);
 		IsStereotype application = lookup.forAnnotation(Application.class, HEXAGONAL_ANNOTATIONS);
 		IsStereotype primaryPort = lookup.forAnnotation(PrimaryPort.class);
+		IsStereotype secondaryPort = lookup.forAnnotation(SecondaryPort.class);
 
 		Predicate<JavaClass> stereotyped = anyOf(lookup, HEXAGONAL_ANNOTATIONS);
-		boolean declarable = HEXAGON_PRESENT;
 
 		List<UnitRole> exposures = List.of(
-				new UnitRole(declarable ? HexagonAnnotation.EXPOSES_PRIMARY_ADAPTERS : null, "primary adapters",
-						primaryAdapter, true),
-				new UnitRole(declarable ? HexagonAnnotation.EXPOSES_APPLICATION : null, "application code", application,
-						false),
-				new UnitRole(declarable ? HexagonAnnotation.EXPOSES_PRIMARY_PORTS : null, "primary ports", primaryPort,
-						false));
+				new UnitRole(HexagonAnnotation.EXPOSES_PRIMARY_ADAPTERS, "primary adapters", primaryAdapter, true),
+				new UnitRole(HexagonAnnotation.EXPOSES_APPLICATION, "application code", application, false),
+				new UnitRole(HexagonAnnotation.EXPOSES_PRIMARY_PORTS, "primary ports", primaryPort, false),
+				new UnitRole(HexagonAnnotation.EXPOSES_SECONDARY_PORTS, "secondary ports", secondaryPort, false));
+
+		Predicate<JavaClass> applicationCode = application.or(stereotyped.negate());
 
 		List<UnitRole> referrers = List.of(
-				new UnitRole(declarable ? HexagonAnnotation.REFERS_VIA_SECONDARY_ADAPTERS : null, "secondary adapters",
-						secondaryAdapter, false),
-				new UnitRole(declarable ? HexagonAnnotation.REFERS_VIA_APPLICATION : null,
-						"application code (including types without hexagonal stereotypes)", application.or(stereotyped.negate()),
-						false));
+				new UnitRole(HexagonAnnotation.REFERS_VIA_SECONDARY_ADAPTERS, "secondary adapters", secondaryAdapter, false),
+				new UnitRole(HexagonAnnotation.REFERS_VIA_APPLICATION,
+						"application code (including types without hexagonal stereotypes)", applicationCode, false),
+				new UnitRole(HexagonAnnotation.REFERS_VIA_PRIMARY_ADAPTERS, "primary adapters", primaryAdapter, false),
+				new UnitRole(HexagonAnnotation.REFERS_VIA_PRIMARY_PORTS, "primary ports", primaryPort, false),
+				new UnitRole(HexagonAnnotation.REFERS_VIA_SECONDARY_PORTS, "secondary ports", secondaryPort, false));
 
 		UnitRoles roles = new UnitRoles("hexagonal stereotypes", stereotyped, secondaryAdapter, "secondary adapters",
-				primaryAdapter.or(primaryPort), "primary adapters or primary ports", true,
-				declarable ? HexagonAnnotation.NAME : null, null, exposures, referrers);
+				HexagonAnnotation.NAME, null, exposures, referrers, applicationCode.or(primaryPort).or(secondaryPort),
+				application.or(primaryPort), "application code and ports (to application code and primary ports)");
 
 		return unitBoundaries(roles, options);
 	}
@@ -731,8 +722,8 @@ public class JMoleculesArchitectureRules {
 	 * @param annotations the ring annotations of the Onion Architecture variant, must not be {@literal null}.
 	 * @param infrastructure the infrastructure ring annotation of the variant, must not be {@literal null}.
 	 * @param application the application ring annotation of the variant, must not be {@literal null}.
-	 * @param otherVariant the ring annotations of the other variant, sharing the {@link Onion} unit annotation, must not
-	 *          be {@literal null}.
+	 * @param otherVariant the ring annotations of the other variant, sharing the
+	 *          {@link org.jmolecules.architecture.onion.Onion} unit annotation, must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
 	private static ArchRule onionUnitBoundaries(OnionVerificationOptions options,
@@ -745,30 +736,149 @@ public class JMoleculesArchitectureRules {
 		IsStereotype applicationRing = lookup.forAnnotation(application, annotations);
 
 		Predicate<JavaClass> stereotyped = anyOf(lookup, annotations);
-		boolean declarable = ONION_PRESENT;
+		Predicate<JavaClass> applicationCode = applicationRing.or(stereotyped.negate());
 
 		List<UnitRole> exposures = List.of(
-				new UnitRole(declarable ? OnionAnnotation.EXPOSES_INFRASTRUCTURE : null, "infrastructure ring types",
-						infrastructureRing, true),
-				new UnitRole(declarable ? OnionAnnotation.EXPOSES_APPLICATION : null, "application ring types",
-						applicationRing, false));
+				new UnitRole(OnionAnnotation.EXPOSES_INFRASTRUCTURE, "infrastructure ring types", infrastructureRing, true),
+				new UnitRole(OnionAnnotation.EXPOSES_APPLICATION, "application ring types", applicationRing, false));
 
 		List<UnitRole> referrers = List.of(
-				new UnitRole(declarable ? OnionAnnotation.REFERS_VIA_INFRASTRUCTURE : null, "infrastructure ring types",
-						infrastructureRing, false),
-				new UnitRole(declarable ? OnionAnnotation.REFERS_VIA_APPLICATION : null,
-						"application ring types (including types not assigned to a ring)", applicationRing.or(stereotyped.negate()),
-						false));
+				new UnitRole(OnionAnnotation.REFERS_VIA_INFRASTRUCTURE, "infrastructure ring types", infrastructureRing,
+						false),
+				new UnitRole(OnionAnnotation.REFERS_VIA_APPLICATION,
+						"application ring types (including types not assigned to a ring)", applicationCode, false));
 
 		UnitRoles roles = new UnitRoles("onion rings", stereotyped, infrastructureRing, "infrastructure ring types",
-				infrastructureRing, "infrastructure ring types", false, declarable ? OnionAnnotation.NAME : null,
-				anyOf(lookup, otherVariant), exposures, referrers);
+				OnionAnnotation.NAME, anyOf(lookup, otherVariant), exposures, referrers, applicationCode, applicationRing,
+				"application ring types (to application ring types)");
 
 		return unitBoundaries(roles, options);
 	}
 
 	private static ArchRule unitBoundaries(UnitRoles roles, UnitAwareVerificationOptions<?> options) {
 		return classes().should(new UnitBoundaries(roles, options)).allowEmptyShould(true);
+	}
+
+	/**
+	 * The {@link ArchRule} for the Hexagonal Architecture. As the {@link ArchitecturalUnit}s to verify are only known
+	 * once the types to analyze are, the actual rules are assembled when evaluating them:
+	 * <ul>
+	 * <li>the layer rules for each unit containing hexagonal stereotypes, only considering the references between the
+	 * unit's own types,</li>
+	 * <li>the layer rules for the references to types outside of any unit,</li>
+	 * <li>the verification of the references between units according to the exposure and referrers configured.</li>
+	 * </ul>
+	 * Without any unit, that boils down to the layer rules applied to all types.
+	 *
+	 * @author Oliver Drotbohm
+	 */
+	private static class HexagonalUnitRule implements ArchRule {
+
+		private final HexagonalVerificationOptions options;
+		private final @Nullable String description, reason;
+
+		HexagonalUnitRule(HexagonalVerificationOptions options, @Nullable String description, @Nullable String reason) {
+
+			this.options = options;
+			this.description = description;
+			this.reason = reason;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see com.tngtech.archunit.lang.ArchRule#check(com.tngtech.archunit.core.domain.JavaClasses)
+		 */
+		@Override
+		public void check(JavaClasses classes) {
+			ArchRule.Assertions.check(this, classes);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see com.tngtech.archunit.lang.ArchRule#because(java.lang.String)
+		 */
+		@Override
+		public ArchRule because(String reason) {
+			return new HexagonalUnitRule(options, description, reason);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see com.tngtech.archunit.lang.ArchRule#allowEmptyShould(boolean)
+		 */
+		@Override
+		public ArchRule allowEmptyShould(boolean allowEmptyShould) {
+			return this;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see com.tngtech.archunit.core.domain.properties.CanOverrideDescription#as(java.lang.String)
+		 */
+		@Override
+		public ArchRule as(String description) {
+			return new HexagonalUnitRule(options, description, reason);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see com.tngtech.archunit.base.HasDescription#getDescription()
+		 */
+		@Override
+		public String getDescription() {
+			return create(new ArchitecturalUnits(), Collections.emptySet()).getDescription();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see com.tngtech.archunit.lang.CanBeEvaluated#evaluate(com.tngtech.archunit.core.domain.JavaClasses)
+		 */
+		@Override
+		public EvaluationResult evaluate(JavaClasses classes) {
+
+			ArchitecturalUnitResolver resolver = options.getUnitResolver() != null
+					? options.getUnitResolver()
+					: new ArchitecturalUnits();
+
+			Predicate<JavaClass> stereotyped = anyOf(options.getStereotypeLookup(), HEXAGONAL_ANNOTATIONS);
+			Set<ArchitecturalUnit> hexagons = new LinkedHashSet<>();
+
+			for (JavaClass type : classes) {
+
+				ArchitecturalUnit unit = resolver.getUnitFor(type);
+
+				if (unit != null && stereotyped.test(type)) {
+					hexagons.add(unit);
+				}
+			}
+
+			return create(resolver, hexagons).evaluate(classes);
+		}
+
+		private ArchRule create(ArchitecturalUnitResolver resolver, Collection<ArchitecturalUnit> hexagons) {
+
+			DescribedPredicate<JavaClass> inAnyUnit = DescribedPredicate.describe("belong to an architectural unit",
+					type -> resolver.getUnitFor(type) != null);
+
+			CompositeArchRule result = CompositeArchRule.of(hexagonalLayers(options, inAnyUnit));
+
+			for (ArchitecturalUnit hexagon : hexagons) {
+
+				DescribedPredicate<JavaClass> inUnit = DescribedPredicate.describe(
+						"belong to architectural unit " + hexagon, type -> hexagon.equals(resolver.getUnitFor(type)));
+				DescribedPredicate<JavaClass> scope = options.getScope() == null ? inUnit : options.getScope().and(inUnit);
+
+				result = result.and(hexagonalLayers(options.withScope(scope), null));
+			}
+
+			ArchRule rule = result.and(hexagonalUnitBoundaries(options));
+
+			if (description != null) {
+				rule = rule.as(description);
+			}
+
+			return reason == null ? rule : rule.because(reason);
+		}
 	}
 
 	/**
@@ -798,35 +908,41 @@ public class JMoleculesArchitectureRules {
 	}
 
 	/**
-	 * References to {@link Hexagon}, introduced in jMolecules 2.1. As the jMolecules architecture artifacts are optional
-	 * dependencies that might be present in older versions, the class must only be used if {@link #HEXAGON_PRESENT}.
-	 * They are {@link String}s so that callers don't refer to {@link Hexagon} types themselves, which the JVM would load
-	 * when verifying them.
+	 * The name of {@link org.jmolecules.architecture.hexagonal.Hexagon} and its {@code Exposure} and {@code Referrer}
+	 * constants, introduced in jMolecules 2.1. As the jMolecules architecture artifacts are optional dependencies that
+	 * might be present in older versions, they are {@link String}s so that the rules never refer to the types themselves,
+	 * which the JVM would load when verifying the rules. Packages can't be annotated with an annotation that is not
+	 * present, so looking it up by name is safe in any case.
 	 */
-	private static class HexagonAnnotation {
+	static class HexagonAnnotation {
 
-		static final String NAME = Hexagon.class.getName();
+		static final String NAME = "org.jmolecules.architecture.hexagonal.Hexagon";
 
-		static final String EXPOSES_PRIMARY_ADAPTERS = Hexagon.Exposure.PRIMARY_ADAPTERS.name();
-		static final String EXPOSES_PRIMARY_PORTS = Hexagon.Exposure.PRIMARY_PORTS.name();
-		static final String EXPOSES_APPLICATION = Hexagon.Exposure.APPLICATION.name();
+		static final String EXPOSES_PRIMARY_ADAPTERS = "PRIMARY_ADAPTERS";
+		static final String EXPOSES_PRIMARY_PORTS = "PRIMARY_PORTS";
+		static final String EXPOSES_APPLICATION = "APPLICATION";
+		static final String EXPOSES_SECONDARY_PORTS = "SECONDARY_PORTS";
 
-		static final String REFERS_VIA_SECONDARY_ADAPTERS = Hexagon.Referrer.SECONDARY_ADAPTERS.name();
-		static final String REFERS_VIA_APPLICATION = Hexagon.Referrer.APPLICATION.name();
+		static final String REFERS_VIA_SECONDARY_ADAPTERS = "SECONDARY_ADAPTERS";
+		static final String REFERS_VIA_APPLICATION = "APPLICATION";
+		static final String REFERS_VIA_PRIMARY_ADAPTERS = "PRIMARY_ADAPTERS";
+		static final String REFERS_VIA_PRIMARY_PORTS = "PRIMARY_PORTS";
+		static final String REFERS_VIA_SECONDARY_PORTS = "SECONDARY_PORTS";
 	}
 
 	/**
-	 * References to {@link Onion}, introduced in jMolecules 2.1. See {@link HexagonAnnotation} for details.
+	 * The name of {@link org.jmolecules.architecture.onion.Onion} and its {@code Exposure} and {@code Referrer}
+	 * constants, introduced in jMolecules 2.1. See {@link HexagonAnnotation} for details.
 	 */
-	private static class OnionAnnotation {
+	static class OnionAnnotation {
 
-		static final String NAME = Onion.class.getName();
+		static final String NAME = "org.jmolecules.architecture.onion.Onion";
 
-		static final String EXPOSES_INFRASTRUCTURE = Onion.Exposure.INFRASTRUCTURE.name();
-		static final String EXPOSES_APPLICATION = Onion.Exposure.APPLICATION.name();
+		static final String EXPOSES_INFRASTRUCTURE = "INFRASTRUCTURE";
+		static final String EXPOSES_APPLICATION = "APPLICATION";
 
-		static final String REFERS_VIA_INFRASTRUCTURE = Onion.Referrer.INFRASTRUCTURE.name();
-		static final String REFERS_VIA_APPLICATION = Onion.Referrer.APPLICATION.name();
+		static final String REFERS_VIA_INFRASTRUCTURE = "INFRASTRUCTURE";
+		static final String REFERS_VIA_APPLICATION = "APPLICATION";
 	}
 
 	/**
@@ -837,48 +953,65 @@ public class JMoleculesArchitectureRules {
 	private static class UnitRoles {
 
 		private static final String EXPOSES = "exposes", REFERS_VIA = "refersVia";
+		private static final String ADDITIONALLY_EXPOSES = "additionallyExposes",
+				ADDITIONALLY_REFERS_VIA = "additionallyRefersVia";
 
 		private final String language;
-		private final Predicate<JavaClass> stereotyped, outgoing, incoming;
-		private final String outgoingName, incomingName;
-		private final boolean outgoingToIncomingAcrossUnitsOnly;
-		private final @Nullable String unitAnnotation;
+		private final Predicate<JavaClass> stereotyped, outgoing;
+		private final String outgoingName;
+		private final String unitAnnotation;
 		private final @Nullable Predicate<JavaClass> competing;
 		private final List<UnitRole> exposures, referrers;
+		private final Predicate<JavaClass> directAccessOrigins, directAccessTargets;
+		private final String directAccessDescription;
 
 		/**
 		 * @param language a human-readable name of the language's stereotypes.
 		 * @param stereotyped whether a type is assigned any stereotype of the language.
-		 * @param outgoing the types designated to refer to the incoming ones of other units (e.g. secondary adapters).
-		 * @param incoming the types designated to be referred to by the outgoing ones of other units (e.g. primary
-		 *          adapters).
-		 * @param outgoingToIncomingAcrossUnitsOnly whether outgoing types may refer to incoming ones across units only.
+		 * @param outgoing the types designated to refer to the entry points of other units that are only exposed to them
+		 *          (e.g. secondary adapters).
+		 * @param outgoingName a human-readable name of the outgoing types.
 		 * @param unitAnnotation the fully qualified name of the language's unit annotation, declaring the roles of a unit
-		 *          in its {@code exposes} and {@code refersVia} attributes, or {@literal null} if the annotation is not
-		 *          present. Units declared via the annotation are considered to use the language.
+		 *          in its {@code exposes} and {@code refersVia} attributes. Units declared via the annotation are
+		 *          considered to use the language.
 		 * @param competing the stereotypes of another language sharing the unit annotation (e.g. the other variant of the
 		 *          Onion Architecture). Units declared via the unit annotation using those are not considered to use the
 		 *          current language. Can be {@literal null}.
 		 * @param exposures all roles a unit of the language can expose, in the order they are to be described in.
 		 * @param referrers all roles of a unit of the language that can refer to other units, in the order they are to be
 		 *          described in.
+		 * @param directAccessOrigins the types allowed to refer to the {@code directAccessTargets} of other units if direct
+		 *          application access is enabled (i.e. the application core).
+		 * @param directAccessTargets the types of other units using the language the {@code directAccessOrigins} may refer
+		 *          to if direct application access is enabled. They may refer to all types of units not using it.
+		 * @param directAccessDescription a human-readable description of the direct application access.
 		 */
 		UnitRoles(String language, Predicate<JavaClass> stereotyped, Predicate<JavaClass> outgoing, String outgoingName,
-				Predicate<JavaClass> incoming, String incomingName, boolean outgoingToIncomingAcrossUnitsOnly,
-				@Nullable String unitAnnotation, @Nullable Predicate<JavaClass> competing, List<UnitRole> exposures,
-				List<UnitRole> referrers) {
+				String unitAnnotation, @Nullable Predicate<JavaClass> competing, List<UnitRole> exposures,
+				List<UnitRole> referrers, Predicate<JavaClass> directAccessOrigins,
+				Predicate<JavaClass> directAccessTargets, String directAccessDescription) {
 
 			this.language = language;
 			this.stereotyped = stereotyped;
 			this.outgoing = outgoing;
 			this.outgoingName = outgoingName;
-			this.incoming = incoming;
-			this.incomingName = incomingName;
-			this.outgoingToIncomingAcrossUnitsOnly = outgoingToIncomingAcrossUnitsOnly;
 			this.unitAnnotation = unitAnnotation;
 			this.competing = competing;
 			this.exposures = exposures;
 			this.referrers = referrers;
+			this.directAccessOrigins = directAccessOrigins;
+			this.directAccessTargets = directAccessTargets;
+			this.directAccessDescription = directAccessDescription;
+		}
+
+		/**
+		 * Returns whether the given reference between two units is a direct application access, i.e. from application code
+		 * to the types of another unit application code may refer to if direct application access is enabled.
+		 *
+		 * @param targetUsesLanguage whether the target type's unit uses the language.
+		 */
+		boolean isDirectApplicationAccess(JavaClass origin, JavaClass target, boolean targetUsesLanguage) {
+			return directAccessOrigins.test(origin) && (!targetUsesLanguage || directAccessTargets.test(target));
 		}
 
 		/**
@@ -889,8 +1022,7 @@ public class JMoleculesArchitectureRules {
 
 			JavaPackage pkg = unit.getPackage();
 
-			return unitAnnotation != null
-					&& (pkg.isAnnotatedWith(unitAnnotation) || pkg.isMetaAnnotatedWith(unitAnnotation));
+			return pkg.isAnnotatedWith(unitAnnotation) || pkg.isMetaAnnotatedWith(unitAnnotation);
 		}
 
 		/**
@@ -909,32 +1041,40 @@ public class JMoleculesArchitectureRules {
 		}
 
 		/**
-		 * Returns the roles exposed by the given {@link ArchitecturalUnit} as declared in the {@code exposes} attribute of
-		 * the language's unit annotation on the unit's package.
-		 *
-		 * @return the declared roles or {@literal null} if none declared.
+		 * Returns the roles the given {@link ArchitecturalUnit} exposes: the ones declared in the {@code exposes} attribute
+		 * of the language's unit annotation, or the given defaults if there are none, plus the ones declared in
+		 * {@code additionallyExposes}.
 		 */
-		@Nullable
-		List<UnitRole> getDeclaredExposures(ArchitecturalUnit unit) {
-			return getDeclared(unit, EXPOSES, exposures);
+		List<UnitRole> getExposures(ArchitecturalUnit unit, List<UnitRole> defaults) {
+			return merge(exposures, getDeclared(unit, EXPOSES, exposures), defaults,
+					getDeclared(unit, ADDITIONALLY_EXPOSES, exposures));
 		}
 
 		/**
-		 * Returns the roles of the given {@link ArchitecturalUnit} allowed to refer to other units as declared in the
-		 * {@code refersVia} attribute of the language's unit annotation on the unit's package.
-		 *
-		 * @return the declared roles or {@literal null} if none declared.
+		 * Returns the roles of the given {@link ArchitecturalUnit} allowed to refer to other units: the ones declared in
+		 * the {@code refersVia} attribute of the language's unit annotation, or the given defaults if there are none, plus
+		 * the ones declared in {@code additionallyRefersVia}.
 		 */
-		@Nullable
-		List<UnitRole> getDeclaredReferrers(ArchitecturalUnit unit) {
-			return getDeclared(unit, REFERS_VIA, referrers);
+		List<UnitRole> getReferrers(ArchitecturalUnit unit, List<UnitRole> defaults) {
+			return merge(referrers, getDeclared(unit, REFERS_VIA, referrers), defaults,
+					getDeclared(unit, ADDITIONALLY_REFERS_VIA, referrers));
+		}
+
+		private static List<UnitRole> merge(List<UnitRole> all, @Nullable List<UnitRole> declared,
+				List<UnitRole> defaults, @Nullable List<UnitRole> additional) {
+
+			List<UnitRole> base = declared == null ? defaults : declared;
+
+			if (additional == null) {
+				return base;
+			}
+
+			return all.stream()
+					.filter(it -> base.contains(it) || additional.contains(it))
+					.collect(Collectors.toList());
 		}
 
 		private @Nullable List<UnitRole> getDeclared(ArchitecturalUnit unit, String attribute, List<UnitRole> roles) {
-
-			if (unitAnnotation == null) {
-				return null;
-			}
 
 			Object value = unit.getPackage().tryGetAnnotationOfType(unitAnnotation)
 					.flatMap(it -> it.get(attribute))
@@ -953,27 +1093,27 @@ public class JMoleculesArchitectureRules {
 	}
 
 	/**
-	 * A role of an architectural language whose types an {@link ArchitecturalUnit} can expose to other units or allow
-	 * to refer to other units.
+	 * A role of an architectural language whose types an {@link ArchitecturalUnit} can expose to other units or allow to
+	 * refer to other units.
 	 *
 	 * @author Oliver Drotbohm
 	 */
 	private static class UnitRole {
 
-		private final @Nullable String key;
+		private final String key;
 		private final String name;
 		private final Predicate<JavaClass> types;
 		private final boolean designatedOriginsOnly;
 
 		/**
 		 * @param key the name of the constant representing the role in the corresponding attribute of the language's unit
-		 *          annotation, {@literal null} if the annotation is not present.
+		 *          annotation.
 		 * @param name a human-readable name of the role's types.
 		 * @param types the types of the role.
 		 * @param designatedOriginsOnly whether the types are only exposed to the types of other units designated to refer
 		 *          to them (e.g. primary adapters to secondary adapters).
 		 */
-		UnitRole(@Nullable String key, String name, Predicate<JavaClass> types, boolean designatedOriginsOnly) {
+		UnitRole(String key, String name, Predicate<JavaClass> types, boolean designatedOriginsOnly) {
 
 			this.key = key;
 			this.name = name;
@@ -989,7 +1129,7 @@ public class JMoleculesArchitectureRules {
 
 			return keys == null
 					? roles
-					: roles.stream().filter(it -> it.key != null && keys.contains(it.key)).collect(Collectors.toList());
+					: roles.stream().filter(it -> keys.contains(it.key)).collect(Collectors.toList());
 		}
 
 		/**
@@ -1153,11 +1293,13 @@ public class JMoleculesArchitectureRules {
 
 	/**
 	 * An {@link ArchCondition} to verify the references between types of different {@link ArchitecturalUnit}s. Only units
-	 * that contain at least one type assigned a stereotype of the architectural language verified are considered: their
-	 * outgoing references are restricted to the types allowed to refer to other units, their incoming ones to the types
-	 * they expose. Those are the ones declared in the {@code refersVia} and {@code exposes} attributes of the language's
-	 * unit annotation, or the defaults configured in the options, narrowed to the types exposed by the resolved
-	 * {@link ArchitecturalUnit} itself. References from or to types residing outside of any unit are not considered.
+	 * that contain at least one type assigned a stereotype of the architectural language verified are subject to
+	 * restrictions: their outgoing references are restricted to the types allowed to refer to other units, their incoming
+	 * ones to the types they expose. Those are the ones declared in the {@code refersVia} and {@code exposes} attributes
+	 * of the language's unit annotation, or the defaults configured in the options, narrowed to the types exposed by the
+	 * resolved {@link ArchitecturalUnit} itself. Types outside of any unit are treated like types of a unit not using the
+	 * language: they can refer to whatever other units expose. References within a unit, as well as from any type to ones
+	 * outside of any unit, are not considered, as they are covered by the layer rules.
 	 *
 	 * @author Oliver Drotbohm
 	 */
@@ -1165,6 +1307,7 @@ public class JMoleculesArchitectureRules {
 
 		private final UnitRoles roles;
 		private final List<UnitRole> defaultExposures, defaultReferrers;
+		private final boolean directApplicationAccess;
 
 		private final @Nullable ArchitecturalUnitResolver customResolver;
 		private final @Nullable Predicate<JavaClass> scope;
@@ -1182,6 +1325,7 @@ public class JMoleculesArchitectureRules {
 			this.roles = roles;
 			this.defaultExposures = roles.getDefaultExposures(options.getExposure());
 			this.defaultReferrers = roles.getDefaultReferrers(options.getReferrers());
+			this.directApplicationAccess = options.isDirectApplicationAccess();
 		}
 
 		/*
@@ -1284,15 +1428,25 @@ public class JMoleculesArchitectureRules {
 			}
 
 			ArchitecturalUnit parent = unit.getParent();
-			List<UnitRole> exposures = roles.getDeclaredExposures(unit);
-			List<UnitRole> referrers = roles.getDeclaredReferrers(unit);
-
-			LanguageUnit result = new LanguageUnit(unit, exposures == null ? defaultExposures : exposures,
-					referrers == null ? defaultReferrers : referrers, parent == null ? null : toLanguageUnit(parent));
+			LanguageUnit result = new LanguageUnit(unit, roles.getExposures(unit, defaultExposures),
+					roles.getReferrers(unit, defaultReferrers), parent == null ? null : toLanguageUnit(parent));
 
 			languageUnits.put(unit, result);
 
 			return result;
+		}
+
+		/**
+		 * Describes the types of the given unit allowed to refer to other units, including the direct application access if
+		 * enabled.
+		 */
+		private String describeReferrers(LanguageUnit unit) {
+
+			String referrers = unit.describeReferrers();
+
+			return directApplicationAccess
+					? referrers + ", as well as " + roles.directAccessDescription + ","
+					: referrers;
 		}
 
 		/**
@@ -1303,20 +1457,27 @@ public class JMoleculesArchitectureRules {
 		private @Nullable String verify(JavaClass origin, @Nullable LanguageUnit originUnit, JavaClass target,
 				@Nullable LanguageUnit targetUnit) {
 
-			if (originUnit == null || targetUnit == null || originUnit.equals(targetUnit)) {
-				return roles.outgoingToIncomingAcrossUnitsOnly && roles.outgoing.test(origin) && roles.incoming.test(target)
-						? describeWithinUnit(origin, originUnit, target, targetUnit)
-						: null;
+			// References within a unit and to types outside of any unit are covered by the layer rules
+			if (targetUnit == null || targetUnit.equals(originUnit)) {
+				return null;
 			}
 
-			boolean originUsesLanguage = unitsUsingLanguage.contains(originUnit);
+			// Direct application access is granted independently of exposure and referrers
+			if (directApplicationAccess
+					&& roles.isDirectApplicationAccess(origin, target, unitsUsingLanguage.contains(targetUnit))) {
+				return null;
+			}
+
+			boolean originUsesLanguage = originUnit != null && unitsUsingLanguage.contains(originUnit);
 
 			// Outgoing references
-			if (originUsesLanguage && !originUnit.allowsReferencesFrom(origin)) {
+			if (originUnit != null && originUsesLanguage && !originUnit.allowsReferencesFrom(origin)) {
 
-				return String.format("Type %s of architectural unit %s must not refer to type %s of architectural unit %s. Only %s may "
-						+ "refer to other architectural units", origin.getSimpleName(), originUnit, target.getSimpleName(),
-						targetUnit, originUnit.describeReferrers());
+				return String.format(
+						"Type %s of architectural unit %s must not refer to type %s of architectural unit %s. Only %s may "
+								+ "refer to other architectural units",
+						origin.getSimpleName(), originUnit, target.getSimpleName(),
+						targetUnit, describeReferrers(originUnit));
 			}
 
 			// Incoming references
@@ -1333,24 +1494,6 @@ public class JMoleculesArchitectureRules {
 							target.getSimpleName(), targetUnit)
 					: String.format("%s belongs to architectural unit %s, which only exposes %s", target.getSimpleName(),
 							targetUnit, exposed);
-		}
-
-		private String describeWithinUnit(JavaClass origin, @Nullable ArchitecturalUnit originUnit, JavaClass target,
-				@Nullable ArchitecturalUnit targetUnit) {
-
-			String reason;
-
-			if (originUnit == null) {
-				reason = String.format("%s is not part of any architectural unit", origin.getName());
-			} else if (targetUnit == null) {
-				reason = String.format("%s is not part of any architectural unit", target.getName());
-			} else {
-				reason = String.format("%s and %s both belong to architectural unit %s", origin.getSimpleName(),
-						target.getSimpleName(), originUnit);
-			}
-
-			return reason + String.format(". %s may only refer to %s of other architectural units",
-					StringUtils.capitalize(roles.outgoingName), roles.incomingName);
 		}
 	}
 

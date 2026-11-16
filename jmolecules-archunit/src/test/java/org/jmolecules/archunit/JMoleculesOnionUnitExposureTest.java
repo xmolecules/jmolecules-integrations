@@ -41,7 +41,9 @@ class JMoleculesOnionUnitExposureTest {
 	@ArchTest // GH-418
 	void onlyAllowsReferencesToTypesExposedByUnit(JavaClasses types) {
 
-		assertThat(JMoleculesArchitectureRules.ensureOnionSimple().evaluate(types).getFailureReport().getDetails())
+		OnionVerificationOptions options = OnionVerificationOptions.defaults().withReferrers(Referrer.values());
+
+		assertThat(JMoleculesArchitectureRules.ensureOnionSimple(options).evaluate(types).getFailureReport().getDetails())
 				.satisfiesExactlyInAnyOrder( //
 						violation(AppC.class, AppI.class).andThen(it -> assertThat(it)
 								.contains("which only exposes infrastructure ring types (to infrastructure ring types).")), //
@@ -65,5 +67,29 @@ class JMoleculesOnionUnitExposureTest {
 								.contains("Only infrastructure ring types may refer to other architectural units")), //
 						violation(InfraC.class, AppI.class), //
 						violation(AppR.class, AppO.class));
+	}
+
+	@ArchTest // GH-418
+	void grantsDirectApplicationAccessIndependentlyOfDeclaredExposureAndReferrers(JavaClasses types) {
+
+		OnionVerificationOptions options = OnionVerificationOptions.defaults().withDirectApplicationAccess();
+
+		// Unit infra only exposes its infrastructure ring, unit restricted only allows it to refer to other units
+		assertThat(JMoleculesArchitectureRules.ensureOnionSimple(options).evaluate(types).getFailureReport().getDetails())
+				.satisfiesExactlyInAnyOrder( //
+						violation(InfraC.class, AppI.class).andThen(it -> assertThat(it)
+								.contains("which only exposes infrastructure ring types (to infrastructure ring types).")));
+	}
+
+	@ArchTest // GH-418
+	void allowsDisablingDirectApplicationAccess(JavaClasses types) {
+
+		OnionVerificationOptions options = OnionVerificationOptions.defaults()
+				.withDirectApplicationAccess()
+				.withoutDirectApplicationAccess();
+
+		assertThat(JMoleculesArchitectureRules.ensureOnionSimple(options).evaluate(types).getFailureReport().getDetails())
+				.containsExactlyInAnyOrderElementsOf(JMoleculesArchitectureRules.ensureOnionSimple().evaluate(types)
+						.getFailureReport().getDetails());
 	}
 }
