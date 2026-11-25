@@ -135,6 +135,9 @@ That access is granted independently of the exposure and referrers configured, g
 `withoutDirectApplicationAccess()` disables it again.
 All other references, e.g. secondary adapters referring to primary ports of other units, still require the roles to be exposed explicitly.
 
+To only verify the references between units, e.g. to combine that with a verification of the units' internals set up separately, use `ensureHexagonalUnitBoundaries(…)`, `ensureOnionSimpleUnitBoundaries(…)` or `ensureOnionClassicalUnitBoundaries(…)`.
+They don't apply the layer and ring rules.
+
 ==== Customizing Unit Resolution
 
 Frameworks with their own notion of modules can provide an `ArchitecturalUnitResolver` via the options to define the units themselves.

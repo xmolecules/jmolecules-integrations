@@ -290,8 +290,26 @@ public class JMoleculesArchitectureRules {
 
 				.whereLayer(ONION_SIMPLE_DOMAIN)
 				.mayOnlyBeAccessedByLayers(ONION_SIMPLE_APPLICATION, ONION_SIMPLE_INFRASTRUCTURE))
-				.and(onionUnitBoundaries(options, ONION_SIMPLE_ANNOTATIONS, InfrastructureRing.class, ApplicationRing.class,
-						ONION_CLASSICAL_ANNOTATIONS));
+				.and(onionSimpleUnitBoundaries(options));
+	}
+
+	/**
+	 * ArchUnit {@link ArchRule} only verifying the references between {@link ArchitecturalUnit}s using the rings of the
+	 * simplified Onion Architecture, according to the exposure and referrers configured in the given
+	 * {@link OnionVerificationOptions} or declared on the individual units. In contrast to
+	 * {@link #ensureOnionSimple(OnionVerificationOptions)}, the ring rules are not applied, so that the rule can be
+	 * combined with a verification of the units' internals set up separately, e.g. for each unit individually.
+	 *
+	 * @param options must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @see #ensureOnionSimple(OnionVerificationOptions)
+	 * @since 0.34
+	 */
+	public static ArchRule ensureOnionSimpleUnitBoundaries(OnionVerificationOptions options) {
+
+		Assert.notNull(options, "OnionVerificationOptions must not be null!");
+
+		return onionSimpleUnitBoundaries(options);
 	}
 
 	/**
@@ -368,9 +386,26 @@ public class JMoleculesArchitectureRules {
 				.whereLayer(ONION_CLASSICAL_DOMAIN_MODEL)
 				.mayOnlyBeAccessedByLayers(ONION_CLASSICAL_DOMAIN_SERVICE, ONION_CLASSICAL_APPLICATION,
 						ONION_CLASSICAL_INFRASTRUCTURE))
-				.and(onionUnitBoundaries(options, ONION_CLASSICAL_ANNOTATIONS,
-						org.jmolecules.architecture.onion.classical.InfrastructureRing.class, ApplicationServiceRing.class,
-						ONION_SIMPLE_ANNOTATIONS));
+				.and(onionClassicalUnitBoundaries(options));
+	}
+
+	/**
+	 * ArchUnit {@link ArchRule} only verifying the references between {@link ArchitecturalUnit}s using the rings of the
+	 * classical Onion Architecture, according to the exposure and referrers configured in the given
+	 * {@link OnionVerificationOptions} or declared on the individual units. In contrast to
+	 * {@link #ensureOnionClassical(OnionVerificationOptions)}, the ring rules are not applied, so that the rule can be
+	 * combined with a verification of the units' internals set up separately, e.g. for each unit individually.
+	 *
+	 * @param options must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @see #ensureOnionClassical(OnionVerificationOptions)
+	 * @since 0.34
+	 */
+	public static ArchRule ensureOnionClassicalUnitBoundaries(OnionVerificationOptions options) {
+
+		Assert.notNull(options, "OnionVerificationOptions must not be null!");
+
+		return onionClassicalUnitBoundaries(options);
 	}
 
 	/**
@@ -488,6 +523,25 @@ public class JMoleculesArchitectureRules {
 		Assert.notNull(options, "HexagonalVerificationOptions must not be null!");
 
 		return new HexagonalUnitRule(options, null, null);
+	}
+
+	/**
+	 * ArchUnit {@link ArchRule} only verifying the references between {@link ArchitecturalUnit}s using hexagonal
+	 * stereotypes, according to the exposure and referrers configured in the given {@link HexagonalVerificationOptions}
+	 * or declared on the individual units. In contrast to {@link #ensureHexagonal(HexagonalVerificationOptions)}, the
+	 * layer rules are not applied, neither within the units nor to the types outside of any unit, so that the rule can be
+	 * combined with a verification of the units' internals set up separately, e.g. for each unit individually.
+	 *
+	 * @param options must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @see #ensureHexagonal(HexagonalVerificationOptions)
+	 * @since 0.34
+	 */
+	public static ArchRule ensureHexagonalUnitBoundaries(HexagonalVerificationOptions options) {
+
+		Assert.notNull(options, "HexagonalVerificationOptions must not be null!");
+
+		return hexagonalUnitBoundaries(options);
 	}
 
 	/**
@@ -712,6 +766,17 @@ public class JMoleculesArchitectureRules {
 				application.or(primaryPort), "application code and ports (to application code and primary ports)");
 
 		return unitBoundaries(roles, options);
+	}
+
+	private static ArchRule onionSimpleUnitBoundaries(OnionVerificationOptions options) {
+		return onionUnitBoundaries(options, ONION_SIMPLE_ANNOTATIONS, InfrastructureRing.class, ApplicationRing.class,
+				ONION_CLASSICAL_ANNOTATIONS);
+	}
+
+	private static ArchRule onionClassicalUnitBoundaries(OnionVerificationOptions options) {
+		return onionUnitBoundaries(options, ONION_CLASSICAL_ANNOTATIONS,
+				org.jmolecules.architecture.onion.classical.InfrastructureRing.class, ApplicationServiceRing.class,
+				ONION_SIMPLE_ANNOTATIONS);
 	}
 
 	/**

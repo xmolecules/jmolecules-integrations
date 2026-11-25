@@ -455,6 +455,24 @@ class JMoleculesHexagonalRulesTest {
 			assertNotReported(details, "a.ApplicationA.applicationB");
 		}
 
+		@ArchTest // GH-418
+		void onlyVerifiesReferencesBetweenUnitsIfRequested(JavaClasses classes) {
+
+			HexagonalVerificationOptions options = HexagonalVerificationOptions.defaults();
+
+			List<String> crossUnit = ensureHexagonal(options).evaluate(classes).getFailureReport().getDetails().stream()
+					.filter(it -> it.contains("architectural unit"))
+					.collect(Collectors.toList());
+
+			List<String> details = ensureHexagonalUnitBoundaries(options).evaluate(classes).getFailureReport()
+					.getDetails();
+
+			// Only the cross-unit violations of the full rule, no layer rule violations within or outside of units
+			assertThat(details).isNotEmpty().containsExactlyInAnyOrderElementsOf(crossUnit);
+			assertNotReported(details, "a.SecondaryAdapterA.primaryAdapterA");
+			assertNotReported(details, "none.SecondaryAdapterNone.primaryAdapterNone");
+		}
+
 		private static void assertReported(List<String> details, String field, String reason) {
 
 			assertThat(details).as(field)

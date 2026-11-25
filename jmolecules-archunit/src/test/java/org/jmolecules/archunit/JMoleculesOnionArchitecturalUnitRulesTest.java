@@ -21,6 +21,7 @@ import static org.jmolecules.archunit.TestUtils.*;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.jmolecules.architecture.onion.Onion.Exposure;
 import org.jmolecules.architecture.onion.Onion.Referrer;
@@ -191,5 +192,25 @@ class JMoleculesOnionArchitecturalUnitRulesTest {
 				.evaluate(types).getFailureReport().getDetails();
 
 		assertNotReported(details, "InfraA.appB");
+	}
+
+	@ArchTest // GH-418
+	void onlyVerifiesReferencesBetweenUnitsIfRequested(JavaClasses types) {
+
+		OnionVerificationOptions options = OnionVerificationOptions.defaults();
+
+		List<String> crossUnit = JMoleculesArchitectureRules.ensureOnionSimple(options).evaluate(types)
+				.getFailureReport().getDetails().stream()
+				.filter(it -> it.contains("architectural unit"))
+				.collect(Collectors.toList());
+
+		assertThat(JMoleculesArchitectureRules.ensureOnionSimpleUnitBoundaries(options).evaluate(types)
+				.getFailureReport().getDetails())
+				.isNotEmpty()
+				.containsExactlyInAnyOrderElementsOf(crossUnit);
+
+		// No type uses classical rings, so no references between units are restricted
+		assertThat(JMoleculesArchitectureRules.ensureOnionClassicalUnitBoundaries(options).evaluate(types)
+				.hasViolation()).isFalse();
 	}
 }
