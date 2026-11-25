@@ -76,13 +76,17 @@ var options = HexagonalVerificationOptions.defaults()
 
 === Architectural units
 
-Annotations meta-annotated with `@ArchitecturalUnit` (e.g. `@Module`, `@Hexagon` or `@Onion`) declare packages as _architectural units_.
-The Hexagonal rules are then applied to each unit using the language individually, and once to the code outside of any unit, i.e. references within a hexagon (and to code outside of any hexagon) are subject to the usual layering rules.
+Annotations meta-annotated with `@ArchitecturalUnit` (e.g. `@Module`, `@Hexagon`, `@Onion` or `@Layered`) declare packages as _architectural units_.
+The Hexagonal, Onion and Layered rules are then applied to each unit using the language individually, and once to the code outside of any unit, i.e. references within a unit (and to code outside of any unit) are subject to the usual layering rules.
 References between units are governed by the roles a unit exposes and the roles that may refer to other units, as described below.
-The Onion rules govern the references between units that use the respective architectural language in the same way.
-A unit uses a language if at least one of its types is assigned a stereotype of it, or if it is declared via `@Hexagon` or `@Onion`.
+A unit uses a language if at least one of its types is assigned a stereotype of it, or if it is declared via `@Hexagon`, `@Onion` or `@Layered`.
 For the Hexagonal Architecture, by default, only secondary adapters may refer to other units, and only to their primary adapters.
 For the Onion Architecture, by default, only infrastructure ring types may refer to other units, and only to their infrastructure ring types.
+For the Layered Architecture, by default, only application and domain layer types may refer to other units, and only to their application and domain layer types.
+All layers can be exposed and allowed to refer to other units, usually the lower layers of a unit being exposed to the upper ones of others.
+
+NOTE: `ensureLayering()` and `ensureLayeringStrict()` don't consider architectural units, as their return type (`LayeredArchitecture`) can't express that.
+They're deprecated in favor of `ensureLayering(LayeredVerificationOptions)` and `ensureLayeringStrict(LayeredVerificationOptions)`.
 
 ==== Customizing Exposure and Referrers
 
@@ -100,7 +104,7 @@ var options = HexagonalVerificationOptions.defaults()
 Secondary ports can be exposed via `Exposure.SECONDARY_PORTS`, e.g. to allow other units to use a repository directly instead of going through a primary port and the application code. Declaring that on the unit documents the design decision.
 
 Primary adapters (infrastructure ring types for the Onion Architecture) by default are only ever exposed to secondary adapters (infrastructure ring types) of other units.
-Individual units can replace the global settings via the `exposes` and `refersVia` attributes of `@Hexagon` and `@Onion`:
+Individual units can replace the global settings via the `exposes` and `refersVia` attributes of `@Hexagon`, `@Onion` and `@Layered`:
 
 [source, java]
 ----
@@ -130,12 +134,12 @@ In units not using it, as well as in code outside of any unit, any type may refe
 
 ==== Direct Application-Level Access
 
-`withDirectApplicationAccess()` on the Hexagonal and Onion options allows the application core (application code including types without stereotypes of the language, as well as primary and secondary ports for the Hexagonal Architecture) to refer to the application code and primary ports (application ring types for the Onion Architecture) of other units, as well as to all types of units not using the language.
+`withDirectApplicationAccess()` on the Hexagonal, Onion and Layered options allows the application core (application code including types without stereotypes of the language, as well as primary and secondary ports for the Hexagonal Architecture) to refer to the application code and primary ports (application ring and layer types for the Onion and Layered Architecture) of other units, as well as to all types of units not using the language.
 That access is granted independently of the exposure and referrers configured, globally or on the individual units.
 `withoutDirectApplicationAccess()` disables it again.
 All other references, e.g. secondary adapters referring to primary ports of other units, still require the roles to be exposed explicitly.
 
-To only verify the references between units, e.g. to combine that with a verification of the units' internals set up separately, use `ensureHexagonalUnitBoundaries(…)`, `ensureOnionSimpleUnitBoundaries(…)` or `ensureOnionClassicalUnitBoundaries(…)`.
+To only verify the references between units, e.g. to combine that with a verification of the units' internals set up separately, use `ensureHexagonalUnitBoundaries(…)`, `ensureOnionSimpleUnitBoundaries(…)`, `ensureOnionClassicalUnitBoundaries(…)` or `ensureLayeringUnitBoundaries(…)`.
 They don't apply the layer and ring rules.
 
 ==== Customizing Unit Resolution

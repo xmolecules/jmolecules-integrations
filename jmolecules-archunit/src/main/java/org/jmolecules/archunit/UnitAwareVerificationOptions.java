@@ -31,9 +31,9 @@ import com.tngtech.archunit.core.domain.JavaClass;
  * Base class for the options of architectural languages that can also verify the references between
  * {@link org.jmolecules.archunit.ArchitecturalUnits.ArchitecturalUnit}s. A unit is considered to use a language if at
  * least one of its types is assigned a stereotype of it, or if it is declared via the language's unit annotation
- * ({@link org.jmolecules.architecture.hexagonal.Hexagon}, {@link org.jmolecules.architecture.onion.Onion}). For the
- * Onion Architecture, the latter only applies to the variant whose rings the unit uses, if any. For units using the
- * language, the options define:
+ * ({@link org.jmolecules.architecture.hexagonal.Hexagon}, {@link org.jmolecules.architecture.onion.Onion},
+ * {@link org.jmolecules.architecture.layered.Layered}). For the Onion Architecture, the latter only applies to the
+ * variant whose rings the unit uses, if any. For units using the language, the options define:
  * <ul>
  * <li>which roles of the language a unit exposes to other units, i.e. which of its types other units may refer to
  * ({@code withExposure(…)} on the language-specific options),</li>

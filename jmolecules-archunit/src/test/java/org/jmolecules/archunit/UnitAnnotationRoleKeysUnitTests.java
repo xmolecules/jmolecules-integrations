@@ -21,15 +21,17 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.jmolecules.architecture.hexagonal.Hexagon;
+import org.jmolecules.architecture.layered.Layered;
 import org.jmolecules.architecture.onion.Onion;
 import org.jmolecules.archunit.JMoleculesArchitectureRules.HexagonAnnotation;
+import org.jmolecules.archunit.JMoleculesArchitectureRules.LayeredAnnotation;
 import org.jmolecules.archunit.JMoleculesArchitectureRules.OnionAnnotation;
 import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests to make sure the role keys the rules use to refer to the {@code exposes} and {@code refersVia} attribute
- * values of {@link Hexagon} and {@link Onion} match the names of the enum constants, which the rules cannot refer to
- * directly as they might not be present on the classpath.
+ * values of {@link Hexagon}, {@link Onion} and {@link Layered} match the names of the enum constants, which the rules
+ * cannot refer to directly as they might not be present on the classpath.
  *
  * @author Oliver Drotbohm
  */
@@ -60,6 +62,20 @@ class UnitAnnotationRoleKeysUnitTests {
 
 		assertThat(List.of(OnionAnnotation.REFERS_VIA_INFRASTRUCTURE, OnionAnnotation.REFERS_VIA_APPLICATION))
 				.containsExactlyInAnyOrderElementsOf(names(Onion.Referrer.values()));
+	}
+
+	@Test // GH-418
+	void usesLayeredConstantNamesAsRoleKeys() {
+
+		assertThat(LayeredAnnotation.NAME).isEqualTo(Layered.class.getName());
+
+		assertThat(List.of(LayeredAnnotation.EXPOSES_INTERFACE, LayeredAnnotation.EXPOSES_APPLICATION,
+				LayeredAnnotation.EXPOSES_DOMAIN, LayeredAnnotation.EXPOSES_INFRASTRUCTURE))
+				.containsExactlyInAnyOrderElementsOf(names(Layered.Exposure.values()));
+
+		assertThat(List.of(LayeredAnnotation.REFERS_VIA_INTERFACE, LayeredAnnotation.REFERS_VIA_APPLICATION,
+				LayeredAnnotation.REFERS_VIA_DOMAIN, LayeredAnnotation.REFERS_VIA_INFRASTRUCTURE))
+				.containsExactlyInAnyOrderElementsOf(names(Layered.Referrer.values()));
 	}
 
 	private static List<String> names(Enum<?>... values) {

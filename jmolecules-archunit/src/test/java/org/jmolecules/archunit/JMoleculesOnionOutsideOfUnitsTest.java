@@ -79,7 +79,9 @@ class JMoleculesOnionOutsideOfUnitsTest {
 				.getDetails();
 
 		assertThat(details)
-				.anySatisfy(it -> assertThat(it).contains("DomainOut.infraOut>").doesNotContain("architectural unit"))
-				.anySatisfy(it -> assertThat(it).contains("AppOut.infraB>").doesNotContain("architectural unit"));
+				.anySatisfy(it -> assertThat(it).contains("DomainOut.infraOut>").doesNotContain("architectural unit"));
+
+		// References into units are only governed by their exposure, not by the ring rules
+		assertNotReported(details, "AppOut.infraB");
 	}
 }

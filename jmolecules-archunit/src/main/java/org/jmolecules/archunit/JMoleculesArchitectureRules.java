@@ -26,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.lang.annotation.Annotation;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -108,21 +109,24 @@ public class JMoleculesArchitectureRules {
 
 	/**
 	 * ArchUnit {@link LayeredArchitecture} defined by considering JMolecules layer annotations allowing access of
-	 * <em>all</em> layers below.
+	 * <em>all</em> layers below. Does not consider {@link ArchitecturalUnit}s, i.e. applies the layer rules to all types.
 	 *
 	 * @return will never be {@literal null}.
 	 * @see InterfaceLayer
 	 * @see ApplicationLayer
 	 * @see DomainLayer
 	 * @see InfrastructureLayer
+	 * @deprecated since 0.34, in favor of {@link #ensureLayering(LayeredVerificationOptions)}, which also considers
+	 *             {@link ArchitecturalUnit}s.
 	 */
+	@Deprecated(since = "0.34", forRemoval = true)
 	public static LayeredArchitecture ensureLayering() {
-		return ensureLayering(LayeredVerificationOptions.defaults());
+		return layering(LayeredVerificationOptions.defaults(), null, false);
 	}
 
 	/**
 	 * ArchUnit {@link LayeredArchitecture} defined by considering JMolecules layer annotations allowing access of
-	 * <em>all</em> layers below.
+	 * <em>all</em> layers below. Does not consider {@link ArchitecturalUnit}s, i.e. applies the layer rules to all types.
 	 *
 	 * @param lookup must not be {@literal null}.
 	 * @return will never be {@literal null}.
@@ -131,19 +135,32 @@ public class JMoleculesArchitectureRules {
 	 * @see DomainLayer
 	 * @see InfrastructureLayer
 	 * @since 0.22
-	 * @deprecated since 0.34, in favor of {@link #ensureLayering(LayeredVerificationOptions)}.
+	 * @deprecated since 0.34, in favor of {@link #ensureLayering(LayeredVerificationOptions)}, which also considers
+	 *             {@link ArchitecturalUnit}s.
 	 */
 	@Deprecated(since = "0.34", forRemoval = true)
 	public static LayeredArchitecture ensureLayering(StereotypeLookup lookup) {
 
 		LayeredVerificationOptions options = LayeredVerificationOptions.defaults().withStereotypeLookup(lookup);
 
-		return ensureLayering(options);
+		return layering(options, null, false);
 	}
 
 	/**
-	 * ArchUnit {@link LayeredArchitecture} defined by considering JMolecules layer annotations allowing access of
-	 * <em>all</em> layers below, using the given {@link LayeredVerificationOptions}.
+	 * ArchUnit {@link ArchRule} defined by considering JMolecules layer annotations allowing access of <em>all</em>
+	 * layers below, using the given {@link LayeredVerificationOptions}.
+	 * <p>
+	 * {@link ArchitecturalUnit}s (packages annotated with an annotation meta-annotated with
+	 * {@link org.jmolecules.stereotype.ArchitecturalUnit}, like {@link org.jmolecules.architecture.layered.Layered} or
+	 * {@link org.jmolecules.ddd.annotation.Module}) are verified individually: the layer rules apply to the references
+	 * within each unit using layer annotations, and to the references to types outside of any unit. References between
+	 * units are only governed by the layers they expose and the ones allowed to refer to other units: by default, only
+	 * application and domain layer types may refer to other units, and only to their application and domain layer types. Types outside of any
+	 * unit may refer to whatever other units expose. See
+	 * {@link LayeredVerificationOptions#withExposure(org.jmolecules.architecture.layered.Layered.Exposure...)} and
+	 * {@link LayeredVerificationOptions#withReferrers(org.jmolecules.architecture.layered.Layered.Referrer...)} to change
+	 * that globally, and {@link org.jmolecules.architecture.layered.Layered#exposes()} and
+	 * {@link org.jmolecules.architecture.layered.Layered#refersVia()} to do so for individual units.
 	 *
 	 * @param options must not be {@literal null}.
 	 * @return will never be {@literal null}.
@@ -153,34 +170,34 @@ public class JMoleculesArchitectureRules {
 	 * @see InfrastructureLayer
 	 * @since 0.34
 	 */
-	public static LayeredArchitecture ensureLayering(LayeredVerificationOptions options) {
+	public static ArchRule ensureLayering(LayeredVerificationOptions options) {
 
 		Assert.notNull(options, "LayeredVerificationOptions must not be null!");
 
-		return layeredArchitecture(options)
-				.whereLayer(INTERFACE).mayNotBeAccessedByAnyLayer()
-				.whereLayer(APPLICATION).mayOnlyBeAccessedByLayers(INTERFACE)
-				.whereLayer(DOMAIN).mayOnlyBeAccessedByLayers(APPLICATION, INTERFACE)
-				.whereLayer(INFRASTRUCTURE).mayOnlyBeAccessedByLayers(DOMAIN, APPLICATION, INTERFACE);
+		return new UnitAwareRule<>(options, LAYER_ANNOTATIONS, (it, ignoredTargets) -> layering(it, ignoredTargets, false),
+				JMoleculesArchitectureRules::layeredUnitBoundaries, null, null);
 	}
 
 	/**
 	 * ArchUnit {@link LayeredArchitecture} defined by considering JMolecules layer annotations allowing access to the
-	 * next lower layer only.
+	 * next lower layer only. Does not consider {@link ArchitecturalUnit}s, i.e. applies the layer rules to all types.
 	 *
 	 * @return will never be {@literal null}.
 	 * @see InterfaceLayer
 	 * @see ApplicationLayer
 	 * @see DomainLayer
 	 * @see InfrastructureLayer
+	 * @deprecated since 0.34, in favor of {@link #ensureLayeringStrict(LayeredVerificationOptions)}, which also
+	 *             considers {@link ArchitecturalUnit}s.
 	 */
+	@Deprecated(since = "0.34", forRemoval = true)
 	public static LayeredArchitecture ensureLayeringStrict() {
-		return ensureLayeringStrict(LayeredVerificationOptions.defaults());
+		return layering(LayeredVerificationOptions.defaults(), null, true);
 	}
 
 	/**
 	 * ArchUnit {@link LayeredArchitecture} defined by considering JMolecules layer annotations allowing access to the
-	 * next lower layer only.
+	 * next lower layer only. Does not consider {@link ArchitecturalUnit}s, i.e. applies the layer rules to all types.
 	 *
 	 * @param lookup must not be {@literal null}.
 	 * @return will never be {@literal null}.
@@ -189,19 +206,21 @@ public class JMoleculesArchitectureRules {
 	 * @see DomainLayer
 	 * @see InfrastructureLayer
 	 * @since 0.22
-	 * @deprecated since 0.34, in favor of {@link #ensureLayeringStrict(LayeredVerificationOptions)}.
+	 * @deprecated since 0.34, in favor of {@link #ensureLayeringStrict(LayeredVerificationOptions)}, which also
+	 *             considers {@link ArchitecturalUnit}s.
 	 */
 	@Deprecated(since = "0.34", forRemoval = true)
 	public static LayeredArchitecture ensureLayeringStrict(StereotypeLookup lookup) {
 
 		LayeredVerificationOptions options = LayeredVerificationOptions.defaults().withStereotypeLookup(lookup);
 
-		return ensureLayeringStrict(options);
+		return layering(options, null, true);
 	}
 
 	/**
-	 * ArchUnit {@link LayeredArchitecture} defined by considering JMolecules layer annotations allowing access to the
-	 * next lower layer only, using the given {@link LayeredVerificationOptions}.
+	 * ArchUnit {@link ArchRule} defined by considering JMolecules layer annotations allowing access to the next lower
+	 * layer only, using the given {@link LayeredVerificationOptions}. {@link ArchitecturalUnit}s are considered as
+	 * described for {@link #ensureLayering(LayeredVerificationOptions)}.
 	 *
 	 * @param options must not be {@literal null}.
 	 * @return will never be {@literal null}.
@@ -211,15 +230,32 @@ public class JMoleculesArchitectureRules {
 	 * @see InfrastructureLayer
 	 * @since 0.34
 	 */
-	public static LayeredArchitecture ensureLayeringStrict(LayeredVerificationOptions options) {
+	public static ArchRule ensureLayeringStrict(LayeredVerificationOptions options) {
 
 		Assert.notNull(options, "LayeredVerificationOptions must not be null!");
 
-		return layeredArchitecture(options)
-				.whereLayer(INTERFACE).mayNotBeAccessedByAnyLayer()
-				.whereLayer(APPLICATION).mayOnlyBeAccessedByLayers(INTERFACE)
-				.whereLayer(DOMAIN).mayOnlyBeAccessedByLayers(APPLICATION)
-				.whereLayer(INFRASTRUCTURE).mayOnlyBeAccessedByLayers(DOMAIN);
+		return new UnitAwareRule<>(options, LAYER_ANNOTATIONS, (it, ignoredTargets) -> layering(it, ignoredTargets, true),
+				JMoleculesArchitectureRules::layeredUnitBoundaries, null, null);
+	}
+
+	/**
+	 * ArchUnit {@link ArchRule} only verifying the references between {@link ArchitecturalUnit}s using layer
+	 * annotations, according to the exposure and referrers configured in the given {@link LayeredVerificationOptions} or
+	 * declared on the individual units. In contrast to {@link #ensureLayering(LayeredVerificationOptions)}, the layer
+	 * rules are not applied, neither within the units nor to the types outside of any unit, so that the rule can be
+	 * combined with a verification of the units' internals set up separately, e.g. for each unit individually.
+	 *
+	 * @param options must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @see #ensureLayering(LayeredVerificationOptions)
+	 * @see #ensureLayeringStrict(LayeredVerificationOptions)
+	 * @since 0.34
+	 */
+	public static ArchRule ensureLayeringUnitBoundaries(LayeredVerificationOptions options) {
+
+		Assert.notNull(options, "LayeredVerificationOptions must not be null!");
+
+		return layeredUnitBoundaries(options);
 	}
 
 	/**
@@ -280,17 +316,8 @@ public class JMoleculesArchitectureRules {
 
 		Assert.notNull(options, "OnionVerificationOptions must not be null!");
 
-		return CompositeArchRule.of(onionArchitectureSimple(options)
-
-				.whereLayer(ONION_SIMPLE_INFRASTRUCTURE)
-				.mayNotBeAccessedByAnyLayer()
-
-				.whereLayer(ONION_SIMPLE_APPLICATION)
-				.mayOnlyBeAccessedByLayers(ONION_SIMPLE_INFRASTRUCTURE)
-
-				.whereLayer(ONION_SIMPLE_DOMAIN)
-				.mayOnlyBeAccessedByLayers(ONION_SIMPLE_APPLICATION, ONION_SIMPLE_INFRASTRUCTURE))
-				.and(onionSimpleUnitBoundaries(options));
+		return new UnitAwareRule<>(options, ONION_SIMPLE_ANNOTATIONS, JMoleculesArchitectureRules::onionSimpleRings,
+				JMoleculesArchitectureRules::onionSimpleUnitBoundaries, null, null);
 	}
 
 	/**
@@ -372,21 +399,8 @@ public class JMoleculesArchitectureRules {
 
 		Assert.notNull(options, "OnionVerificationOptions must not be null!");
 
-		return CompositeArchRule.of(onionArchitecture(options)
-
-				.whereLayer(ONION_CLASSICAL_INFRASTRUCTURE)
-				.mayNotBeAccessedByAnyLayer()
-
-				.whereLayer(ONION_CLASSICAL_APPLICATION)
-				.mayOnlyBeAccessedByLayers(ONION_CLASSICAL_INFRASTRUCTURE)
-
-				.whereLayer(ONION_CLASSICAL_DOMAIN_SERVICE)
-				.mayOnlyBeAccessedByLayers(ONION_CLASSICAL_APPLICATION, ONION_CLASSICAL_INFRASTRUCTURE)
-
-				.whereLayer(ONION_CLASSICAL_DOMAIN_MODEL)
-				.mayOnlyBeAccessedByLayers(ONION_CLASSICAL_DOMAIN_SERVICE, ONION_CLASSICAL_APPLICATION,
-						ONION_CLASSICAL_INFRASTRUCTURE))
-				.and(onionClassicalUnitBoundaries(options));
+		return new UnitAwareRule<>(options, ONION_CLASSICAL_ANNOTATIONS, JMoleculesArchitectureRules::onionClassicalRings,
+				JMoleculesArchitectureRules::onionClassicalUnitBoundaries, null, null);
 	}
 
 	/**
@@ -522,7 +536,8 @@ public class JMoleculesArchitectureRules {
 
 		Assert.notNull(options, "HexagonalVerificationOptions must not be null!");
 
-		return new HexagonalUnitRule(options, null, null);
+		return new UnitAwareRule<>(options, HEXAGONAL_ANNOTATIONS, JMoleculesArchitectureRules::hexagonalLayers,
+				JMoleculesArchitectureRules::hexagonalUnitBoundaries, null, null);
 	}
 
 	/**
@@ -600,6 +615,35 @@ public class JMoleculesArchitectureRules {
 						HEXAGONAL_PORT_UNQUALIFIED);
 	}
 
+	/**
+	 * The layer rules of the Layered Architecture, only considering the types in the scope of the given options.
+	 *
+	 * @param options must not be {@literal null}.
+	 * @param ignoredTargets the types to ignore references to, can be {@literal null}.
+	 * @param strict whether to only allow access to the next lower layer.
+	 */
+	private static LayeredArchitecture layering(LayeredVerificationOptions options,
+			@Nullable DescribedPredicate<JavaClass> ignoredTargets, boolean strict) {
+
+		LayeredArchitecture architecture = strict
+
+				? layeredArchitecture(options)
+						.whereLayer(INTERFACE).mayNotBeAccessedByAnyLayer()
+						.whereLayer(APPLICATION).mayOnlyBeAccessedByLayers(INTERFACE)
+						.whereLayer(DOMAIN).mayOnlyBeAccessedByLayers(APPLICATION)
+						.whereLayer(INFRASTRUCTURE).mayOnlyBeAccessedByLayers(DOMAIN)
+
+				: layeredArchitecture(options)
+						.whereLayer(INTERFACE).mayNotBeAccessedByAnyLayer()
+						.whereLayer(APPLICATION).mayOnlyBeAccessedByLayers(INTERFACE)
+						.whereLayer(DOMAIN).mayOnlyBeAccessedByLayers(APPLICATION, INTERFACE)
+						.whereLayer(INFRASTRUCTURE).mayOnlyBeAccessedByLayers(DOMAIN, APPLICATION, INTERFACE);
+
+		return ignoredTargets == null
+				? architecture
+				: architecture.ignoreDependency(DescribedPredicate.<JavaClass> alwaysTrue(), ignoredTargets);
+	}
+
 	private static LayeredArchitecture layeredArchitecture(LayeredVerificationOptions options) {
 
 		StereotypeLookup lookup = options.getStereotypeLookup();
@@ -621,6 +665,60 @@ public class JMoleculesArchitectureRules {
 				.definedBy(lookup.forAnnotation(InterfaceLayer.class, LAYER_ANNOTATIONS));
 
 		return scoped(architecture, options);
+	}
+
+	/**
+	 * The ring rules of the classical Onion Architecture, only considering the types in the scope of the given options.
+	 *
+	 * @param options must not be {@literal null}.
+	 * @param ignoredTargets the types to ignore references to, can be {@literal null}.
+	 */
+	private static ArchRule onionClassicalRings(OnionVerificationOptions options,
+			@Nullable DescribedPredicate<JavaClass> ignoredTargets) {
+
+		LayeredArchitecture architecture = onionArchitecture(options)
+
+				.whereLayer(ONION_CLASSICAL_INFRASTRUCTURE)
+				.mayNotBeAccessedByAnyLayer()
+
+				.whereLayer(ONION_CLASSICAL_APPLICATION)
+				.mayOnlyBeAccessedByLayers(ONION_CLASSICAL_INFRASTRUCTURE)
+
+				.whereLayer(ONION_CLASSICAL_DOMAIN_SERVICE)
+				.mayOnlyBeAccessedByLayers(ONION_CLASSICAL_APPLICATION, ONION_CLASSICAL_INFRASTRUCTURE)
+
+				.whereLayer(ONION_CLASSICAL_DOMAIN_MODEL)
+				.mayOnlyBeAccessedByLayers(ONION_CLASSICAL_DOMAIN_SERVICE, ONION_CLASSICAL_APPLICATION,
+						ONION_CLASSICAL_INFRASTRUCTURE);
+
+		return ignoredTargets == null
+				? architecture
+				: architecture.ignoreDependency(DescribedPredicate.<JavaClass> alwaysTrue(), ignoredTargets);
+	}
+
+	/**
+	 * The ring rules of the simplified Onion Architecture, only considering the types in the scope of the given options.
+	 *
+	 * @param options must not be {@literal null}.
+	 * @param ignoredTargets the types to ignore references to, can be {@literal null}.
+	 */
+	private static ArchRule onionSimpleRings(OnionVerificationOptions options,
+			@Nullable DescribedPredicate<JavaClass> ignoredTargets) {
+
+		LayeredArchitecture architecture = onionArchitectureSimple(options)
+
+				.whereLayer(ONION_SIMPLE_INFRASTRUCTURE)
+				.mayNotBeAccessedByAnyLayer()
+
+				.whereLayer(ONION_SIMPLE_APPLICATION)
+				.mayOnlyBeAccessedByLayers(ONION_SIMPLE_INFRASTRUCTURE)
+
+				.whereLayer(ONION_SIMPLE_DOMAIN)
+				.mayOnlyBeAccessedByLayers(ONION_SIMPLE_APPLICATION, ONION_SIMPLE_INFRASTRUCTURE);
+
+		return ignoredTargets == null
+				? architecture
+				: architecture.ignoreDependency(DescribedPredicate.<JavaClass> alwaysTrue(), ignoredTargets);
 	}
 
 	private static LayeredArchitecture onionArchitecture(OnionVerificationOptions options) {
@@ -768,6 +866,47 @@ public class JMoleculesArchitectureRules {
 		return unitBoundaries(roles, options);
 	}
 
+	/**
+	 * Verifies the references between {@link ArchitecturalUnit}s for the Layered Architecture, considering only units
+	 * using layer annotations. See {@link #ensureLayering(LayeredVerificationOptions)} for details.
+	 *
+	 * @param options must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	private static ArchRule layeredUnitBoundaries(LayeredVerificationOptions options) {
+
+		StereotypeLookup lookup = options.getStereotypeLookup();
+
+		IsStereotype interfaceLayer = lookup.forAnnotation(InterfaceLayer.class, LAYER_ANNOTATIONS);
+		IsStereotype applicationLayer = lookup.forAnnotation(ApplicationLayer.class, LAYER_ANNOTATIONS);
+		IsStereotype domainLayer = lookup.forAnnotation(DomainLayer.class, LAYER_ANNOTATIONS);
+		IsStereotype infrastructureLayer = lookup.forAnnotation(InfrastructureLayer.class, LAYER_ANNOTATIONS);
+
+		Predicate<JavaClass> stereotyped = anyOf(lookup, LAYER_ANNOTATIONS);
+		Predicate<JavaClass> applicationCode = applicationLayer.or(stereotyped.negate());
+
+		List<UnitRole> exposures = List.of(
+				new UnitRole(LayeredAnnotation.EXPOSES_INTERFACE, "interface layer types", interfaceLayer, false),
+				new UnitRole(LayeredAnnotation.EXPOSES_APPLICATION, "application layer types", applicationLayer, false),
+				new UnitRole(LayeredAnnotation.EXPOSES_DOMAIN, "domain layer types", domainLayer, false),
+				new UnitRole(LayeredAnnotation.EXPOSES_INFRASTRUCTURE, "infrastructure layer types", infrastructureLayer,
+						false));
+
+		List<UnitRole> referrers = List.of(
+				new UnitRole(LayeredAnnotation.REFERS_VIA_INTERFACE, "interface layer types", interfaceLayer, false),
+				new UnitRole(LayeredAnnotation.REFERS_VIA_APPLICATION,
+						"application layer types (including types not assigned to a layer)", applicationCode, false),
+				new UnitRole(LayeredAnnotation.REFERS_VIA_DOMAIN, "domain layer types", domainLayer, false),
+				new UnitRole(LayeredAnnotation.REFERS_VIA_INFRASTRUCTURE, "infrastructure layer types", infrastructureLayer,
+						false));
+
+		// No layer is exposed to a designated layer of other units only, so there are no designated outgoing types
+		UnitRoles roles = new UnitRoles("layers", stereotyped, it -> false, "", LayeredAnnotation.NAME, null, exposures,
+				referrers, applicationCode, applicationLayer, "application layer types (to application layer types)");
+
+		return unitBoundaries(roles, options);
+	}
+
 	private static ArchRule onionSimpleUnitBoundaries(OnionVerificationOptions options) {
 		return onionUnitBoundaries(options, ONION_SIMPLE_ANNOTATIONS, InfrastructureRing.class, ApplicationRing.class,
 				ONION_CLASSICAL_ANNOTATIONS);
@@ -825,11 +964,12 @@ public class JMoleculesArchitectureRules {
 	}
 
 	/**
-	 * The {@link ArchRule} for the Hexagonal Architecture. As the {@link ArchitecturalUnit}s to verify are only known
-	 * once the types to analyze are, the actual rules are assembled when evaluating them:
+	 * The {@link ArchRule} for an architectural language whose layer rules are applied to each {@link ArchitecturalUnit}
+	 * individually (the Hexagonal, Onion and Layered Architecture). As the units to verify are only known once the types
+	 * to analyze are, the actual rules are assembled when evaluating them:
 	 * <ul>
-	 * <li>the layer rules for each unit containing hexagonal stereotypes, only considering the references between the
-	 * unit's own types,</li>
+	 * <li>the layer rules for each unit containing stereotypes of the language, only considering the references between
+	 * the unit's own types,</li>
 	 * <li>the layer rules for the references to types outside of any unit,</li>
 	 * <li>the verification of the references between units according to the exposure and referrers configured.</li>
 	 * </ul>
@@ -837,14 +977,31 @@ public class JMoleculesArchitectureRules {
 	 *
 	 * @author Oliver Drotbohm
 	 */
-	private static class HexagonalUnitRule implements ArchRule {
+	private static class UnitAwareRule<O extends UnitAwareVerificationOptions<O>> implements ArchRule {
 
-		private final HexagonalVerificationOptions options;
+		private final O options;
+		private final Collection<Class<? extends Annotation>> annotations;
+		private final BiFunction<O, DescribedPredicate<JavaClass>, ArchRule> layers;
+		private final Function<O, ArchRule> boundaries;
 		private final @Nullable String description, reason;
 
-		HexagonalUnitRule(HexagonalVerificationOptions options, @Nullable String description, @Nullable String reason) {
+		/**
+		 * @param options must not be {@literal null}.
+		 * @param annotations the stereotype annotations of the language, must not be {@literal null}.
+		 * @param layers creates the layer rules for the given options, ignoring the references to the types matching the
+		 *          given predicate if not {@literal null}.
+		 * @param boundaries creates the verification of the references between units for the given options.
+		 * @param description can be {@literal null}.
+		 * @param reason can be {@literal null}.
+		 */
+		UnitAwareRule(O options, Collection<Class<? extends Annotation>> annotations,
+				BiFunction<O, DescribedPredicate<JavaClass>, ArchRule> layers, Function<O, ArchRule> boundaries,
+				@Nullable String description, @Nullable String reason) {
 
 			this.options = options;
+			this.annotations = annotations;
+			this.layers = layers;
+			this.boundaries = boundaries;
 			this.description = description;
 			this.reason = reason;
 		}
@@ -864,7 +1021,7 @@ public class JMoleculesArchitectureRules {
 		 */
 		@Override
 		public ArchRule because(String reason) {
-			return new HexagonalUnitRule(options, description, reason);
+			return new UnitAwareRule<>(options, annotations, layers, boundaries, description, reason);
 		}
 
 		/*
@@ -882,7 +1039,7 @@ public class JMoleculesArchitectureRules {
 		 */
 		@Override
 		public ArchRule as(String description) {
-			return new HexagonalUnitRule(options, description, reason);
+			return new UnitAwareRule<>(options, annotations, layers, boundaries, description, reason);
 		}
 
 		/*
@@ -905,38 +1062,38 @@ public class JMoleculesArchitectureRules {
 					? options.getUnitResolver()
 					: new ArchitecturalUnits();
 
-			Predicate<JavaClass> stereotyped = anyOf(options.getStereotypeLookup(), HEXAGONAL_ANNOTATIONS);
-			Set<ArchitecturalUnit> hexagons = new LinkedHashSet<>();
+			Predicate<JavaClass> stereotyped = anyOf(options.getStereotypeLookup(), annotations);
+			Set<ArchitecturalUnit> units = new LinkedHashSet<>();
 
 			for (JavaClass type : classes) {
 
 				ArchitecturalUnit unit = resolver.getUnitFor(type);
 
 				if (unit != null && stereotyped.test(type)) {
-					hexagons.add(unit);
+					units.add(unit);
 				}
 			}
 
-			return create(resolver, hexagons).evaluate(classes);
+			return create(resolver, units).evaluate(classes);
 		}
 
-		private ArchRule create(ArchitecturalUnitResolver resolver, Collection<ArchitecturalUnit> hexagons) {
+		private ArchRule create(ArchitecturalUnitResolver resolver, Collection<ArchitecturalUnit> units) {
 
 			DescribedPredicate<JavaClass> inAnyUnit = DescribedPredicate.describe("belong to an architectural unit",
 					type -> resolver.getUnitFor(type) != null);
 
-			CompositeArchRule result = CompositeArchRule.of(hexagonalLayers(options, inAnyUnit));
+			CompositeArchRule result = CompositeArchRule.of(layers.apply(options, inAnyUnit));
 
-			for (ArchitecturalUnit hexagon : hexagons) {
+			for (ArchitecturalUnit unit : units) {
 
 				DescribedPredicate<JavaClass> inUnit = DescribedPredicate.describe(
-						"belong to architectural unit " + hexagon, type -> hexagon.equals(resolver.getUnitFor(type)));
+						"belong to architectural unit " + unit, type -> unit.equals(resolver.getUnitFor(type)));
 				DescribedPredicate<JavaClass> scope = options.getScope() == null ? inUnit : options.getScope().and(inUnit);
 
-				result = result.and(hexagonalLayers(options.withScope(scope), null));
+				result = result.and(layers.apply(options.withScope(scope), null));
 			}
 
-			ArchRule rule = result.and(hexagonalUnitBoundaries(options));
+			ArchRule rule = result.and(boundaries.apply(options));
 
 			if (description != null) {
 				rule = rule.as(description);
@@ -1008,6 +1165,25 @@ public class JMoleculesArchitectureRules {
 
 		static final String REFERS_VIA_INFRASTRUCTURE = "INFRASTRUCTURE";
 		static final String REFERS_VIA_APPLICATION = "APPLICATION";
+	}
+
+	/**
+	 * The name of {@link org.jmolecules.architecture.layered.Layered} and its {@code Exposure} and {@code Referrer}
+	 * constants, introduced in jMolecules 2.1. See {@link HexagonAnnotation} for details.
+	 */
+	static class LayeredAnnotation {
+
+		static final String NAME = "org.jmolecules.architecture.layered.Layered";
+
+		static final String EXPOSES_INTERFACE = "INTERFACE";
+		static final String EXPOSES_APPLICATION = "APPLICATION";
+		static final String EXPOSES_DOMAIN = "DOMAIN";
+		static final String EXPOSES_INFRASTRUCTURE = "INFRASTRUCTURE";
+
+		static final String REFERS_VIA_INTERFACE = "INTERFACE";
+		static final String REFERS_VIA_APPLICATION = "APPLICATION";
+		static final String REFERS_VIA_DOMAIN = "DOMAIN";
+		static final String REFERS_VIA_INFRASTRUCTURE = "INFRASTRUCTURE";
 	}
 
 	/**

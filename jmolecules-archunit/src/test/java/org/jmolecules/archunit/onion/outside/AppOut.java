@@ -26,5 +26,5 @@ import org.jmolecules.archunit.onion.units.b.InfraB;
 class AppOut {
 
 	AppB appB; // application ring of a unit -> allowed, outside of units there are no restrictions on who may refer
-	InfraB infraB; // application ring must not refer to infrastructure ring -> violation of the layer rules
+	InfraB infraB; // infrastructure ring exposed by the unit -> allowed, the ring rules only apply within units
 }
