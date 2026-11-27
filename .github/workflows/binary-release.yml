@@ -31,10 +31,13 @@ jobs:
       matrix:
         include:
           # macOS Intel
+          # Oracle GraalVM stopped shipping macOS Intel builds with 25.0.1, which lacks the reachability
+          # metadata schema required by the native-maven-plugin. Liberica NIK still ships current ones.
           - os: macos-15-intel
             platform: darwin
             arch: x86_64
             artifact-suffix: osx-x86_64
+            distribution: liberica
 
           # macOS Apple Silicon
           - os: macos-latest
@@ -66,7 +69,7 @@ jobs:
         uses: graalvm/setup-graalvm@v1
         with:
           java-version: ${{ env.JAVA_VERSION }}
-          distribution: 'graalvm'
+          distribution: ${{ matrix.distribution || 'graalvm' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           native-image-job-reports: 'true'
           cache: 'maven'
