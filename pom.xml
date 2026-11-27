@@ -33,8 +33,7 @@
 		<bytebuddy.version>1.18.17</bytebuddy.version>
 		<hibernate.version>6.6.59.Final</hibernate.version>
 		<java.version>17</java.version>
-		<jmolecules.version>2.1.0-SNAPSHOT</jmolecules.version>
-		<jmolecules-next.version>2.0.1</jmolecules-next.version>
+		<jmolecules.version>2.1.0</jmolecules.version>
 		<kotlin.version>2.4.21</kotlin.version>
 		<module.name>org.jmolecules.integrations</module.name>
 		<maven.compiler.proc>full</maven.compiler.proc>
