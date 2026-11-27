@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>org.jmolecules.integrations</groupId>
 		<artifactId>jmolecules-integrations</artifactId>
-		<version>0.34.0</version>
+		<version>0.34.1-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<artifactId>jmolecules-cli</artifactId>
