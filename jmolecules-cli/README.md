@@ -9,24 +9,21 @@ Command-line interface for jMolecules - Domain-Driven Design and architecture bu
 #### Homebrew
 
 ```bash
-brew install xmolecules/jm
+brew install xmolecules/tap/jm
 ```
 
 Bash completion is installed automatically and works in both bash and zsh.
 
 ### Linux
 
-Download the appropriate binary for your architecture from [GitHub Releases](https://github.com/xmolecules/jmolecules-integrations/releases):
-
-- **x86_64**: `jm-VERSION-linux-x86_64.tar.gz`
-- **ARM64**: `jm-VERSION-linux-aarch64.tar.gz`
+Download `jm-VERSION-linux-x86_64.zip` from [GitHub Releases](https://github.com/xmolecules/jmolecules-integrations/releases):
 
 ```bash
 # Extract archive
-tar -xzf jm-VERSION-linux-x86_64.tar.gz
+unzip jm-VERSION-linux-x86_64.zip -d jm
 
 # Move binary to PATH
-sudo mv bin/jm /usr/local/bin/
+sudo mv jm/bin/jm /usr/local/bin/
 ```
 
 The bash completion file is included in `completion/jm.completion` and works in both bash and zsh.
