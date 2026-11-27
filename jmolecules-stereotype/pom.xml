@@ -12,6 +12,7 @@
 	<name>jMolecules - Stereotype</name>
 
 	<properties>
+		<module.name>org.jmolecules.integrations.stereotype</module.name>
 		<java.version>17</java.version>
 	</properties>
 

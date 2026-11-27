@@ -13,6 +13,7 @@
 	<name>jMolecules - Code Generation</name>
 
 	<properties>
+		<module.name>org.jmolecules.integrations.codegen</module.name>
 		<java.version>17</java.version>
 		<spring-boot.version>${spring-boot4.version}</spring-boot.version>
 	</properties>

@@ -12,6 +12,7 @@
 	<name>jMolecules - Command Line Interface</name>
 	
 	<properties>
+		<module.name>org.jmolecules.integrations.cli</module.name>
 		<java.version>17</java.version>
 		<picocli.version>4.7.7</picocli.version>
 		<spring-boot.version>${spring-boot4.version}</spring-boot.version>
