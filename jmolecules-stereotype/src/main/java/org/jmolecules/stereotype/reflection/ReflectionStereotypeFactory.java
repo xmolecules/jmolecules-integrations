@@ -21,7 +21,9 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -209,6 +211,15 @@ public class ReflectionStereotypeFactory implements StereotypeFactory<Package, C
 	}
 
 	private static boolean isAnnotated(AnnotatedElement element, String fqn) {
+		return isAnnotated(element, fqn, new HashSet<>());
+	}
+
+	/**
+	 * Returns whether the given element is (meta-)annotated with the annotation of the given name. Keeps track of the
+	 * annotation types already inspected to terminate on annotation graphs containing cycles (e.g. Kotlin's
+	 * {@code @Target}, which is annotated with itself).
+	 */
+	private static boolean isAnnotated(AnnotatedElement element, String fqn, Set<Class<?>> visited) {
 
 		if (element == null) {
 			return false;
@@ -216,8 +227,9 @@ public class ReflectionStereotypeFactory implements StereotypeFactory<Package, C
 
 		return Stream.of(element.getDeclaredAnnotations())
 				.map(Annotation::annotationType)
-				.filter(it -> !it.getName().startsWith("java"))
-				.anyMatch(it -> it.getName().equals(fqn) || isAnnotated(it, fqn));
+				.filter(it -> !isIgnored(it))
+				.filter(visited::add)
+				.anyMatch(it -> it.getName().equals(fqn) || isAnnotated(it, fqn, visited));
 	}
 
 	private static boolean doesImplement(Class<?> type, String fqn) {
@@ -235,18 +247,31 @@ public class ReflectionStereotypeFactory implements StereotypeFactory<Package, C
 				.anyMatch(it -> doesImplement(it, fqn));
 	}
 
-	private static <T extends AnnotatedElement> Collection<Class<?>> fromAnnotation(Annotation annotation) {
+	private static Collection<Class<?>> fromAnnotation(Annotation annotation) {
 
 		var result = new ArrayList<Class<?>>();
+
+		collectStereotypeAnnotations(annotation, result, new HashSet<>());
+
+		return result;
+	}
+
+	/**
+	 * Collects the annotation types that are meta-annotated with {@link org.jmolecules.stereotype.Stereotype} starting
+	 * from the type of the given {@link Annotation}. Keeps track of the annotation types already inspected to terminate
+	 * on annotation graphs containing cycles.
+	 */
+	private static void collectStereotypeAnnotations(Annotation annotation, Collection<Class<?>> result,
+			Set<Class<?>> visited) {
+
 		var annotationType = annotation.annotationType();
 
-		if (annotationType.getName().startsWith("java")) {
-			return Collections.emptyList();
+		if (isIgnored(annotationType) || !visited.add(annotationType)) {
+			return;
 		}
 
 		var annotations = Stream.of(annotationType.getAnnotations())
-				.filter(it -> !it.equals(annotation))
-				.filter(it -> !it.annotationType().getName().startsWith("java"))
+				.filter(it -> !isIgnored(it.annotationType()))
 				.toList();
 
 		for (Annotation candidate : annotations) {
@@ -256,9 +281,18 @@ public class ReflectionStereotypeFactory implements StereotypeFactory<Package, C
 		}
 
 		for (Annotation candidate : annotations) {
-			result.addAll(fromAnnotation(candidate));
+			collectStereotypeAnnotations(candidate, result, visited);
 		}
+	}
 
-		return result;
+	/**
+	 * Returns whether the given annotation type is part of the JDK or the Kotlin standard library and thus cannot be a
+	 * stereotype or meta-annotated with one.
+	 */
+	private static boolean isIgnored(Class<?> annotationType) {
+
+		var name = annotationType.getName();
+
+		return name.startsWith("java") || name.startsWith("kotlin");
 	}
 }

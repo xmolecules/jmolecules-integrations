@@ -42,6 +42,7 @@ class ReflectionStereotypeFactoryUnitTests {
 	JsonPathStereotypeCatalog catalog = new JsonPathStereotypeCatalog(
 			CatalogSource.ofClassLoader(ReflectionStereotypeFactoryUnitTests.class.getClassLoader()));
 	ReflectionStereotypeFactory factory = new ReflectionStereotypeFactory(catalog).enableLocalStereotypeDetection();
+	ReflectionStereotypeFactory withoutLocalDetection = new ReflectionStereotypeFactory(catalog);
 
 	@Test
 	void detectsInterfaceBasedStereotype() {
@@ -144,6 +145,28 @@ class ReflectionStereotypeFactoryUnitTests {
 				.doesNotContain("architecture.hexagonal.PrimaryPort");
 	}
 
+	@Test // GH-422
+	void terminatesOnSelfReferencingAnnotation() {
+
+		assertThatNoException().isThrownBy(() -> factory.fromType(SelfReferencingAnnotated.class));
+		assertThatNoException().isThrownBy(() -> withoutLocalDetection.fromType(SelfReferencingAnnotated.class));
+	}
+
+	@Test // GH-422
+	void terminatesOnMutuallyReferencingAnnotations() {
+
+		assertThatNoException().isThrownBy(() -> factory.fromType(MutuallyReferencingAnnotated.class));
+		assertThatNoException().isThrownBy(() -> withoutLocalDetection.fromType(MutuallyReferencingAnnotated.class));
+	}
+
+	@Test // GH-422
+	void detectsStereotypeBehindAnnotationCycle() {
+
+		assertThat(factory.fromType(CyclicStereotypeAnnotated.class))
+				.extracting(Stereotype::getDisplayName)
+				.containsExactly("Cyclic Stereotype A");
+	}
+
 	@org.jmolecules.stereotype.Stereotype
 	interface MyStereotype {}
 
@@ -178,4 +201,36 @@ class ReflectionStereotypeFactoryUnitTests {
 	}
 
 	static class MyPortImplementation implements MyPort {}
+
+	// GH-422
+
+	@Retention(RetentionPolicy.RUNTIME)
+	@SelfReferencing
+	@interface SelfReferencing {}
+
+	@Retention(RetentionPolicy.RUNTIME)
+	@MutualB
+	@interface MutualA {}
+
+	@Retention(RetentionPolicy.RUNTIME)
+	@MutualA
+	@interface MutualB {}
+
+	@org.jmolecules.stereotype.Stereotype
+	@Retention(RetentionPolicy.RUNTIME)
+	@CyclicStereotypeB
+	@interface CyclicStereotypeA {}
+
+	@Retention(RetentionPolicy.RUNTIME)
+	@CyclicStereotypeA
+	@interface CyclicStereotypeB {}
+
+	@SelfReferencing
+	static class SelfReferencingAnnotated {}
+
+	@MutualA
+	static class MutuallyReferencingAnnotated {}
+
+	@CyclicStereotypeB
+	static class CyclicStereotypeAnnotated {}
 }
